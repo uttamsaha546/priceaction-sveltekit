@@ -5,11 +5,14 @@
 		LineSeries,
 		CandlestickSeries,
 		CrosshairMode,
-		PriceScaleMode
+		PriceScaleMode,
+
+		createSeriesMarkers
+
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
-	import { SeriesMarkersPrimitive } from '$lib/utils/SeriesMarkersPrimitive';
+	import { createSeriesMarkers as My_createSeriesMarkers } from '$lib/utils/SeriesMarkersPrimitive';
 	import { RsiSeriesMarker } from '$lib/utils/RsiSeriesMarker';
 
 	let chart;
@@ -46,9 +49,7 @@
 		// const smaSeries = new SmaSeriesPrimitive();
 		// mainSeries.attachPrimitive(smaSeries);
 
-		const seriesMarker = new SeriesMarkersPrimitive();
-		seriesMarker.setMarkers(RsiSeriesMarker);
-		mainSeries.attachPrimitive(seriesMarker);
+		My_createSeriesMarkers(mainSeries, RsiSeriesMarker)
 
 		return () => chart.remove();
 	});
