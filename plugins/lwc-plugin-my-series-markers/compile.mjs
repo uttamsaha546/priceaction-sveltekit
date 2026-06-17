@@ -1,13 +1,9 @@
 import { dirname, resolve } from 'node:path';
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { build, defineConfig } from 'vite';
 import { fileURLToPath } from 'url';
-import { generateDtsBundle } from 'dts-bundle-generator';
 
 function buildPackageJson(packageName) {
-	/*
-	 Define the contents of the package's package.json here.
-	 */
 	return {
 		name: packageName,
 		version: '1.0.0',
@@ -15,14 +11,12 @@ function buildPackageJson(packageName) {
 		type: 'module',
 		main: `./${packageName}.umd.cjs`,
 		module: `./${packageName}.js`,
-		types: `./${packageName}.d.ts`,
+		// Removed types fields since we are now compiling plain JavaScript
 		exports: {
 			import: {
-				types: `./${packageName}.d.ts`,
 				default: `./${packageName}.js`,
 			},
 			require: {
-				types: `./${packageName}.d.cts`,
 				default: `./${packageName}.umd.cjs`,
 			},
 		},
@@ -33,7 +27,8 @@ const __filename = fileURLToPath(import.meta.url);
 const currentDir = dirname(__filename);
 
 const pluginFileName = 'my-series-markers';
-const pluginFile = resolve(currentDir, 'src', `${pluginFileName}.ts`);
+// FIXED: Changed extension from .ts to .js to point to your new file location
+const pluginFile = resolve(currentDir, 'src', `${pluginFileName}.js`);
 
 const pluginsToBuild = [
 	{
@@ -60,6 +55,7 @@ const buildConfig = ({
 			outDir: `dist`,
 			emptyOutDir: true,
 			copyPublicDir: false,
+			minify: false, // 👈 ADD THIS LINE to prevent renaming variables
 			lib: {
 				entry: filepath,
 				name,
@@ -78,6 +74,7 @@ const buildConfig = ({
 	});
 };
 
+
 const startTime = Date.now().valueOf();
 console.log('⚡️ Starting');
 console.log('Bundling the plugin...');
@@ -85,6 +82,7 @@ const promises = pluginsToBuild.map(file => {
 	return build(buildConfig(file));
 });
 await Promise.all(promises);
+
 console.log('Generating the package.json file...');
 pluginsToBuild.forEach(file => {
 	const packagePath = resolve(compiledFolder, 'package.json');
@@ -95,22 +93,9 @@ pluginsToBuild.forEach(file => {
 	);
 	writeFileSync(packagePath, content, { encoding: 'utf-8' });
 });
-console.log('Generating the typings files...');
-pluginsToBuild.forEach(file => {
-	try {
-		const esModuleTyping = generateDtsBundle([
-			{
-				filePath: `./typings/${pluginFileName}.d.ts`,
-			},
-		]);
-		const typingFilePath = resolve(compiledFolder, `${file.exportName}.d.ts`);
-		writeFileSync(typingFilePath, esModuleTyping.join('\n'), {
-			encoding: 'utf-8',
-		});
-		copyFileSync(typingFilePath, resolve(compiledFolder, `${file.exportName}.d.cts`));
-	} catch (e) {
-		console.error('Error generating typings for: ', file.exportName);
-	}
-});
+
+// REMOVED: The code for generating typings files has been deleted 
+// because dts-bundle-generator fails on pure JavaScript projects.
+
 const endTime = Date.now().valueOf();
 console.log(`🎉 Done (${endTime - startTime}ms)`);

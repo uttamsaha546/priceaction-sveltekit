@@ -2,10 +2,11 @@
 
 export const RsiSeriesMarker = [
     {
-        time: { year: 2024, month: 12, day: 23 },
+        time: 1744588800,
+        price: 120,
         position: 'aboveBar',
         color: '#f68410',
-        shape: 'circle',
+        shape: 'labelUp',
         text: 'A',
         size: 5,
     },

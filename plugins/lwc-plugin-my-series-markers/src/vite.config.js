@@ -1,13 +1,13 @@
+// vite.config.js
 import { defineConfig } from 'vite';
-
-const input = {
-	main: './src/example/index.html',
-};
 
 export default defineConfig({
 	build: {
-		rollupOptions: {
-			input,
-		},
-	},
+		lib: {
+			// Change the extension from .ts to .js
+			entry: 'src/my-series-markers.js',
+			name: 'MySeriesMarkers',
+			fileName: 'my-series-markers'
+		}
+	}
 });

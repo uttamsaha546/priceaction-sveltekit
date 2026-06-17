@@ -6,14 +6,13 @@
 		CandlestickSeries,
 		CrosshairMode,
 		PriceScaleMode,
-
 		createSeriesMarkers
-
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
-	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
-	import { createSeriesMarkers as My_createSeriesMarkers } from '$lib/utils/SeriesMarkersPrimitive';
+	// import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
+	// import { createSeriesMarkers as My_createSeriesMarkers } from '$lib/utils/SeriesMarkersPrimitive';
 	import { RsiSeriesMarker } from '$lib/utils/RsiSeriesMarker';
+	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 
 	let chart;
 	let container;
@@ -49,7 +48,10 @@
 		// const smaSeries = new SmaSeriesPrimitive();
 		// mainSeries.attachPrimitive(smaSeries);
 
-		My_createSeriesMarkers(mainSeries, RsiSeriesMarker)
+		// const customShapePlugin = new CustomShapePrimitive(RsiSeriesMarker);
+		// mainSeries.attachPrimitive(customShapePlugin);
+
+		// My_createSeriesMarkers(mainSeries, RsiSeriesMarker);
 
 		return () => chart.remove();
 	});
@@ -59,6 +61,8 @@
 		if (!mainSeries || !data || !chart) return;
 
 		mainSeries.setData(data ?? []);
+		const customShapePlugin = new CustomShapePrimitive(RsiSeriesMarker);
+		mainSeries.attachPrimitive(customShapePlugin);
 
 		const priceScale = chart.priceScale('right');
 
