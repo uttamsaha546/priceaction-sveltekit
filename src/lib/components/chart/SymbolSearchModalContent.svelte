@@ -1,0 +1,475 @@
+<script>
+	import SearchIcon from './Icons/SearchIcon.svelte';
+	import CloseIconFilled from './Icons/CloseIconFilled.svelte';
+	import { ChartState } from '$lib/state/ChartState.svelte';
+	import dayjs from 'dayjs';
+	const Type = {
+		Stock: 1,
+		MF: 2,
+		ETF: 3,
+		Inedx: 4,
+		Nps: 5,
+		Global: 6
+	};
+	const Source = {
+		Groww: 1,
+		Dhan: 2,
+		NpsTrust: 3,
+		YahooFinance: 4
+	};
+
+	let searchInput = $state('');
+	let filteredResult = $state([]);
+	let type = $state(Type.Stock);
+	let source = $state(Source.Dhan);
+	let searchResult = $state([]);
+
+	let controller;
+	$effect(() => {
+		source; // make source a dependancy
+		type; //make type a dependancy
+		const q = searchInput.trim();
+		if (!q) return;
+		const t = setTimeout(() => {
+			// cancel previous request (if still running)
+			controller?.abort();
+			controller = new AbortController();
+			// run search / fetch here directly
+			search(q, controller.signal);
+		}, 500);
+
+		return () => {
+			clearTimeout(t);
+			controller?.abort();
+		};
+	});
+
+	async function search(debouncedQuery, signal) {
+		try {
+			if (source === Source.Dhan) {
+				const a = await fetch(
+					'https://openweb-search.dhan.co/Search/category',
+					{
+						method: 'POST',
+						body: JSON.stringify({
+							Data: {
+								searchterm: debouncedQuery,
+								inst:
+									type === Type.Stock
+										? 'E'
+										: type === Type.MF
+											? 'MF'
+											: type === Type.Index
+												? 'I'
+												: 'ETF',
+								optionflag: false
+							}
+						})
+					},
+					signal
+				);
+
+				searchResult = (await a.json()).data;
+			}
+			// else if (source === Source.NpsTrust) {
+			// 	const filteredData = npsSchemeList.filter((obj) =>
+			// 		new RegExp(debouncedQuery, 'i').test(obj.schemename)
+			// 	);
+			// 	setSearchResult(filteredData);
+			// }
+			else if (source === Source.YahooFinance) {
+				const a = await fetch(
+					'/proxy?url=' +
+						encodeURIComponent(
+							'https://query1.finance.yahoo.com/v1/finance/search?q=' + debouncedQuery
+						)
+				);
+				searchResult = (await a.json()).quotes;
+			}
+		} catch (err) {
+			if (err.name === 'AbortError') return; // expected
+			console.error(err);
+		}
+	}
+
+	async function fetchLineData(params) {
+		if (
+			source === Source.Dhan &&
+			(type === Type.Stock || type === Type.ETF || type === Type.Index)
+		) {
+			const dayEnd = dayjs().endOf('day').unix();
+
+			const getDataH = await fetch(
+				`/proxy?url=${encodeURIComponent('https://openweb-ticks.dhan.co/getDataH')}`,
+				{
+					method: 'POST',
+					body: JSON.stringify({
+						END: dayEnd,
+						END_TIME: dayjs.unix(dayEnd).toDate().toUTCString(),
+						EXCH: params._Exch_s,
+						EXPCODE: 0,
+						INST: params.Inst_s,
+						INTERVAL: 'D',
+						SEC_ID: parseInt(params.Sid_s),
+						SEG: params.Seg_s,
+						START: 214684200,
+						START_TIME: 'Wed, 20 Oct 1976 18:30:00 GMT',
+						SYM: params.Sym_t
+					})
+				}
+			);
+
+			const DataH = await getDataH.json();
+
+			let { t: timestamp, c: close } = DataH.data;
+
+			ChartState.lineData = timestamp.map((_, i) => [timestamp[i], close[i]]);
+		} else if (source === Source.Dhan && type === Type.MF) {
+			const a = await fetch('/proxy?url=https://mf-openweb-search.dhan.co/chart', {
+				method: 'POST',
+				body: JSON.stringify({
+					aes_key: '',
+					entity_id: 'Openweb',
+					ip: '',
+					source: 'W',
+					data: {
+						client_id: '',
+						end_date: '',
+						period: 'max',
+						sCode: params.dmfm_cmots_scheme_code || params.dhan_code,
+						start_date: ''
+					}
+				})
+			});
+			let { d: date, n: nav } = (await a.json()).data[0];
+			ChartState.lineData = date.map((_, i) => [new Date(date[i]).getTime(), nav[i]]);
+		}
+		// else if (source === Source.NpsTrust && type === Type.Nps) {
+
+		// 	fetch('/api/proxy?nav-graphs-details', {
+		// 		method: 'POST',
+		// 		body: JSON.stringify({
+		// 			method: 'GET',
+		// 			url: 'https://npstrust.org.in/nav-graphs-details',
+		// 			payload: {
+		// 				lnavdata: activeData.data.pfmcode,
+		// 				yearval: 'all',
+		// 				subcat: activeData.data.schemecode,
+		// 				vaname: activeData.data.pfmname
+		// 			},
+		// 			headers: {
+		// 				'Content-Type': 'application/json'
+		// 			}
+		// 		})
+		// 	})
+		// 		.then((response) => {
+		// 			if (!response.ok) {
+		// 				throw new Error('Network response was not ok ' + response.statusText);
+		// 			}
+		// 			return response.json();
+		// 		})
+		// 		.then((json) => {
+		// 			const chartData =
+		// 				timeframe === 'W' ? getWeeklyOHLC(json.data) : getMonthlyOHLC(json.data);
+		// 			setChartData(chartData);
+		// 			setLoading(false);
+		// 		})
+		// 		.catch((error) => {
+		// 			console.error('Fetch error:', error);
+		// 		});
+		// }
+		// else if (activeData.source === Source.NseIndia && activeData.type === Type.Index) {
+		// 	const splitDateRange = (from, to, maxDays = 100) => {
+		// 		const ranges = [];
+		// 		let start = dayjs(from, 'DD-MM-YYYY');
+		// 		const end = dayjs(to, 'DD-MM-YYYY');
+
+		// 		while (start.isBefore(end)) {
+		// 			let chunkEnd = start.add(maxDays, 'day');
+		// 			if (chunkEnd.isAfter(end)) {
+		// 				chunkEnd = end;
+		// 			}
+
+		// 			ranges.push({
+		// 				from: start.format('DD-MM-YYYY'),
+		// 				to: chunkEnd.format('DD-MM-YYYY')
+		// 			});
+
+		// 			start = chunkEnd.add(1, 'day');
+		// 		}
+
+		// 		return ranges;
+		// 	};
+
+		// 	const fetchChunk = async (range) => {
+		// 		const response = await fetch('/api/proxy', {
+		// 			method: 'POST',
+		// 			body: JSON.stringify({
+		// 				method: 'GET',
+		// 				url: 'https://www.nseindia.com/api/historicalOR/indicesHistory',
+		// 				payload: {
+		// 					indexType: activeData.indexType,
+		// 					from: range.from,
+		// 					to: range.to
+		// 				},
+		// 				headers: {
+		// 					'Content-Type': 'application/json; charset=utf-8',
+		// 					Accept: 'application/json, text/javascript, */*; q=0.01',
+		// 					Referer: 'https://www.niftyindices.com/reports/historical-data',
+		// 					'X-Requested-With': 'XMLHttpRequest',
+		// 					'User-Agent': 'Mozilla/5.0'
+		// 				}
+		// 			})
+		// 		});
+
+		// 		if (!response.ok) {
+		// 			throw new Error('Network response was not ok ' + response.statusText);
+		// 		}
+
+		// 		const json = await response.json();
+		// 		return json.data || [];
+		// 	};
+
+		// 	const fetchHistoricalData = async () => {
+		// 		try {
+		// 			setLoading(true);
+
+		// 			const key = activeData.name.toLowerCase().replaceAll(' ', '-');
+		// 			const cache = await getCache(key);
+
+		// 			let mergedData;
+
+		// 			if (cache) {
+		// 				const lastFetched = dayjs(cache.data.at(-1).EOD_TIMESTAMP).format('DD-MM-YYYY');
+
+		// 				const ranges = splitDateRange(lastFetched, dayjs().format('DD-MM-YYYY'));
+		// 				console.log(ranges);
+
+		// 				if (ranges.length) {
+		// 					const results = await Promise.all(ranges.map((range) => fetchChunk(range)));
+
+		// 					const newData = results.flat();
+		// 					mergedData = [...cache.data, ...newData];
+		// 				} else {
+		// 					mergedData = cache.data;
+		// 				}
+		// 			} else {
+		// 				const ranges = splitDateRange(activeData.from, activeData.to);
+		// 				// Parallel requests
+		// 				const results = await Promise.all(ranges.map((range) => fetchChunk(range)));
+
+		// 				mergedData = results.flat();
+		// 			}
+
+		// 			if (!mergedData?.length) return;
+
+		// 			mergedData = mergedData.sort(
+		// 				(a, b) => dayjs(a.EOD_TIMESTAMP).valueOf() - dayjs(b.EOD_TIMESTAMP).valueOf()
+		// 			);
+
+		// 			setCache(key, mergedData);
+
+		// 			const chartData =
+		// 				timeframe === 'W'
+		// 					? getWeeklyOHLC(
+		// 							mergedData.map((item) => [
+		// 								dayjs(item.EOD_TIMESTAMP).valueOf(),
+		// 								item.EOD_CLOSE_INDEX_VAL
+		// 							])
+		// 						)
+		// 					: getMonthlyOHLC(
+		// 							mergedData.map((item) => [
+		// 								dayjs(item.EOD_TIMESTAMP).valueOf(),
+		// 								item.EOD_CLOSE_INDEX_VAL
+		// 							])
+		// 						);
+
+		// 			setChartData(chartData);
+		// 		} catch (error) {
+		// 			console.error('Fetch error:', error);
+		// 		} finally {
+		// 			setLoading(false);
+		// 		}
+		// 	};
+
+		// 	fetchHistoricalData();
+		// } else if (activeData.source === Source.NiftyIndices && activeData.type === Type.Index) {
+		// 	setLoading(true);
+		// 	const now = new Date();
+		// 	fetch('/api/proxy', {
+		// 		method: 'POST',
+		// 		body: JSON.stringify({
+		// 			method: 'POST',
+		// 			url: 'https://www.niftyindices.com/Backpage.aspx/getHistoricaldatatabletoString',
+		// 			payload: {
+		// 				cinfo:
+		// 					"{'name':'NIFTY CHEMICALS','startDate':'01-Apr-2025','endDate':'16-Feb-2026','indexName':'NIFTY CHEMICALS'}"
+		// 			},
+		// 			headers: {
+		// 				'Content-Type': 'application/json; charset=utf-8',
+		// 				Accept: 'application/json, text/javascript, */*; q=0.01'
+		// 				// 'Referer': 'https://www.niftyindices.com/reports/historical-data',
+		// 				// 'X-Requested-With': 'XMLHttpRequest',
+		// 				// "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+		// 			}
+		// 		})
+		// 	})
+		// 		.then((response) => {
+		// 			if (!response.ok) {
+		// 				throw new Error('Network response was not ok ' + response.statusText);
+		// 			}
+		// 			return response.json();
+		// 		})
+		// 		.then((json) => {
+		// 			json = JSON.parse(json.d);
+		// 			console.log(json);
+		// 			const chartData = getWeeklyOHLC(json.map((item, _) => [item.timestamp, item.close]));
+		// 			console.log(chartData);
+		// 			setChartData(chartData);
+		// 			setLoading(false);
+		// 		})
+		// 		.catch((error) => {
+		// 			console.error('Fetch error:', error);
+		// 		});
+		// }
+		else if (source === Source.YahooFinance && type === Type.Global) {
+			const dayEnd = dayjs().endOf('day').unix();
+			const getDayOHLC = await fetch(
+				`/proxy?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${params.symbol}?period1=1356978600&period2=${dayEnd}&interval=1d`)}`
+			);
+			const res = await getDayOHLC.json();
+			const { timestamp, meta, indicators } = res.chart.result[0];
+			let { close } = indicators.quote[0];
+			ChartState.lineData = timestamp.map((_, i) => [timestamp[i], close[i]]);
+		}
+	}
+</script>
+
+<div class="inputContainer border border-gray-200 rounded p-1 flex flex-row items-center">
+	<span><SearchIcon /></span>
+	<input
+		bind:value={searchInput}
+		class="W-Flex-1 flex-1 focus:outline-0 px-1"
+		placeholder="Symbol"
+	/>
+	{#if searchInput}
+		<button
+			class="hover:bg-gray-200 rounded p-1"
+			onclick={() => {
+				searchInput = '';
+				filteredResult = [];
+			}}><CloseIconFilled /></button
+		>
+	{/if}
+</div>
+
+<div class="spacer h-2"></div>
+
+<div class="typeContainer flex-row gap-2">
+	<button
+		onclick={() => {
+			type = Type.Stock;
+			source = Source.Dhan;
+		}}
+		class={`${type === Type.Stock ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>Stock</button
+	>
+	<button
+		onclick={() => {
+			type = Type.MF;
+			source = Source.Dhan;
+		}}
+		class={`${type === Type.MF ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>MF</button
+	>
+	<button
+		onclick={() => {
+			type = Type.ETF;
+			source = Source.Dhan;
+		}}
+		class={`${type === Type.ETF ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>ETF</button
+	>
+	<button
+		onclick={() => {
+			type = Type.Index;
+			source = Source.Dhan;
+		}}
+		class={`${type === Type.Index ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>Index</button
+	>
+	<button
+		onclick={() => {
+			type = Type.Nps;
+			source = Source.NpsTrust;
+		}}
+		class={`${type === Type.Nps ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>NPS</button
+	>
+	<button
+		onclick={() => {
+			type = Type.Global;
+			source = Source.YahooFinance;
+		}}
+		class={`${type === Type.Global ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
+		>Global</button
+	>
+</div>
+
+<div class="spacer h-2"></div>
+
+<div class="searchResultContainer overflow-auto">
+	{#each searchResult as row, index}
+		<div
+			class="flex flex-row border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
+			onclick={() => {
+				ChartState.activeModal = null;
+				fetchLineData(row);
+			}}
+			onkeydown={() => {}}
+			role="button"
+			tabindex="0"
+		>
+			{#if type === Type.Stock}
+				<div class="symbol flex-1">{row.Sym_t}</div>
+				<div class="name flex-2">{row.disp_sym_s}</div>
+				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+					<span class="text-[#707070] text-sm">{row.disp_inst_s?.toLowerCase()}</span>
+					<span>{row.d_exch}</span>
+					<img
+						src={`https://s3-symbol-logo.tradingview.com/source/${row.d_exch}.svg`}
+						class="rounded-full"
+						alt="logo"
+					/>
+				</div>
+			{:else if type === Type.MF}
+				<div class="symbol flex-1">{row.dmfm_isin_code}</div>
+				<div class="name flex-2">{row.dmfm_custom_scheme_name}</div>
+			{:else if type === Type.ETF}
+				<div class="symbol flex-1">{row.Sym_t}</div>
+				<div class="name flex-2">{row.disp_sym_s}</div>
+				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+					<span>ETF</span>
+				</div>
+			{:else if type === Type.Index}
+				<div class="symbol flex-1">{row.Sym_t}</div>
+				<div class="name flex-2">{row.disp_sym_s}</div>
+				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+					<span>Index</span>
+				</div>
+			{:else if type === Type.Nps}
+				<div class="symbol flex-1">{row.schemecode}</div>
+				<div class="name flex-2">{row.schemename}</div>
+				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+					<span>NPS</span>
+				</div>
+			{:else if type === Type.Global}
+				<div class="symbol flex-1">{row.symbol}</div>
+				<div class="name flex-2">{row.longname}</div>
+				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+					<span>{row.exchDisp}</span>
+				</div>
+			{/if}
+		</div>
+	{/each}
+</div>
