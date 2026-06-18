@@ -34,7 +34,7 @@
 				scaleMargins: { top: 0, bottom: 0 },
 				mode: PriceScaleMode.Logarithmic
 			},
-			timeScale: { rightOffset: 5, barSpacing: 4 },
+			timeScale: { rightOffset: 10, barSpacing: 4 },
 			autoSize: true
 		});
 
@@ -44,7 +44,7 @@
 		}
 
 		const smaSeries = new SmaSeriesPrimitive();
-		mainSeries.attachPrimitive(smaSeries);		
+		mainSeries.attachPrimitive(smaSeries);
 		const rsiSeries = new CustomShapePrimitive();
 		mainSeries.attachPrimitive(rsiSeries);
 
@@ -56,7 +56,6 @@
 		if (!mainSeries || !data || !chart) return;
 
 		mainSeries.setData(data ?? []);
-
 
 		const priceScale = chart.priceScale('right');
 
@@ -102,7 +101,7 @@
 		const prices = data.map((d) => d.high ?? d.value);
 		const maxPrice = Math.max(...prices);
 
-		const shift = maxPrice - range.to;
+		const shift = maxPrice - range.to; //left 10% top space
 
 		if (shift !== 0) {
 			priceScale.setVisibleRange({

@@ -12,7 +12,7 @@ class CustomShapeRenderer {
 
             for (const item of this._data) {
                 if (item.x === null || item.y === null) continue;
-                
+
                 ctx.save();
                 ctx.translate(item.x, item.y);
                 if (item.shape === 'labelUp') {
@@ -26,12 +26,12 @@ class CustomShapeRenderer {
     }
 
     _drawLabel(ctx, color, text, isUp) {
-        const paddingX = 8;
+        const paddingX = 3;
         const paddingY = 4;
         ctx.font = '11px sans-serif';
         const textMetrics = ctx.measureText(text || '');
         const textWidth = textMetrics.width;
-        const textHeight = 11;
+        const textHeight = 8;
 
         const rectWidth = textWidth + paddingX * 2;
         const rectHeight = textHeight + paddingY * 2;
@@ -46,13 +46,13 @@ class CustomShapeRenderer {
 
         ctx.beginPath();
         if (isUp) {
-            ctx.moveTo(-5, -14);
-            ctx.lineTo(5, -14);
-            ctx.lineTo(0, -6);
+            ctx.moveTo(-4, -15);
+            ctx.lineTo(4, -15);
+            ctx.lineTo(0, -10);
         } else {
-            ctx.moveTo(-5, 14);
-            ctx.lineTo(5, 14);
-            ctx.lineTo(0, 6);
+            ctx.moveTo(-4, 15);
+            ctx.lineTo(4, 15);
+            ctx.lineTo(0, 10);
         }
         ctx.closePath();
         ctx.fill();
@@ -74,10 +74,10 @@ class CustomShapePaneView {
         const series = this._primitive.series();
         const chart = this._primitive.chart();
         if (!series || !chart) return;
-        
+
         const timeScale = chart.timeScale();
         const seriesBars = series.data();
-        
+
         if (!seriesBars || seriesBars.length === 0) {
             this._renderer = new CustomShapeRenderer([]);
             return;
@@ -97,28 +97,68 @@ class CustomShapePaneView {
             let item = null;
 
             // Define marker criteria based on your technical rules
-            if (rsi >= 70) {
-                item = {
-                    time: bar.time,
-                    position: 'aboveBar',
-                    color: '#EE4B2B', // Red for overbought
-                    shape: 'labelDown',
-                    text: 'X'
-                };
-            } else if (rsi <= 30) {
+            if (rsi > 70) {
                 item = {
                     time: bar.time,
                     position: 'belowBar',
-                    color: '#50C878', // Green for oversold
-                    shape: 'labelUp',
+                    color: 'rgb(76, 175, 80)', // green
+                    shape: 'labelDown',
                     text: 'C'
+                };
+            } else if (rsi > 65) {
+                item = {
+                    time: bar.time,
+                    position: 'belowBar',
+                    color: 'rgb(76, 175, 80)', // green
+                    shape: 'labelDown',
+                    text: 'B'
+                };
+            } else if (rsi > 60) {
+                item = {
+                    time: bar.time,
+                    position: 'belowBar',
+                    color: 'rgb(76, 175, 80)', // green
+                    shape: 'labelDown',
+                    text: 'A'
+                };
+            } else if (rsi > 55) {
+                item = {
+                    time: bar.time,
+                    position: 'belowBar',
+                    color: 'rgba(76, 175, 80, 0.5)', // light green
+                    shape: 'labelDown',
+                    text: 'A'
+                };
+            } else if (rsi > 50) {
+                item = {
+                    time: bar.time,
+                    position: 'aboveBar',
+                    color: 'rgb(242, 54, 69)', // red
+                    shape: 'labelUp',
+                    text: 'X'
+                };
+            } else if (rsi > 45) {
+                item = {
+                    time: bar.time,
+                    position: 'aboveBar',
+                    color: 'rgb(242, 54, 69)', // red
+                    shape: 'labelUp',
+                    text: 'Y'
+                };
+            } else if (rsi <= 45) {
+                item = {
+                    time: bar.time,
+                    position: 'aboveBar',
+                    color: 'rgb(242, 54, 69)', // red
+                    shape: 'labelUp',
+                    text: 'Z'
                 };
             }
 
             // Map valid marker definitions to canvas coordinate points
             if (item) {
                 const x = timeScale.timeToCoordinate(item.time);
-                const targetPrice = item.position === 'aboveBar' ? (bar.high ?? bar.value) : (bar.low ?? bar.value);
+                const targetPrice = item.position === 'aboveBar' ? (bar.high ?? bar.value) * 1.01 : (bar.low ?? bar.value) * 0.99;
                 const y = series.priceToCoordinate(targetPrice);
 
                 mappedData.push({ x, y, shape: item.shape, color: item.color, text: item.text });
@@ -160,7 +200,7 @@ class CustomShapePaneView {
     }
 
     renderer() { return this._renderer; }
-    zOrder() { return 'top'; }
+    zOrder() { return 'normal'; }
 }
 
 export class CustomShapePrimitive {
@@ -193,7 +233,7 @@ export class CustomShapePrimitive {
     update() {
         this._paneView.update();
         if (this._requestUpdate) {
-            this._requestUpdate(); 
+            this._requestUpdate();
         }
     }
 

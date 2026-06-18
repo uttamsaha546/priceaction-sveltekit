@@ -76,7 +76,7 @@
 			<div class:hidden={activeTool !== 1} class="h-full">Tool 1 Content</div>
 
 			<div class:hidden={activeTool !== 2} class="h-full flex flex-col">
-				{#if activeTool===2}<StocksAnalysisComponent />{/if}
+				<StocksAnalysisComponent />
 			</div>
 		</div>
 
