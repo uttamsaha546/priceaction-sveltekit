@@ -1,105 +1,55 @@
-import { defaultOptions } from './options';
 import { MySeriesMarkersPaneView } from './pane-view';
-import { PluginBase } from './plugin-base';
 
-export class MySeriesMarkers
-	extends PluginBase {
+import { ensureDefined, ensureNotNull } from './helpers/assertions';
 
-	constructor(
-		dataPoints,
-		options
-	) {
-		super();
-		this._dataPoints = dataPoints;
-		// this._options = {
-		// 	...defaultOptions,
-		// 	...options,
-		// };
-		this._paneViews = [new MySeriesMarkersPaneView(this)];
-		// this._timeAxisViews = [
-		// 	new MySeriesMarkersTimeAxisView(this, p1),
-		// 	new MySeriesMarkersTimeAxisView(this, p2),
-		// ];
-		// this._priceAxisViews = [
-		// 	new MySeriesMarkersPriceAxisView(this, p1),
-		// 	new MySeriesMarkersPriceAxisView(this, p2),
-		// ];
-		// this._priceAxisPaneViews = [new MySeriesMarkersPriceAxisPaneView(this, true)];
-		// this._timeAxisPaneViews = [new MySeriesMarkersTimeAxisPaneView(this, false)];
+const seriesMarkerOptionsDefaults = {
+    autoScale: true,
+    zOrder: 'normal',
+};
+
+export class MySeriesMarkers{
+
+	constructor(options={}) {
+		this._private__options = {...seriesMarkerOptionsDefaults, ...options};
+		this._private__paneView = null;
+        this._private__markers = [];
+        this._private__indexedMarkers = [];
+		this._private__series = null;
+        this._private__chart = null;
+	}
+
+	attached(param) {
+		this._private__recalculateMarkers(); //calculate markers when primitive gets attached if series data available.
+		this._private__chart = param.chart;
+		this._private__series = param.series;
+		this._private__requestUpdate = param.requestUpdate;
+
+		this._private__paneView = new MySeriesMarkersPaneView(this._private__series, ensureNotNull(this._private__chart), this._private__options);
+		
+		//Subscribe to the data changed event. This event is fired whenever the update or setData method is evoked on the series.
+		this._private__series.subscribeDataChanged(this._private__requestUpdate());
+		this._private__requestUpdate();
+	}
+
+	detached() {		
+		this._private__series.unsubscribeDataChanged(this._private__requestUpdate());
+		this._private__chart = null;
+        this._private__series = null;
+        this._private__paneView = null;
+		this._private__requestUpdate = null;
 	}
 
 	updateAllViews() {
-		//* Use this method to update any data required by the
-		//* views to draw.
-		this._paneViews.forEach(pw => pw.update());
-		// this._timeAxisViews.forEach(pw => pw.update());
-		// this._priceAxisViews.forEach(pw => pw.update());
-		// this._priceAxisPaneViews.forEach(pw => pw.update());
-		// this._timeAxisPaneViews.forEach(pw => pw.update());
+		if (this._private__paneView) {
+            this._private__paneView._internal_update();
+        }
 	}
-
-	// priceAxisViews() {
-	// 	//* Labels rendered on the price scale
-	// 	return this._priceAxisViews;
-	// }
-
-	// timeAxisViews() {
-	// 	//* labels rendered on the time scale
-	// 	return this._timeAxisViews;
-	// }
 
 	paneViews() {
-		//* rendering on the main chart pane
-		return this._paneViews;
+		return this._private__paneView ? [this._private__paneView] : [];
 	}
 
-	// priceAxisPaneViews() {
-	// 	//* rendering on the price scale
-	// 	return this._priceAxisPaneViews;
-	// }
+	_private__recalculateMarkers(){
 
-	// timeAxisPaneViews() {
-	// 	//* rendering on the time scale
-	// 	return this._timeAxisPaneViews;
-	// }
-
-	autoscaleInfo(
-		startTimePoint,
-		endTimePoint
-	) {
-		//* Use this method to provide autoscale information if your primitive
-		//* should have the ability to remain in view automatically.
-
-	}
-
-	dataUpdated(_scope) {
-		//* This method will be called by PluginBase when the data on the
-		//* series has changed.
-	}
-
-	// _timeCurrentlyVisible(
-	// 	time,
-	// 	startTimePoint,
-	// 	endTimePoint
-	// ) {
-	// 	const ts = this.chart.timeScale();
-	// 	const coordinate = ts.timeToCoordinate(time);
-	// 	if (coordinate === null) return false;
-	// 	const logical = ts.coordinateToLogical(coordinate);
-	// 	if (logical === null) return false;
-	// 	return logical <= endTimePoint && logical >= startTimePoint;
-	// }
-
-	get options() {
-		return this._options;
-	}
-
-	applyOptions(options) {
-		this._options = { ...this._options, ...options };
-		this.requestUpdate();
-	}
-
-	get data() {
-		return this._dataPoints;
 	}
 }

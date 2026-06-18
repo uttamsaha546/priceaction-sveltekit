@@ -5,9 +5,7 @@
  * @param value - The value, or undefined.
  * @returns The passed value, if it is not undefined
  */
-export function ensureDefined(value: undefined): never;
-export function ensureDefined<T>(value: T | undefined): T;
-export function ensureDefined<T>(value: T | undefined): T {
+export function ensureDefined(value) {
 	if (value === undefined) {
 		throw new Error('Value is undefined');
 	}
@@ -22,9 +20,7 @@ export function ensureDefined<T>(value: T | undefined): T {
  * @param value - The value, or null.
  * @returns The passed value, if it is not null
  */
-export function ensureNotNull(value: null): never;
-export function ensureNotNull<T>(value: T | null): T;
-export function ensureNotNull<T>(value: T | null): T {
+export function ensureNotNull(value) {
 	if (value === null) {
 		throw new Error('Value is null');
 	}

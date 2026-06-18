@@ -1,6 +1,5 @@
 import { createSeriesMarkers, LineSeries } from "lightweight-charts";
 import { ChartState } from "$lib/state/ChartState.svelte";
-import { RsiSeriesMarker } from "./RsiSeriesMarker";
 
 export class SmaSeriesPrimitive {
 
@@ -27,7 +26,6 @@ export class SmaSeriesPrimitive {
         const mainSeriesData = this._mainSeries.data();
         const smaValues = calculateSMA(mainSeriesData, ChartState.isMonthly ? 12 : 52);
         this._smaSeries.setData(smaValues);
-        createSeriesMarkers(this._mainSeries, RsiSeriesMarker)
     }
 }
 

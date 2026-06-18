@@ -9,9 +9,7 @@
 		createSeriesMarkers
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
-	// import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
-	// import { createSeriesMarkers as My_createSeriesMarkers } from '$lib/utils/SeriesMarkersPrimitive';
-	import { RsiSeriesMarker } from '$lib/utils/RsiSeriesMarker';
+	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 
 	let chart;
@@ -45,13 +43,10 @@
 			mainSeries.setData(data);
 		}
 
-		// const smaSeries = new SmaSeriesPrimitive();
-		// mainSeries.attachPrimitive(smaSeries);
-
-		// const customShapePlugin = new CustomShapePrimitive(RsiSeriesMarker);
-		// mainSeries.attachPrimitive(customShapePlugin);
-
-		// My_createSeriesMarkers(mainSeries, RsiSeriesMarker);
+		const smaSeries = new SmaSeriesPrimitive();
+		mainSeries.attachPrimitive(smaSeries);		
+		const rsiSeries = new CustomShapePrimitive();
+		mainSeries.attachPrimitive(rsiSeries);
 
 		return () => chart.remove();
 	});
@@ -61,8 +56,7 @@
 		if (!mainSeries || !data || !chart) return;
 
 		mainSeries.setData(data ?? []);
-		const customShapePlugin = new CustomShapePrimitive(RsiSeriesMarker);
-		mainSeries.attachPrimitive(customShapePlugin);
+
 
 		const priceScale = chart.priceScale('right');
 

@@ -2,29 +2,41 @@ import { MySeriesMarkersPaneRenderer } from './pane-renderer.js';
 
 export class MySeriesMarkersPaneView {
 
-	constructor(primitive) {
-		this._primitive = primitive;
-	}
+	constructor({series, chart, options}) {
+		this._private__series = series;
+        this._private__chart = chart;
+		this._private__options = options;
+		this._private__renderer = new MySeriesMarkersPaneRenderer();
 
-	update() {
-		const series = this._primitive.series;
-		const timeScale = this._primitive.chart.timeScale();
+		this._private__data = { //populated after coordinate transformation of markers data
+            _internal_items: [],
+            _internal_visibleRange: null,
+        };
 
-		const originalData = this._primitive.data;
-
-		this._data = originalData.map(item => {
-			const x = timeScale.timeToCoordinate(item.time);
-			const y = series.priceToCoordinate(item.price);
-
-			return { ...item, x, y }
-		})
-		console.log(this._data)
+		this._private__markers = []; //markers data
 	}
 
 	renderer() {
-		return new MySeriesMarkersPaneRenderer(
-			this._data,
-			this._primitive.options?.fillColor
-		);
+		// Do not render if series is hidden
+		if (!this._private__series.options().visible) {
+            return null;
+        }
+		
+		this._internal__makeValid(); //populates the data
+
+		const layout = this._private__chart.options()['layout'];
+        this._private__renderer._internal_setParams(layout.fontSize, layout.fontFamily, this._private__options.zOrder);
+        this._private__renderer._internal_setData(this._private__data);
+
+		return this._private__renderer;
+	}	
+
+
+	_internal_setMarkers(markers) {
+        this._private__markers = markers;
+    }
+
+	_internal__makeValid(){
+		const timeScale = this._private__chart.timeScale();
 	}
 }

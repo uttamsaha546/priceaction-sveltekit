@@ -18,6 +18,7 @@
 			const json = await res.json();
 			const data = json.folio.data;
 			ChartState.lineData = data;
+			
 		} catch (err) {
 			console.error(err);
 		}
