@@ -101,7 +101,7 @@
 		const prices = data.map((d) => d.high ?? d.value);
 		const maxPrice = Math.max(...prices);
 
-		const shift = maxPrice - range.to; //left 10% top space
+		const shift = maxPrice - range.to;
 
 		if (shift !== 0) {
 			priceScale.setVisibleRange({
