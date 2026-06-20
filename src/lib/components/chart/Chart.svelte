@@ -17,6 +17,12 @@
 	let mainSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
+	$effect(() => {
+		if (mainSeries && data && data.length > 0) {
+			mainSeries.setData(data);
+		}
+	});
+
 	onMount(() => {
 		chart = createChart(container, {
 			width: container.clientWidth,
