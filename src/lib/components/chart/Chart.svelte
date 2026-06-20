@@ -2,11 +2,9 @@
 	import { onMount } from 'svelte';
 	import {
 		createChart,
-		LineSeries,
 		CandlestickSeries,
 		CrosshairMode,
-		PriceScaleMode,
-		createSeriesMarkers
+		PriceScaleMode
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
@@ -16,12 +14,6 @@
 	let container;
 	let mainSeries;
 	let { data, scalingMultiplier = 1 } = $props();
-
-	$effect(() => {
-		if (mainSeries && data && data.length > 0) {
-			mainSeries.setData(data);
-		}
-	});
 
 	onMount(() => {
 		chart = createChart(container, {
@@ -45,12 +37,9 @@
 		});
 
 		mainSeries = chart.addSeries(CandlestickSeries);
-		if (data?.length) {
-			mainSeries.setData(data);
-		}
 
 		const smaSeries = new SmaSeriesPrimitive();
-		mainSeries.attachPrimitive(smaSeries);
+	mainSeries.attachPrimitive(smaSeries);
 		const rsiSeries = new CustomShapePrimitive();
 		mainSeries.attachPrimitive(rsiSeries);
 
@@ -59,9 +48,9 @@
 
 	// For subsequent data updates
 	$effect(() => {
-		if (!mainSeries || !data || !chart) return;
+		if (!mainSeries || !data || !chart || !data.length===0) return;
 
-		mainSeries.setData(data ?? []);
+		mainSeries.setData(data);
 
 		const priceScale = chart.priceScale('right');
 

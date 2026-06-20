@@ -6,23 +6,27 @@
 
 	import { onMount } from 'svelte';
 	import { ChartState } from '$lib/state/ChartState.svelte';
-
-	onMount(async () => {
-		try {
+	
+	async function loadInitialData(){
+    try {
 			const res = await fetch(
 				`/proxy?url=${encodeURIComponent(
 					'https://groww.in/v1/api/data/mf/web/v1/scheme/140228/graph?benchmark=false&months=60'
 				)}`
 			);
-
-			const json = await res.json();
+     const json = await res.json();
 			const data = json.folio.data;
 			ChartState.lineData = data;
 			
 		} catch (err) {
 			console.error(err);
 		}
-	});
+	}
+
+	onMount( () => {
+		loadInitialData();
+   });
+			
 </script>
 
 <div class="h-screen w-screen flex flex-col">

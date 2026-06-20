@@ -2,18 +2,16 @@
 export const ChartState = (() => {
     let lineData = $state([]);
     let isMonthly = $state(false);
-    let scaleFactor = $state(1);
+    let scaleFactor = $state('');
     let activeModal = $state(null);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
-    let rsiMarkers = $derived(calculateRsiSeriesMarker(barData, 'close', 14));
 
     return {
         get lineData() { return lineData; },
         set lineData(val) { lineData = val; },
 
-        get barData() { return barData; }, // Read-only derived data
-        get rsiMarkers() { return rsiMarkers; },
+        get barData() { return barData; },
 
         get isMonthly() { return isMonthly; },
         set isMonthly(val) { isMonthly = val; },

@@ -18,5 +18,16 @@ export default defineConfig({
 			// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 			adapter: adapter()
 		})
-	]
+	],
+// ⬇️ ADD THIS BLOCK RIGHT HERE TO FIX THE CACHE BUG
+	server: {
+		watch: {
+			// Instructs Vite to completely ignore SQLite cache writes to prevent client state loss
+			ignored: [
+				'**/database.db', 
+				'**/database.db-shm', 
+				'**/database.db-wal'
+			]
+		}
+	}
 });
