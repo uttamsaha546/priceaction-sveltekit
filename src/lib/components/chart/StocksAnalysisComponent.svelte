@@ -57,6 +57,7 @@
 	<div class="FiltersContainer">
 		<!-- Sector Filter -->
 		<select
+			name="sector"
 			class="w-48 truncate border border-gray-200 rounded px-2"
 			bind:value={sector}
 			onchange={(e) => {
@@ -73,7 +74,11 @@
 		</select>
 
 		<!-- Industry Filter -->
-		<select class="w-48 truncate border border-gray-200 rounded px-2" bind:value={industry}>
+		<select
+			name="industry"
+			class="w-48 truncate border border-gray-200 rounded px-2"
+			bind:value={industry}
+		>
 			<option value={''} class="w-48"> Industry </option>
 			{#each industryList as industryName (industryName)}
 				<option value={industryName} class="w-48">
@@ -83,7 +88,7 @@
 		</select>
 
 		<!-- RSI Filter -->
-		<select class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
+		<select name="rsi" class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
 			<option value={''} class="w-48"> RSI(14M) </option>
 			<option value={'c'}>{'RSI 100-70) C'}</option>
 			<option value={'b'}>{'RSI (65-70] B'}</option>
