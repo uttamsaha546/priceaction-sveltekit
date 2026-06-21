@@ -9,6 +9,7 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
+	import { DonchianHighPrimitive } from '$lib/utils/DonchianHighPrimitive';
 
 	let chart;
 	let container;
@@ -39,16 +40,18 @@
 		mainSeries = chart.addSeries(CandlestickSeries);
 
 		const smaSeries = new SmaSeriesPrimitive();
-	mainSeries.attachPrimitive(smaSeries);
+		mainSeries.attachPrimitive(smaSeries);
 		const rsiSeries = new CustomShapePrimitive();
 		mainSeries.attachPrimitive(rsiSeries);
+		const donchianHighSeries = new DonchianHighPrimitive();
+		mainSeries.attachPrimitive(donchianHighSeries);
 
 		return () => chart.remove();
 	});
 
 	// For subsequent data updates
 	$effect(() => {
-		if (!mainSeries || !data || !chart || !data.length===0) return;
+		if (!mainSeries || !data || !chart || !data.length === 0) return;
 
 		mainSeries.setData(data);
 
