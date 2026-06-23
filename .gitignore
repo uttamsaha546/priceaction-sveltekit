@@ -11,7 +11,9 @@ node_modules
 # OS
 .DS_Store
 Thumbs.db
-
+database.db
+database.db-shm
+database.db-wal
 # Env
 .env
 .env.*

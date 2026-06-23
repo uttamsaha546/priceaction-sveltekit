@@ -30,7 +30,7 @@
 			},
 			crosshair: { mode: CrosshairMode.Normal },
 			rightPriceScale: {
-				scaleMargins: { top: 0, bottom: 0 },
+				scaleMargins: { top: 0.1, bottom: 0 },
 				mode: PriceScaleMode.Logarithmic
 			},
 			timeScale: { rightOffset: 10, barSpacing: 4 },
