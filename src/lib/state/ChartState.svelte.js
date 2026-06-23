@@ -4,6 +4,7 @@ export const ChartState = (() => {
     let isMonthly = $state(false);
     let scaleFactor = $state('');
     let activeModal = $state(null);
+    let flags = $state(null);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
 
@@ -15,6 +16,9 @@ export const ChartState = (() => {
 
         get isMonthly() { return isMonthly; },
         set isMonthly(val) { isMonthly = val; },
+
+        get flags() { return flags },
+        set flags(val) { flags = val },
 
         get scaleFactor() { return scaleFactor; },
         set scaleFactor(val) { scaleFactor = val; },
