@@ -10,6 +10,7 @@
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 	import { DonchianHighPrimitive } from '$lib/utils/DonchianHighPrimitive';
+	import { _52WeekHighPrimitive } from '$lib/utils/52WeekHighPrimitive';
 
 	let chart;
 	let container;
@@ -33,7 +34,7 @@
 				scaleMargins: { top: 0.1, bottom: 0 },
 				mode: PriceScaleMode.Logarithmic
 			},
-			timeScale: { rightOffset: 10, barSpacing: 4 },
+			timeScale: { rightOffset: 10, barSpacing: 6 },
 			autoSize: true
 		});
 
@@ -45,6 +46,8 @@
 		mainSeries.attachPrimitive(rsiSeries);
 		const donchianHighSeries = new DonchianHighPrimitive();
 		mainSeries.attachPrimitive(donchianHighSeries);
+		const _52WeekHighSeries = new _52WeekHighPrimitive();
+		mainSeries.attachPrimitive(_52WeekHighSeries);
 
 		return () => chart.remove();
 	});

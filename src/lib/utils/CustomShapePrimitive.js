@@ -26,9 +26,9 @@ class CustomShapeRenderer {
     }
 
     _drawLabel(ctx, color, text, isUp) {
-        const paddingX = 3;
-        const paddingY = 4;
-        ctx.font = '11px sans-serif';
+        const paddingX = 2;
+        const paddingY = 3;
+        ctx.font = '10px sans-serif';
         const textMetrics = ctx.measureText(text || '');
         const textWidth = textMetrics.width;
         const textHeight = 8;
