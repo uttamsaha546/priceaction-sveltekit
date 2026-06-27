@@ -28,7 +28,6 @@ class CustomShapeRenderer {
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
-        ctx.lineCap = "round";
 
         ctx.beginPath();
         ctx.moveTo(-2, -4);  // Top of pole
@@ -38,8 +37,7 @@ class CustomShapeRenderer {
 
         // --- 2. DRAW WAVY FLAG SHAPE ---
         ctx.beginPath();
-        ctx.moveTo(-2, -5); // Top-left attached to pole
-
+        ctx.moveTo(-2, -4); // Top-left attached to pole
         // Top wavy edge
         ctx.bezierCurveTo(0, -4, 2, -4, 4, -4);
         // Right vertical edge

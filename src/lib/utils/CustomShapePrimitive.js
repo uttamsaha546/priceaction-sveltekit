@@ -27,11 +27,11 @@ class CustomShapeRenderer {
 
     _drawLabel(ctx, color, text, isUp) {
         const paddingX = 2;
-        const paddingY = 3;
+        const paddingY = 2;
         ctx.font = '10px sans-serif';
         const textMetrics = ctx.measureText(text || '');
         const textWidth = textMetrics.width;
-        const textHeight = 8;
+        const textHeight = 6;
 
         const rectWidth = textWidth + paddingX * 2;
         const rectHeight = textHeight + paddingY * 2;
@@ -41,18 +41,18 @@ class CustomShapeRenderer {
 
         ctx.fillStyle = color || '#9c27b0';
         ctx.beginPath();
-        ctx.roundRect(xOffset, yOffset, rectWidth, rectHeight, 4);
+        ctx.roundRect(xOffset, yOffset, rectWidth, rectHeight, 2);
         ctx.fill();
 
         ctx.beginPath();
         if (isUp) {
             ctx.moveTo(-4, -15);
             ctx.lineTo(4, -15);
-            ctx.lineTo(0, -10);
+            ctx.lineTo(0, -12);
         } else {
             ctx.moveTo(-4, 15);
             ctx.lineTo(4, 15);
-            ctx.lineTo(0, 10);
+            ctx.lineTo(0, 12);
         }
         ctx.closePath();
         ctx.fill();
@@ -103,7 +103,7 @@ class CustomShapePaneView {
                     position: 'belowBar',
                     color: 'rgb(76, 175, 80)', // green
                     shape: 'labelDown',
-                    text: 'C'
+                    text: 'c'
                 };
             } else if (rsi > 65) {
                 item = {
@@ -111,7 +111,7 @@ class CustomShapePaneView {
                     position: 'belowBar',
                     color: 'rgb(76, 175, 80)', // green
                     shape: 'labelDown',
-                    text: 'B'
+                    text: 'b'
                 };
             } else if (rsi > 60) {
                 item = {
@@ -119,7 +119,7 @@ class CustomShapePaneView {
                     position: 'belowBar',
                     color: 'rgb(76, 175, 80)', // green
                     shape: 'labelDown',
-                    text: 'A'
+                    text: 'a'
                 };
             } else if (rsi > 55) {
                 item = {
@@ -127,7 +127,7 @@ class CustomShapePaneView {
                     position: 'belowBar',
                     color: 'rgba(76, 175, 80, 0.5)', // light green
                     shape: 'labelDown',
-                    text: 'A'
+                    text: 'a'
                 };
             } else if (rsi > 50) {
                 item = {
@@ -135,7 +135,7 @@ class CustomShapePaneView {
                     position: 'aboveBar',
                     color: 'rgb(242, 54, 69)', // red
                     shape: 'labelUp',
-                    text: 'X'
+                    text: 'x'
                 };
             } else if (rsi > 45) {
                 item = {
@@ -143,7 +143,7 @@ class CustomShapePaneView {
                     position: 'aboveBar',
                     color: 'rgb(242, 54, 69)', // red
                     shape: 'labelUp',
-                    text: 'Y'
+                    text: 'y'
                 };
             } else if (rsi <= 45) {
                 item = {
