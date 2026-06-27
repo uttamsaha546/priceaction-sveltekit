@@ -140,6 +140,123 @@
 			}
 		});
 
+		//For touch screen
+		// Track the current virtual crosshair position in pixels
+		let virtualX = 0;
+		let virtualY = 0;
+
+		function setChartMobileInteractions(enabled) {
+			chart.applyOptions({
+				handleScroll: enabled,
+				handleScale: enabled
+			});
+		}
+		const chartElement = chart.chartElement();
+
+		// Track when the finger moves across the screen
+		chartElement.addEventListener(
+			'touchmove',
+			(e) => {
+				if (ToolState.activeTool !== 'measure' && ToolState.activeTool !== 'trendAngle') return;
+				if (measureState === 'locked') return; // Don't move cursor if drawing is locked
+				if (e.touches.length !== 1) return;
+
+				// Prevent screen from scrolling or chart panning
+				e.preventDefault();
+
+				const touch = e.touches[0];
+				const rect = chartElement.getBoundingClientRect();
+
+				// Save current pixel locations
+				virtualX = touch.clientX - rect.left;
+				virtualY = touch.clientY - rect.top;
+
+				// 1. Convert pixels to chart coordinates
+				const timeScale = chart.timeScale();
+				const targetTime = timeScale.coordinateToTime(virtualX);
+				const targetPrice = mainSeries.coordinateToPrice(virtualY);
+
+				if (!targetTime || !targetPrice) return;
+
+				// 2. FORCIBLY move the crosshair to the finger position
+				// This keeps the crosshair lines visible on mobile without long-pressing!
+				chart.setCrosshairPosition(targetPrice, targetTime, mainSeries);
+
+				// 3. Update the live preview if we've already dropped our first anchor
+				if (measureState === 'started' && startPoint) {
+					currentPoint = { time: targetTime, price: targetPrice };
+					updateActivePlugin(startPoint, currentPoint);
+				}
+			},
+			{ passive: false }
+		);
+
+		let touchStartTime = 0;
+
+		chartElement.addEventListener('touchstart', (e) => {
+			if (e.touches.length === 1) {
+				touchStartTime = Date.now();
+
+				// If a tool is chosen, block the background chart from panning on drag
+				if (ToolState.activeTool === 'measure' || ToolState.activeTool === 'trendAngle') {
+					setChartMobileInteractions(false);
+				}
+			}
+		});
+
+		chartElement.addEventListener('touchend', (e) => {
+			const touchDuration = Date.now() - touchStartTime;
+
+			// A tap is typically a touch release that takes less than 250 milliseconds
+			const isTap = touchDuration < 250;
+			if (!isTap) {
+				// If it was a long drag rather than a tap, just leave the crosshair parked
+				return;
+			}
+
+			// Convert our last tracked virtual position into usable points
+			const timeScale = chart.timeScale();
+			const targetTime = timeScale.coordinateToTime(virtualX);
+			const targetPrice = mainSeries.coordinateToPrice(virtualY);
+
+			if (!targetTime || !targetPrice) return;
+			const tappedPoint = { time: targetTime, price: targetPrice };
+
+			// ==========================================
+			// 3-STEP SELECTION LOGIC
+			// ==========================================
+			if (ToolState.activeTool === 'measure' || ToolState.activeTool === 'trendAngle') {
+				if (measureState === 'idle') {
+					// TAP 1: Log the startPoint exactly under the crosshair
+					measureState = 'started';
+					startPoint = tappedPoint;
+					currentPoint = tappedPoint;
+					updateActivePlugin(startPoint, currentPoint);
+				} else if (measureState === 'started') {
+					// TAP 2: Lock the currentPoint and freeze drawing
+					measureState = 'locked';
+					currentPoint = tappedPoint;
+					updateActivePlugin(startPoint, currentPoint);
+
+					// Revert active tool sidebar button
+					ToolState.activeTool = 'cross';
+
+					// Re-enable normal chart scrolling/panning gestures
+					setChartMobileInteractions(true);
+
+					// Hide the virtual crosshair lines now that we are done
+					chart.clearCrosshairPosition();
+				}
+			} else if (measureState === 'locked' && ToolState.activeTool === 'cross') {
+				// TAP 3: Tap anywhere else while locked to remove the drawings
+				measureState = 'idle';
+				startPoint = null;
+				currentPoint = null;
+				measurePlugin.updatePoints(null, null);
+				trendAnglePlugin.updatePoints(null, null);
+			}
+		});
+
 		return () => chart.remove();
 	});
 
