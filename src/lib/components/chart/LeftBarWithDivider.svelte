@@ -1,8 +1,8 @@
 <script>
 	import MeasureIcon from './Icons/MeasureIcon.svelte';
 	import TrendAngleIcon from './Icons/TrendAngleIcon.svelte';
-
-	let activeTool = $state('');
+	import { ToolState } from '$lib/state/ToolState.svelte';
+	import CrosshairIcon from './Icons/CrosshairIcon.svelte';
 </script>
 
 <div class="LeftBarWithDivider h-full w-12 flex flex-row">
@@ -10,18 +10,25 @@
 		<div
 			class="FixedArea h-full w-11 p-1 flex flex-col items-center gap-2 border-l border-gray-200"
 		>
-			<!-- Index Analysis Nifty Icon  -->
+			<!-- Default Cross Tool  -->
 			<button
-				class={`${activeTool === 1 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
-				onclick={() => toggleTool(1)}
+				class={`${ToolState.activeTool === 'cross' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'cross')}
+			>
+				<CrosshairIcon />
+			</button>
+			<!-- Trend Angle Tool  -->
+			<button
+				class={`${ToolState.activeTool === 'trendAngle' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'trendAngle')}
 			>
 				<TrendAngleIcon />
 			</button>
 
-			<!-- Stocks Analysis Icon  -->
+			<!-- Measure Tool  -->
 			<button
-				class={`${activeTool === 2 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
-				onclick={() => toggleTool(2)}
+				class={`${ToolState.activeTool === 'measure' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'measure')}
 			>
 				<MeasureIcon />
 			</button>

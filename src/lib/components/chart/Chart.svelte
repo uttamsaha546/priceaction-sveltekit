@@ -11,6 +11,9 @@
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 	import { DonchianHighPrimitive } from '$lib/utils/DonchianHighPrimitive';
 	import { _52WeekHighPrimitive } from '$lib/utils/52WeekHighPrimitive';
+	import { MeasureToolPrimitive } from './Tools/MeasureToolPrimitive';
+	import { ToolState } from '$lib/state/ToolState.svelte';
+	import { TrendAnglePrimitive } from './Tools/TrendAnglePrimitive';
 
 	let chart;
 	let container;
@@ -48,6 +51,94 @@
 		mainSeries.attachPrimitive(donchianHighSeries);
 		const _52WeekHighSeries = new _52WeekHighPrimitive();
 		mainSeries.attachPrimitive(_52WeekHighSeries);
+
+		const measurePlugin = new MeasureToolPrimitive();
+		mainSeries.attachPrimitive(measurePlugin);
+		const trendAnglePlugin = new TrendAnglePrimitive();
+		mainSeries.attachPrimitive(trendAnglePlugin);
+
+		// Valid states: 'idle', 'started', 'locked'
+		let measureState = $state('idle');
+		let startPoint = null;
+		let currentPoint = null;
+		let currentMouseData = { time: null, price: null };
+
+		// Helper to push points cleanly to the tool in use
+		function updateActivePlugin(start, end) {
+			if (ToolState.activeTool === 'measure') {
+				measurePlugin.updatePoints(start, end);
+			} else if (ToolState.activeTool === 'trendAngle') {
+				trendAnglePlugin.updatePoints(start, end);
+			}
+		}
+
+		// 1. Monitor the mouse cursor tracking
+		chart.subscribeCrosshairMove((param) => {
+			if (!param.time || !param.point) {
+				currentMouseData = { time: null, price: null };
+				return;
+			}
+
+			currentMouseData = {
+				time: param.time,
+				price: mainSeries.coordinateToPrice(param.point.y)
+			};
+
+			// Only track updates visually if we are actively drawing the measure tool
+			if (measureState === 'started' && startPoint) {
+				currentPoint = currentMouseData;
+				updateActivePlugin(startPoint, currentPoint);
+			}
+		});
+
+		// 2. Handle the 3-Step Click Cycle
+		chart.subscribeClick((param) => {
+			if (!param.time || !param.point) return;
+
+			// Prevent random chart clicks from triggering measure logic if the tool isn't active
+			// EXCEPT when we need to clear a locked drawing (measureState === 'locked')
+			const currentTool = ToolState.activeTool;
+			if (currentTool === 'cross' && measureState !== 'locked') return;
+
+			const clickedPoint = {
+				time: param.time,
+				price: mainSeries.coordinateToPrice(param.point.y)
+			};
+
+			if (measureState === 'idle') {
+				// ==========================================
+				// CLICK 1: Set start point & start tracking
+				// ==========================================
+				measureState = 'started';
+				startPoint = clickedPoint;
+				currentPoint = clickedPoint;
+				updateActivePlugin(startPoint, currentPoint);
+			} else if (measureState === 'started') {
+				// ==========================================
+				// CLICK 2: Finish calculation & Lock drawing
+				// ==========================================
+				measureState = 'locked';
+				currentPoint = clickedPoint;
+
+				// 1. Update the canvas point first while the active state conditions align
+				updateActivePlugin(startPoint, currentPoint);
+
+				// 2. Automatically revert the UI sidebar back to the default crosshair tool
+				ToolState.activeTool = 'cross';
+			} else if (measureState === 'locked') {
+				// ==========================================
+				// CLICK 3: Wipe canvas artifacts completely
+				// ==========================================
+				measureState = 'idle';
+				startPoint = null;
+				currentPoint = null;
+
+				// Always clear the plugin drawing regardless of what activeTool currently is
+				// Clear BOTH plugins to ensure nothing remains stuck on screen
+				measurePlugin.updatePoints(null, null);
+				trendAnglePlugin.updatePoints(null, null);
+			}
+		});
 
 		return () => chart.remove();
 	});
