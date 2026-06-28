@@ -2,6 +2,7 @@
 	import StocksAnalysisComponent from './StocksAnalysisComponent.svelte';
 	import NiftyIcon from './Icons/NiftyIcon.svelte';
 	import StocksIcon from './Icons/StocksIcon.svelte';
+	import WatchlistIcon from './Icons/WatchlistIcon.svelte';
 
 	let width = $state(0);
 	let lastExpandedWidth = $state(200);
@@ -73,9 +74,10 @@
 	<div class="RightBarWithExpandableArea h-full flex flex-row">
 		<!-- Expanded Area Content Here -->
 		<div class="ExpandableArea h-full flex flex-col overflow-auto" style:width="{width}px">
-			<div class:hidden={activeTool !== 1} class="h-full">Tool 1 Content</div>
+			<div class:hidden={activeTool !== 1} class="h-full">Watchlist content</div>
+			<div class:hidden={activeTool !== 2} class="h-full">Index analysis Content</div>
 
-			<div class:hidden={activeTool !== 2} class="h-full flex flex-col">
+			<div class:hidden={activeTool !== 3} class="h-full flex flex-col">
 				<StocksAnalysisComponent />
 			</div>
 		</div>
@@ -85,18 +87,26 @@
 			<div
 				class="FixedArea h-full w-11 p-1 flex flex-col items-center gap-2 border-l border-gray-200"
 			>
-				<!-- Index Analysis Nifty Icon  -->
+				<!-- Watchlist Icon  -->
 				<button
 					class={`${activeTool === 1 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
 					onclick={() => toggleTool(1)}
+				>
+					<WatchlistIcon />
+				</button>
+
+				<!-- Index Analysis Nifty Icon  -->
+				<button
+					class={`${activeTool === 2 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
+					onclick={() => toggleTool(2)}
 				>
 					<NiftyIcon />
 				</button>
 
 				<!-- Stocks Analysis Icon  -->
 				<button
-					class={`${activeTool === 2 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
-					onclick={() => toggleTool(2)}
+					class={`${activeTool === 3 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
+					onclick={() => toggleTool(3)}
 				>
 					<StocksIcon />
 				</button>
