@@ -28,10 +28,10 @@
 						const price = window.mainSeries.coordinateToPrice(paneSize.height / 2);
 						const time = window.chart.timeScale().coordinateToTime(paneSize.width / 2);
 						// window.chart.setCrosshairPosition(price, time, window.mainSeries);
-						window.chart.applyOptions({
-							handleScale: false,
-							handleScroll: false
-						});
+						//window.chart.applyOptions({
+							//handleScale: false,
+							//handleScroll: false
+					//	});
 					}
 				}}
 			>

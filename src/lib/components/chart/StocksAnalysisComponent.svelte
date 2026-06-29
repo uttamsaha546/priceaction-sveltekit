@@ -22,6 +22,8 @@
 				(!sector || row.sector === sector) &&
 				(!industry || row.industry === industry) &&
 				(!rsi ||
+(rsi === 'up' && row.rsi14_monthly > 60) ||
+(rsi === 'down' && row.rsi14_monthly < 55) ||
 					(rsi === 'c' && row.rsi14_monthly > 70) ||
 					(rsi === 'b' && row.rsi14_monthly <= 70 && row.rsi14_monthly > 65) ||
 					(rsi === 'a' && row.rsi14_monthly <= 65 && row.rsi14_monthly > 60) ||
@@ -90,6 +92,8 @@
 		<!-- RSI Filter -->
 		<select name="rsi" class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
 			<option value={''} class="w-48"> RSI(14M) </option>
+     <option value={'up'}>{'RSI >60'}</option>
+      <option value={'down'}>{'RSI <55'}</option>
 			<option value={'c'}>{'RSI 100-70) C'}</option>
 			<option value={'b'}>{'RSI (65-70] B'}</option>
 			<option value={'a'}>{'RSI (60-65] A'}</option>

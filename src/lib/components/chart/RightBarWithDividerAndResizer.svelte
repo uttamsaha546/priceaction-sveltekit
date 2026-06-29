@@ -1,4 +1,5 @@
 <script>
+  import IndexAnalysisComponent from './IndexAnalysisComponent.svelte';
 	import StocksAnalysisComponent from './StocksAnalysisComponent.svelte';
 	import NiftyIcon from './Icons/NiftyIcon.svelte';
 	import StocksIcon from './Icons/StocksIcon.svelte';
@@ -75,7 +76,9 @@
 		<!-- Expanded Area Content Here -->
 		<div class="ExpandableArea h-full flex flex-col overflow-auto" style:width="{width}px">
 			<div class:hidden={activeTool !== 1} class="h-full">Watchlist content</div>
-			<div class:hidden={activeTool !== 2} class="h-full">Index analysis Content</div>
+			<div class:hidden={activeTool !== 2} class="h-full">
+			<IndexAnalysisComponent/>
+			</div>
 
 			<div class:hidden={activeTool !== 3} class="h-full flex flex-col">
 				<StocksAnalysisComponent />
