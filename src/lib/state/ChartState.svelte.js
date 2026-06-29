@@ -1,10 +1,11 @@
 
 export const ChartState = (() => {
-    let lineData = $state([]);
+    let lineData = $state([]); //Array of [timestamp in miliseconds or seconds, value]
     let isMonthly = $state(false);
     let scaleFactor = $state('');
     let activeModal = $state(null);
     let flags = $state(null);
+    let currentScrip = $state('');
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
 
@@ -24,72 +25,15 @@ export const ChartState = (() => {
         set scaleFactor(val) { scaleFactor = val; },
 
         get activeModal() { return activeModal; },
-        set activeModal(val) { activeModal = val; }
+        set activeModal(val) { activeModal = val; },
+
+        get currentScrip() { return currentScrip },
+        set currentScrip(val) { currentScrip = val },
     };
 })();
 
 
 // ----------HELPER FYNCTIONS------------//
-
-function calculateRsiSeriesMarker(barData, source = 'close', period = 14) {
-
-    if (barData.length <= period) {
-        return []; // Not enough data points
-    }
-
-    let rsiValues = new Array(barData.length).fill(null);
-    let gains = 0;
-    let losses = 0;
-
-    // Step 1: Calculate initial averages for the first 'period'
-    for (let i = 1; i <= period; i++) {
-        let difference = barData[i][source] - barData[i - 1][source];
-        if (difference > 0) {
-            gains += difference;
-        } else {
-            losses -= difference; // Keep losses as a positive number
-        }
-    }
-
-    let avgGain = gains / period;
-    let avgLoss = losses / period;
-
-    // First RSI value available is at the end of the initial period
-    rsiValues[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
-
-    // Step 2: Use Wilder's smoothing technique for the remaining data points
-    for (let i = period + 1; i < barData.length; i++) {
-        let difference = barData[i][source] - barData[i - 1][source];
-        let currentGain = difference > 0 ? difference : 0;
-        let currentLoss = difference < 0 ? -difference : 0;
-
-        // Smoothed averages formula
-        avgGain = ((avgGain * (period - 1)) + currentGain) / period;
-        avgLoss = ((avgLoss * (period - 1)) + currentLoss) / period;
-
-        if (avgLoss === 0) {
-            rsiValues[i] = 100;
-        } else {
-            let rs = avgGain / avgLoss;
-            rsiValues[i] = 100 - (100 / (1 + rs));
-        }
-    }
-
-    const markers = barData.map((row, index) => {
-        const time = row.time,
-            rsi = rsiValues[index];
-        if (!rsi) return ({ time })
-        const position = rsi > 55 ? 'belowBar' : 'aboveBar';
-        const color = rsi > 60 ? '#50C878' : rsi > 55 ? 'rgba(80, 200, 120, 0.5)' : '#EE4B2B';
-        const shape = position === 'belowBar' ? "labelUp" : 'labelDown';
-        const text = rsi > 70 ? 'C' : rsi > 65 ? 'B' : rsi > 60 ? 'A' : rsi > 55 ? 'A-' : rsi > 50 ? 'X' : rsi > 45 ? 'Y' : 'Z';
-
-        return ({ time, position, color, shape, text, size: 0.5 })
-    })
-
-    console.log(markers)
-    return markers;
-}
 
 /**
  * Convert line data into weekly or monthly OHLC candles.
@@ -111,9 +55,12 @@ function LineDataToBarData(lineData, interval) {
     for (let [timestamp, value] of sorted) {
         const length = String(timestamp).length;
 
-        if (length === 10) {
-            timestamp *= 1000; //convert to miliseconds if in seconds
-        } else if (length !== 13) {
+        if (length === 9 || length === 10) {
+            timestamp *= 1000; //convert to miliseconds if in seconds, 9 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        } else if (length == 12 || length === 13) {
+            //keep timestamp as it is in milisecond, 12 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        }
+        else {
             console.warn(`Unexpected timestamp length: ${length}. Timestamp: ${timestamp}`);
             continue;
         }

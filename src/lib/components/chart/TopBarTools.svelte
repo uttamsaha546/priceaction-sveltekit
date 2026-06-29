@@ -23,6 +23,7 @@
 			>
 		</div>
 		<div class="ScaleFactor">{ChartState.scaleFactor}</div>
+		<div class="Current Scrip Name">{ChartState.currentScrip}</div>
 	</div>
 
 	<div class="Settings w-11 flex flex-row justify-center">

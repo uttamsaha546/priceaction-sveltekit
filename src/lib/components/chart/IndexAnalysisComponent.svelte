@@ -1,162 +1,313 @@
 <script>
-const sectors = [
-  {
-    name: "Capital Goods",
-    industries: [
-      { name: "Defence" },
-      { name: "..." }
-    ]
-  },
-  {
-    name: "Financial Services",
-    industries: [
-      {
-        name: "Banks",
-        subIndustries: ["Private Bank", "PSU Bank"]
-      },
-      {
-        name: "Finance",
-        subIndustries: ["NBFC", "Housing Finance"]
-      },
-      { name: "Insurance" },
-      { name: "Capital Market" }
-    ]
-  },
-  {
-    name: "Healthcare",
-    industries: [
-      { name: "Pharma" },
-      { name: "Hospitals" }
-    ]
-  },
-  {
-    name: 'Chemicals'
-  },
-  {
-    name: 'Automobile & Auto Components'
-  },
-  {
-    name: 'FMCG',
-    industries: [{name: 'Sugar & Ethanol'}],
-  },
-  {name: 'Consumer Durables'},
-  {name: 'IT'},
-  {
-    name: 'Consumer Services',
-    industries: [
-    {name: 'Retailing'}, 
-    {name: 'Leisure Service (Tourism 63%)'}
-    ]
-  },
-  {name: 'Services'},
-  {name: 'Construction'},
-  {name: 'Oil & Gas'},
-  {name: 'Metal'},
-  {name: 'Realty'},
-  {name: 'Power'},
-  {name: 'Cement'},
-  {name: 'Telecom'},
-  {name: 'Media/Waves'},
-  {name: 'Utilities'},
-];
+	import dayjs from 'dayjs';
+	import { ChartState } from '$lib/state/ChartState.svelte';
+
+	const sectors = [
+		{
+			name: 'Capital Goods',
+			scripName: 'BSE Capital Goods Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI0200&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY'),
+			industries: [
+				{
+					name: 'Aerospace & Defence',
+					scripName: 'BSE India Defence Index',
+					url:
+						'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=INDDEF&period=D&todt=' +
+						dayjs().format('DD/MM/YYYY')
+				},
+				{ name: 'Industrial Products' },
+				{ name: 'Electrical Equipment' },
+				{ name: 'Industrial Manufacturing' },
+				{ name: 'Agricultural Commercial & Construction Vehicle' }
+			]
+		},
+		{
+			name: 'Financial Services',
+			scripName: 'BSE Financial Services Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SPBSFIIP&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY'),
+			industries: [
+				{
+					name: 'Banks',
+					scripName: 'BSE BANKEX Index',
+					url:
+						'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SIBANK&period=D&todt=' +
+						dayjs().format('DD/MM/YYYY'),
+					subIndustries: [
+						{
+							name: 'Private Bank',
+							scripName: 'BSE Private Banks Index',
+							url:
+								'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SPBSPBIP&period=D&todt=' +
+								dayjs().format('DD/MM/YYYY')
+						},
+						{
+							name: 'PSU Bank',
+							scripName: 'BSE PSU Bank Index',
+							url:
+								'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=PSUBNK&period=D&todt=' +
+								dayjs().format('DD/MM/YYYY')
+						}
+					]
+				},
+				{
+					name: 'Finance',
+					subIndustries: [
+						{ name: 'NBFC' },
+						{
+							name: 'Housing Finance',
+							scripName: 'BSE Housing Finance Index',
+							url:
+								'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=BSHFIN&period=D&todt=' +
+								dayjs().format('DD/MM/YYYY')
+						}
+					]
+				},
+				{
+					name: 'Insurance',
+					scripName: 'BSE Insurance Index',
+					url:
+						'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=INSURE&period=D&todt=' +
+						dayjs().format('DD/MM/YYYY')
+				},
+				{
+					name: 'Capital Market',
+					scripName: 'BSE Capital Market Index',
+					url:
+						'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=CAPMKT&period=D&todt=' +
+						dayjs().format('DD/MM/YYYY')
+				},
+				{
+					name: 'Financial Technology (Fintech)'
+				}
+			]
+		},
+		{
+			name: 'Healthcare',
+			scripName: 'BSE Healthcare Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI0800&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY'),
+			industries: [
+				{ name: 'Pharma & Biotechnology' },
+				{
+					name: 'Healthcare Services',
+					scripName: 'BSE Hospitals Index',
+					url:
+						'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=BSHOSP&period=D&todt=' +
+						dayjs().format('DD/MM/YYYY')
+				},
+				{ name: 'Healthcare Equipment & Supplies' }
+			]
+		},
+		{
+			name: 'Chemicals',
+			industries: [
+				{
+					name: 'Chemicals & Petrochemicals'
+				},
+				{ name: 'Fertilizers & Agrochemicals' }
+			]
+		},
+		{
+			name: 'Automobile & Auto Components',
+			scripName: 'BSE Auto Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI1900&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY'),
+			industries: [{ name: 'Automobiles' }, { name: 'Auto Components' }]
+		},
+		{
+			name: 'FMCG',
+			scripName: 'BSE Fast Moving Consumer Goods Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI0600&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY'),
+			industries: [{ name: 'Sugar & Ethanol' }, { name: '...' }]
+		},
+		{
+			name: 'Consumer Durables',
+			scripName: 'BSE Consumer Durables Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI0400&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{
+			name: 'Information Technology',
+			scripName: 'BSE Information Technology Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI1000&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{
+			name: 'Consumer Services',
+			industries: [{ name: 'Retailing' }, { name: 'Leisure Service (Tourism 63%)' }]
+		},
+		{
+			name: 'Services',
+			scripName: 'BSE Services Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SPBSSEIP&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{ name: 'Construction' },
+		{
+			name: 'Oil & Gas',
+			scripName: 'BSE Oil & Gas Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI1400&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{ name: 'Textiles' },
+		{
+			name: 'Metal',
+			scripName: 'BSE Metal Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SI1200&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{
+			name: 'Realty',
+			scripName: 'BSE Realty Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SIREAL&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{
+			name: 'Power',
+			scripName: 'BSE Power Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SIPOWE&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{ name: 'Cement' },
+		{
+			name: 'Telecommunication',
+			scripName: 'BSE Telecommunication Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SPBSTLIP&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		},
+		{ name: 'Media/Waves' },
+		{
+			name: 'Utilities',
+			scripName: 'BSE Utilities Index',
+			url:
+				'https://api.bseindia.com/BseIndiaAPI/api/IndexArchDailyPAR/w?fmdt=01/01/1996&index=SPBSUTIP&period=D&todt=' +
+				dayjs().format('DD/MM/YYYY')
+		}
+	];
 </script>
 
 <h1>IndexAnalysisComponent</h1>
 
+<div class="p-1">
+	{#each sectors as sector}
+		<div class="container">
+			<div
+				class="sector-row pl-1"
+				class:cursor-pointer={sector?.url}
+				class:bg-gray-300={!sector?.url}
+				class:bg-[rgba(4,180,136)]={sector?.url}
+				onclick={async () => {
+					const p = await fetch(`/proxy?url=${encodeURIComponent(sector.url)}`, {
+						headers: {
+							'X-Forwarded-Referer': 'https://www.bseindia.com/'
+						}
+					});
 
-<table>
-  <thead>
-    <tr>
-      <th>S</th>
-      <th>I</th>
-      <th>Sub-Ind</th>
-    </tr>
-  </thead>
-  <tbody>
-    {#each sectors as sector}
-      <tr>
-        <td colspan="3" class="sector-row"><div>{sector.name}</div></td>
-      </tr>
+					const data = (await p.json()).Table.map((row) => [
+						dayjs(row.tdate).valueOf(),
+						row.I_close
+					]);
 
-    {#if sector.industries}
-      {#each sector.industries as industry}
-        <tr>
-          <td></td> <td colspan="2" class="industry-row">{industry.name}</td>
-        </tr>
+					ChartState.lineData = data;
+					ChartState.currentScrip = sector.scripName;
+				}}
+				role
+			>
+				{sector.name}
+			</div>
 
-        {#if industry.subIndustries}
-          {#each industry.subIndustries as sub}
-            <tr>
-              <td></td> <td></td> <td class="sub-row">{sub}</td>
-            </tr>
-          {/each}
-        {/if}
-      {/each}
-      {/if}
-    {/each}
-  </tbody>
-</table>
+			{#if sector.industries}
+				{#each sector.industries as industry}
+					<div
+						class="industry-row pl-4"
+						class:text-gray-300={!industry?.url}
+						onclick={async () => {
+							const p = await fetch(`/proxy?url=${encodeURIComponent(industry.url)}`, {
+								headers: {
+									'X-Forwarded-Referer': 'https://www.bseindia.com/'
+								}
+							});
 
+							const data = (await p.json()).Table.map((row) => [
+								dayjs(row.tdate).valueOf(),
+								row.I_close
+							]);
+
+							ChartState.lineData = data;
+							ChartState.currentScrip = industry.scripName;
+						}}
+						role
+					>
+						{industry.name}
+					</div>
+
+					{#if industry.subIndustries}
+						{#each industry.subIndustries as sub}
+							<div
+								class="sub-row pl-7"
+								class:text-gray-300={!sub?.url}
+								onclick={async () => {
+									const p = await fetch(`/proxy?url=${encodeURIComponent(sub.url)}`, {
+										headers: {
+											'X-Forwarded-Referer': 'https://www.bseindia.com/'
+										}
+									});
+
+									const data = (await p.json()).Table.map((row) => [
+										dayjs(row.tdate).valueOf(),
+										row.I_close
+									]);
+
+									ChartState.lineData = data;
+									ChartState.currentScrip = sub.scripName;
+								}}
+								role
+							>
+								{sub.name}
+							</div>
+						{/each}
+					{/if}
+				{/each}
+			{/if}
+		</div>
+	{/each}
+</div>
 
 <style>
-/* Base table styling */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: Arial, sans-serif;
-  margin: 10px 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+	.sector-row,
+	.industry-row,
+	.sub-row {
+		width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 
-/* Header styling */
-th {
-  background-color: #333;
-  color: white;
-  padding: 2px 4px;
-  text-align: left;
-  font-weight: 600;
-}
+	.container {
+		border: 1px solid rgb(4, 180, 136);
+		border-radius: 0.25rem;
+		margin-bottom: 0.25rem;
+	}
 
-/* Cell styling */
-td {
-  padding: 2px 4px;
-  text-align: left;
- // border: 1px solid #ddd;
-}
-
-td > div{
-overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowarp;
-  max-width: 200px;
-}
-
-/* Styling the active spanned cells to stand out */
-td[colspan] {
-  font-weight: bold;
-}
-
-/* Color coding the rows to easily see the spans */
-tr:nth-child(2) td[colspan="3"] {
-  background-color: #e3f2fd; /* Light Blue */
-  color: #0d47a1;
-}
-
-tr:nth-child(3) td[colspan="2"] {
-  background-color: #e8f5e9; /* Light Green */
-  color: #1b5e20;
-}
-
-tr:nth-child(4) td:last-child {
-  background-color: #fff3e0; /* Light Orange */
-  color: #e65100;
-  font-weight: bold;
-}
-
-/* Subtle styling for the empty/offset cells */
-tr td:not([colspan]):empty {
-  background-color: #fafafa;
-  border: 1px dashed #eee; /* Makes empty tracks subtle */
-}
-
+	.sector-row {
+		/* background-color: rgb(4, 180, 136); groww green */
+		color: white;
+		font-weight: 500;
+	}
 </style>

@@ -49,9 +49,11 @@ function makeKey(method, url, payload = {}) {
 }
 
 /* -------------------- GET -------------------- */
-export async function GET({ url }) {
+export async function GET(request) {
     try {
-        const targetUrl = url.searchParams.get('url');
+        const targetUrl = request.url.searchParams.get('url');
+        const referer = request.request.headers.get('x-forwarded-referer');
+        const userAgent = request.request.headers.get('user-agent');
 
         if (!targetUrl) {
             return json({ error: 'Missing url parameter' }, { status: 400 });
@@ -61,7 +63,13 @@ export async function GET({ url }) {
 
         // Leverage the safe fetch engine to guard against concurrent stampedes
         const cachedResponseData = await cache.fetch(key, async () => {
-            const upstream = await fetch(targetUrl);
+            const upstream = await fetch(targetUrl, {
+                headers: {
+                    'User-Agent': userAgent,
+                    // If referer exists, it spreads { 'Referer': referer } into the object.
+                    ...(referer && { 'Referer': referer })
+                }
+            });
             console.log("Called GET (Cache Miss)");
 
             if (!upstream.ok) {
