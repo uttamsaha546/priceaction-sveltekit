@@ -418,58 +418,60 @@
 
 <div class="spacer h-2"></div>
 
-<div class="searchResultContainer overflow-auto">
-	{#each searchResult as row, index}
-		<div
-			class="flex flex-row border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
-			onclick={() => {
-				ChartState.activeModal = null;
-				fetchLineData(row);
-			}}
-			onkeydown={() => {}}
-			role="button"
-			tabindex="0"
-		>
-			{#if type === Type.Stock}
-				<div class="symbol flex-1">{row.Sym_t}</div>
-				<div class="name flex-2">{row.disp_sym_s}</div>
-				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-					<span class="text-[#707070] text-sm">{row.disp_inst_s?.toLowerCase()}</span>
-					<span>{row.d_exch}</span>
-					<img
-						src={`https://s3-symbol-logo.tradingview.com/source/${row.d_exch}.svg`}
-						class="rounded-full"
-						alt="logo"
-					/>
-				</div>
-			{:else if type === Type.MF}
-				<div class="symbol flex-1">{row.dmfm_isin_code}</div>
-				<div class="name flex-2">{row.dmfm_custom_scheme_name}</div>
-			{:else if type === Type.ETF}
-				<div class="symbol flex-1">{row.Sym_t}</div>
-				<div class="name flex-2">{row.disp_sym_s}</div>
-				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-					<span>ETF</span>
-				</div>
-			{:else if type === Type.Index}
-				<div class="symbol flex-1">{row.Sym_t}</div>
-				<div class="name flex-2">{row.disp_sym_s}</div>
-				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-					<span>Index</span>
-				</div>
-			{:else if type === Type.Nps}
-				<div class="symbol flex-1">{row.schemecode}</div>
-				<div class="name flex-2">{row.schemename}</div>
-				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-					<span>NPS</span>
-				</div>
-			{:else if type === Type.Global}
-				<div class="symbol flex-1">{row.symbol}</div>
-				<div class="name flex-2">{row.longname}</div>
-				<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-					<span>{row.exchDisp}</span>
-				</div>
-			{/if}
-		</div>
-	{/each}
+<div class="searchResultContainer flex-1 overflow-auto">
+	<div>
+		{#each searchResult as row, index}
+			<div
+				class="flex flex-row border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
+				onclick={() => {
+					ChartState.activeModal = null;
+					fetchLineData(row);
+				}}
+				onkeydown={() => {}}
+				role="button"
+				tabindex="0"
+			>
+				{#if type === Type.Stock}
+					<div class="symbol flex-1">{row.Sym_t}</div>
+					<div class="name flex-2">{row.disp_sym_s}</div>
+					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+						<span class="text-[#707070] text-sm">{row.disp_inst_s?.toLowerCase()}</span>
+						<span>{row.d_exch}</span>
+						<img
+							src={`https://s3-symbol-logo.tradingview.com/source/${row.d_exch}.svg`}
+							class="rounded-full"
+							alt="logo"
+						/>
+					</div>
+				{:else if type === Type.MF}
+					<div class="symbol flex-1">{row.dmfm_isin_code}</div>
+					<div class="name flex-2">{row.dmfm_custom_scheme_name}</div>
+				{:else if type === Type.ETF}
+					<div class="symbol flex-1">{row.Sym_t}</div>
+					<div class="name flex-2">{row.disp_sym_s}</div>
+					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+						<span>ETF</span>
+					</div>
+				{:else if type === Type.Index}
+					<div class="symbol flex-1">{row.Sym_t}</div>
+					<div class="name flex-2">{row.disp_sym_s}</div>
+					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+						<span>Index</span>
+					</div>
+				{:else if type === Type.Nps}
+					<div class="symbol flex-1">{row.schemecode}</div>
+					<div class="name flex-2">{row.schemename}</div>
+					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+						<span>NPS</span>
+					</div>
+				{:else if type === Type.Global}
+					<div class="symbol flex-1">{row.symbol}</div>
+					<div class="name flex-2">{row.longname}</div>
+					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
+						<span>{row.exchDisp}</span>
+					</div>
+				{/if}
+			</div>
+		{/each}
+	</div>
 </div>

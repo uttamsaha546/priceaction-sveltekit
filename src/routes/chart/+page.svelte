@@ -41,7 +41,7 @@
 	});
 </script>
 
-<div class="h-screen w-screen flex flex-col">
+<div class="h-screen w-screen flex flex-col main-container">
 	<TopBarWithDivider />
 	<div class="H-Flex-1 w-full flex flex-1 overflow-hidden">
 		<LeftBarWithDivider />
@@ -64,3 +64,9 @@
 		<RightBarWithDividerAndResizer />
 	</div>
 </div>
+
+<style>
+	/* .main-container {
+		background-color: rgb(235, 235, 235);
+	} */
+</style>

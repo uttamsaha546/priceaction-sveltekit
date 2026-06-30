@@ -22,8 +22,8 @@
 				(!sector || row.sector === sector) &&
 				(!industry || row.industry === industry) &&
 				(!rsi ||
-(rsi === 'up' && row.rsi14_monthly > 60) ||
-(rsi === 'down' && row.rsi14_monthly < 55) ||
+					(rsi === 'up' && row.rsi14_monthly > 60) ||
+					(rsi === 'down' && row.rsi14_monthly < 55) ||
 					(rsi === 'c' && row.rsi14_monthly > 70) ||
 					(rsi === 'b' && row.rsi14_monthly <= 70 && row.rsi14_monthly > 65) ||
 					(rsi === 'a' && row.rsi14_monthly <= 65 && row.rsi14_monthly > 60) ||
@@ -92,8 +92,8 @@
 		<!-- RSI Filter -->
 		<select name="rsi" class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
 			<option value={''} class="w-48"> RSI(14M) </option>
-     <option value={'up'}>{'RSI >60'}</option>
-      <option value={'down'}>{'RSI <55'}</option>
+			<option value={'up'}>{'RSI >60'}</option>
+			<option value={'down'}>{'RSI <55'}</option>
 			<option value={'c'}>{'RSI 100-70) C'}</option>
 			<option value={'b'}>{'RSI (65-70] B'}</option>
 			<option value={'a'}>{'RSI (60-65] A'}</option>
@@ -108,51 +108,3 @@
 <div class="overflow-auto flex-1">
 	<StockBlock data={filteredStockList} {selectedStockId} />
 </div>
-
-<!--  Context Menu -->
-<!-- {contextMenu.visible && (
-        <div
-          className="fixed bg-white shadow-lg border rounded text-sm z-50"
-          style={{
-            top: contextMenu.y,
-            left: contextMenu.x
-          }}
-        >
-          <div className="flex gap-2 px-3 py-2">
-            {flagColors.map((color, i) => (
-              <div
-                key={i}
-                onClick={() => {
-                  setStockColors(prev => ({
-                    ...prev,
-                    [contextMenu.stock.symbol]: color
-                  }));
-                  setContextMenu(prev => ({ ...prev, visible: false }));
-                }}
-                className="w-4 h-4 rounded-full cursor-pointer border"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-
-          <div
-            className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
-            onClick={() => {
-              console.log(contextMenu.stock);
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            Open Chart
-          </div>
-
-          <div
-            className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
-            onClick={() => {
-              console.log("Add to Watchlist");
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            Add to Watchlist
-          </div>
-        </div>
-      )} -->

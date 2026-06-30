@@ -42,7 +42,7 @@
 	onkeydown={handleKeyDown}
 	onclose={handleCloseModal}
 >
-	<div class="h-full p-0.5">
+	<div class="h-full p-0.5 flex flex-col">
 		<div class="Heading flex flex-row items-center mb-4">
 			<h1 class="flex-1 font-semibold text-xl">{title}</h1>
 

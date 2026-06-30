@@ -38,18 +38,19 @@
 	</div>
 </div>
 
-{#if ChartState.activeModal}
-	<Modal
-		isOpen={true}
-		title={ChartState.activeModal === 'settings' ? 'Settings' : 'Symbol search'}
-		onClose={() => (ChartState.activeModal = null)}
-		size={ChartState.activeModal === 'settings' ? 'small' : 'large'}
-		backdrop={ChartState.activeModal === 'settings' ? false : true}
-	>
-		{#if ChartState.activeModal === 'settings'}
-			<SettingsModalContent />
-		{:else if ChartState.activeModal === 'search'}
-			<SymbolSearchModalContent />
-		{/if}
-	</Modal>
-{/if}
+<!-- {#if ChartState.activeModal} -->
+<Modal
+	isOpen={ChartState.activeModal}
+	title={ChartState.activeModal === 'settings' ? 'Settings' : 'Symbol search'}
+	onClose={() => (ChartState.activeModal = null)}
+	size={ChartState.activeModal === 'settings' ? 'small' : 'large'}
+	backdrop={ChartState.activeModal === 'settings' ? false : true}
+>
+	<div class:hidden={ChartState.activeModal !== 'settings'}>
+		<SettingsModalContent />
+	</div>
+	<div class:hidden={ChartState.activeModal !== 'search'}>
+		<SymbolSearchModalContent />
+	</div>
+</Modal>
+<!-- {/if} -->

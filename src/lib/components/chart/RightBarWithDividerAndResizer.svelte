@@ -1,6 +1,7 @@
 <script>
-  import IndexAnalysisComponent from './IndexAnalysisComponent.svelte';
+	import IndexAnalysisComponent from './IndexAnalysisComponent.svelte';
 	import StocksAnalysisComponent from './StocksAnalysisComponent.svelte';
+	import WatchlistComponent from './WatchlistComponent.svelte';
 	import NiftyIcon from './Icons/NiftyIcon.svelte';
 	import StocksIcon from './Icons/StocksIcon.svelte';
 	import WatchlistIcon from './Icons/WatchlistIcon.svelte';
@@ -75,9 +76,11 @@
 	<div class="RightBarWithExpandableArea h-full flex flex-row">
 		<!-- Expanded Area Content Here -->
 		<div class="ExpandableArea h-full flex flex-col overflow-auto" style:width="{width}px">
-			<div class:hidden={activeTool !== 1} class="h-full">Watchlist content</div>
+			<div class:hidden={activeTool !== 1} class="h-full">
+				<WatchlistComponent />
+			</div>
 			<div class:hidden={activeTool !== 2} class="h-full">
-			<IndexAnalysisComponent/>
+				<IndexAnalysisComponent />
 			</div>
 
 			<div class:hidden={activeTool !== 3} class="h-full flex flex-col">

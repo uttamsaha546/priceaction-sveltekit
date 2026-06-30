@@ -52,7 +52,7 @@ db.exec(`
         industry TEXT,
         basicIndustry TEXT
         ) WITHOUT ROWID;
-    `)
+    `);
 
 // To store cache
 db.exec(`
@@ -61,4 +61,19 @@ db.exec(`
         value TEXT NOT NULL,
         expires_at INTEGER NOT NULL
         ) WITHOUT ROWID;
-    `)
+    `);
+
+// To store watchlists
+// db.exec('DROP TABLE IF EXISTS watchlists');
+db.exec(`
+    CREATE TABLE IF NOT EXISTS watchlists (
+        name TEXT PRIMARY KEY,
+        entries TEXT
+        ) WITHOUT ROWID;
+    `);
+
+const defaultEntries = JSON.stringify([{ symbol: 'VBL' }]);
+
+// Note: The exact method name depends on your library (e.g., db.prepare or db.run)
+const stmt = db.prepare(`INSERT INTO watchlists (name, entries) VALUES (?, ?)`);
+// stmt.run('Default Watchlist', defaultEntries);
