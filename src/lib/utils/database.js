@@ -76,4 +76,4 @@ const defaultEntries = JSON.stringify([{ symbol: 'VBL' }]);
 
 // Note: The exact method name depends on your library (e.g., db.prepare or db.run)
 const stmt = db.prepare(`INSERT INTO watchlists (name, entries) VALUES (?, ?)`);
- stmt.run('Default Watchlist', defaultEntries);
+//  stmt.run('Default Watchlist', defaultEntries);
