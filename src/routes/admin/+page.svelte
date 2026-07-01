@@ -1,0 +1,42 @@
+<script>
+	import { goto } from '$app/navigation';
+	let { data } = $props();
+	$inspect(data);
+
+	async function browseTable(tableName) {
+		await goto(`/admin/browse-table/${tableName}`);
+	}
+</script>
+
+<table>
+	<thead>
+		<tr>
+			<th>Table Name</th>
+			<th>Row Count</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{#each data.tables as table}
+			<tr>
+				<td>{table.name}</td>
+				<td>{table.rowCount}</td>
+				<td>
+					<button onclick={() => browseTable(table.name)}>Browse</button>
+				</td>
+			</tr>
+		{/each}
+	</tbody>
+</table>
+
+<style>
+	table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	th,
+	td {
+		border: 1px solid #ddd;
+		padding: 8px;
+	}
+</style>

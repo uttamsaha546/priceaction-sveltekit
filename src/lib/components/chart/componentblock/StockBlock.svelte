@@ -23,7 +23,7 @@
 	async function fetchGraphData(symbol) {
 		const endTime = dayjs().endOf('day').valueOf();
 		let startTime = dayjs(endTime).subtract(10, 'Year').valueOf();
-		startTime =820434600000;
+		// startTime =820434600000;
 		const p = await fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${symbol}?endTimeInMillis=${endTime}&intervalInMinutes=1440&startTimeInMillis=${startTime}`)}`
 		);

@@ -21,7 +21,7 @@
 			console.error(err);
 		}
 	}
-	async function loadFlagsData() {
+	async function loadFlagsTableData() {
 		try {
 			const res = await fetch('/api/flags');
 			ChartState.flags = await res.json();
@@ -30,9 +30,25 @@
 		}
 	}
 
+	async function loadGrowwTableData() {
+		try {
+			const res = await fetch('/api/groww');
+			const data = await res.json();
+			const keyValuePair = {};
+
+			data.forEach((item) => {
+				keyValuePair[item.searchId] = item;
+			});
+			ChartState.groww = keyValuePair;
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
 	onMount(() => {
+		loadFlagsTableData();
+		loadGrowwTableData();
 		loadInitialData();
-		loadFlagsData();
 
 		if (typeof window !== 'undefined') {
 			// window.isTouchCapable = window.matchMedia('(hover: none) and (pointer: coarse)').matches;

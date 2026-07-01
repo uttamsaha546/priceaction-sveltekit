@@ -6,6 +6,7 @@ export const ChartState = (() => {
     let activeModal = $state(null);
     let flags = $state(null);
     let currentScrip = $state('');
+    let groww = $state(null);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
 
@@ -29,6 +30,9 @@ export const ChartState = (() => {
 
         get currentScrip() { return currentScrip },
         set currentScrip(val) { currentScrip = val },
+
+        get groww() { return groww },
+        set groww(val) { groww = val },
     };
 })();
 
