@@ -17,7 +17,7 @@ $effect(async() => {
 
 $effect(async() => {
     if(!clickedFund) return;
-    const a = await fetch(`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v5/scheme/search/bandhan-small-cap-fund-direct-growth`)}`);
+    const a = await fetch(`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v5/scheme/search/${clickedFund.id}`)}`);
     clickedFundData = (await a.json());
     
 });
