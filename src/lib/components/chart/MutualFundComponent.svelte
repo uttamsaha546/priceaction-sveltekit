@@ -38,7 +38,7 @@
 	$effect(async () => {
 		if (!selectedFundType) return;
 		const a = await fetch(
-			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/search/v1/derived/scheme?available_for_investment=true&doc_type=scheme&page=0&plan_type=Direct&q=&size=100&sort_by=1&sub_category=${selectedFundType}`)}`
+			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/search/v1/derived/scheme?available_for_investment=true&doc_type=scheme&page=0&plan_type=Direct&q=&size=200&sort_by=1&sub_category=${selectedFundType}`)}`
 		);
 		data = (await a.json()).content.filter((item) => !item.index).sort((a, b) => b.aum - a.aum);
 	});
@@ -60,6 +60,8 @@
 				<option value="Large Cap">Large Cap</option>
 				<option value="Mid Cap">Mid Cap</option>
 				<option value="Small Cap">Small Cap</option>
+        <option value="Thematic">Thematic</option>
+				<option value="Sectoral">Sectoral</option>
 			</select>
 			<div>{data.length} funds</div>
 		</div>
