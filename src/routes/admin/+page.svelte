@@ -6,6 +6,15 @@
 	async function browseTable(tableName) {
 		await goto(`/admin/browse-table/${tableName}`);
 	}
+
+	async function updateTable(tableName) {
+		if (tableName === 'groww') {
+			const a = await fetch(`/api/groww/update`, {
+				method: 'POST',
+				body: JSON.stringify({})
+			});
+		}
+	}
 </script>
 
 <table>
@@ -23,6 +32,7 @@
 				<td>{table.rowCount}</td>
 				<td>
 					<button onclick={() => browseTable(table.name)}>Browse</button>
+					<button onclick={() => updateTable(table.name)}>Update</button>
 				</td>
 			</tr>
 		{/each}
