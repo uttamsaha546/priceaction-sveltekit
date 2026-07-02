@@ -9,6 +9,7 @@
 
 	async function loadInitialData() {
 		try {
+			ChartState.isLoading = true;
 			const res = await fetch(
 				`/proxy?url=${encodeURIComponent(
 					'https://groww.in/v1/api/data/mf/web/v1/scheme/140228/graph?benchmark=false&months=60'
@@ -17,8 +18,10 @@
 			const json = await res.json();
 			const data = json.folio.data;
 			ChartState.lineData = data;
+			ChartState.isLoading = false;
 		} catch (err) {
 			console.error(err);
+			ChartState.isLoading = false;
 		}
 	}
 	async function loadFlagsTableData() {
@@ -75,7 +78,9 @@
 				>
 			</div>
 
-			<!-- <div class="absolute top-0 left-0 z-20 bg-gray-50/50 w-full h-full"></div> -->
+			{#if ChartState.isLoading}
+				<div class="absolute top-0 left-0 z-20 bg-gray-50/50 w-full h-full"></div>
+			{/if}
 		</div>
 		<RightBarWithDividerAndResizer />
 	</div>

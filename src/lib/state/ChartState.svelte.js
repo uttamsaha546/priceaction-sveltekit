@@ -7,6 +7,7 @@ export const ChartState = (() => {
     let flags = $state(null);
     let currentScrip = $state('');
     let groww = $state(null);
+    let isLoading = $state(false);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
 
@@ -33,6 +34,9 @@ export const ChartState = (() => {
 
         get groww() { return groww },
         set groww(val) { groww = val },
+
+        get isLoading() { return isLoading },
+        set isLoading(val) { isLoading = val },
     };
 })();
 

@@ -213,6 +213,7 @@
 				class:bg-gray-300={!sector?.url}
 				class:bg-[rgba(4,180,136)]={sector?.url}
 				onclick={async () => {
+					ChartState.isLoading = true;
 					const p = await fetch(`/proxy?url=${encodeURIComponent(sector.url)}`, {
 						headers: {
 							'X-Forwarded-Referer': 'https://www.bseindia.com/'
@@ -226,6 +227,7 @@
 
 					ChartState.lineData = data;
 					ChartState.currentScrip = sector.scripName;
+					ChartState.isLoading = false;
 				}}
 				role
 			>
@@ -238,6 +240,7 @@
 						class="industry-row pl-4"
 						class:text-gray-300={!industry?.url}
 						onclick={async () => {
+							ChartState.isLoading = true;
 							const p = await fetch(`/proxy?url=${encodeURIComponent(industry.url)}`, {
 								headers: {
 									'X-Forwarded-Referer': 'https://www.bseindia.com/'
@@ -251,6 +254,7 @@
 
 							ChartState.lineData = data;
 							ChartState.currentScrip = industry.scripName;
+							ChartState.isLoading = false;
 						}}
 						role
 					>
@@ -263,6 +267,7 @@
 								class="sub-row pl-7"
 								class:text-gray-300={!sub?.url}
 								onclick={async () => {
+									ChartState.isLoading = true;
 									const p = await fetch(`/proxy?url=${encodeURIComponent(sub.url)}`, {
 										headers: {
 											'X-Forwarded-Referer': 'https://www.bseindia.com/'
@@ -276,6 +281,7 @@
 
 									ChartState.lineData = data;
 									ChartState.currentScrip = sub.scripName;
+									ChartState.isLoading = false;
 								}}
 								role
 							>

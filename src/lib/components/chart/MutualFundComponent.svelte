@@ -39,6 +39,7 @@
 	async function fetchGraphData(symbol) {
 		const endTime = dayjs().endOf('day').valueOf();
 		let startTime = dayjs(endTime).subtract(10, 'Year').valueOf();
+		ChartState.isLoading = true;
 		const p = await fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${symbol}?endTimeInMillis=${endTime}&intervalInMinutes=1440&startTimeInMillis=${startTime}`)}`
 		);
@@ -46,6 +47,7 @@
 		const res = await p.json();
 		const data = res.candles.map((row) => [row[0], row[4]]);
 		ChartState.lineData = data;
+		ChartState.isLoading = false;
 	}
 
 	$effect(async () => {
@@ -90,12 +92,14 @@
 			<div
 				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"
 				onclick={async () => {
+					ChartState.isLoading = true;
 					const a = await fetch(
 						`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
 					);
 					const data = (await a.json()).folio;
 					ChartState.lineData = data.data;
 					ChartState.currentScrip = data.name;
+					ChartState.isLoading = false;
 				}}
 				role
 			>
@@ -144,12 +148,14 @@
 			class="text-sm/tight ml-2 truncate"
 			role
 			onclick={async () => {
+				ChartState.isLoading = true;
 				const a = await fetch(
 					`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${clickedFund.scheme_code}/graph?benchmark=false&months=1000`)}`
 				);
 				const data = (await a.json()).folio;
 				ChartState.lineData = data.data;
 				ChartState.currentScrip = data.name;
+				ChartState.isLoading = false;
 			}}
 		>
 			<h3 class="truncate">{clickedFund?.fund_name}</h3>
