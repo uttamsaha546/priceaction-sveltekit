@@ -1,9 +1,8 @@
-<svg
-	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 24 24"
-	fill="currentColor"
-	height="16"
-	width="16"
+<script>
+	let { width = 16, height = 16 } = $props();
+</script>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {height} {width}
 	><path fill="none" d="M0 0h24v24H0z"></path><path fill="none" d="M0 0h24v24H0z"></path><path
 		d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
 	></path></svg

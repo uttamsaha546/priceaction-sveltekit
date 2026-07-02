@@ -2,9 +2,25 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import dayjs from 'dayjs';
 	import StarIcon from './Icons/StarIcon.svelte';
+	import LeftArrowIcon from './Icons/LeftArrowIcon.svelte';
 
 	let selectedFundType = $state(null);
 	let data = $state([]);
+	let sortBy = $state('');
+	let sortedData = $derived.by(() => {
+		if (!data) return [];
+		if (sortBy === '1y') {
+			return [...data].sort((a, b) => b.return1y - a.return1y);
+		} else if (sortBy === '3y') {
+			return [...data].sort((a, b) => b.return3y - a.return3y);
+		} else if (sortBy === '5y') {
+			return [...data].sort((a, b) => b.return5y - a.return5y);
+		} else {
+			return [...data].sort((a, b) => b.aum - a.aum);
+		}
+	});
+
+	// $inspect(sortedData);
 
 	let isHoldingPage = $state(false);
 	let clickedFund = $state(null);
@@ -19,9 +35,6 @@
 				...ChartState.groww[item.stock_search_id]
 			}));
 	});
-
-	$inspect(holdingsData);
-	$inspect(ChartState.groww);
 
 	async function fetchGraphData(symbol) {
 		const endTime = dayjs().endOf('day').valueOf();
@@ -40,7 +53,7 @@
 		const a = await fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/search/v1/derived/scheme?available_for_investment=true&doc_type=scheme&page=0&plan_type=Direct&q=&size=200&sort_by=1&sub_category=${selectedFundType}`)}`
 		);
-		data = (await a.json()).content.filter((item) => !item.index).sort((a, b) => b.aum - a.aum);
+		data = (await a.json()).content.filter((item) => !item.index);
 	});
 
 	$effect(async () => {
@@ -53,74 +66,101 @@
 	});
 </script>
 
-<div>
-	<div class="MutualFundComponentList" class:hidden={isHoldingPage}>
-		<div class="Filters">
-			<select bind:value={selectedFundType}>
-				<option value="Large Cap">Large Cap</option>
-				<option value="Mid Cap">Mid Cap</option>
-				<option value="Small Cap">Small Cap</option>
-        <option value="Thematic">Thematic</option>
-				<option value="Sectoral">Sectoral</option>
-			</select>
-			<div>{data.length} funds</div>
-		</div>
+<!-- Scheme List -->
+<div class="ListOfSchemes h-full flex flex-col" class:hidden={isHoldingPage}>
+	<div class="Filters flex flex-row items-center justify-between text-sm/tight">
+		<select bind:value={selectedFundType}>
+			<option value="Large Cap">Large Cap</option>
+			<option value="Mid Cap">Mid Cap</option>
+			<option value="Small Cap">Small Cap</option>
+			<option value="Thematic">Thematic</option>
+			<option value="Sectoral">Sectoral</option>
+		</select>
+		<div>{sortedData.length} funds</div>
+		<select bind:value={sortBy}>
+			<option value="">Sort</option>
+			<option value="1y">1Y</option>
+			<option value="3y">3Y</option>
+			<option value="5y">5Y</option>
+		</select>
+	</div>
 
-		<div class="Content">
-			{#each data as fund}
-				<div
-					class="FundCard border-b text-sm p-1"
-					onclick={async () => {
-						const a = await fetch(
-							`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
-						);
-						const data = (await a.json()).folio;
-						ChartState.lineData = data.data;
-						ChartState.currentScrip = data.name;
-					}}
-					role
-				>
-					<h3 class="truncate">{fund.fund_name}</h3>
-					<div class="flex flex-row justify-between">
-						<div class="flex flex-row items-center text-gray-600 text-sm/tight gap-1">
-							<div class="flex flex-row items-center">
-								<span>{fund.groww_rating}</span>
-								<StarIcon />
-							</div>
+	<div class="Content flex-1 overflow-auto">
+		{#each sortedData as fund}
+			<div
+				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"
+				onclick={async () => {
+					const a = await fetch(
+						`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
+					);
+					const data = (await a.json()).folio;
+					ChartState.lineData = data.data;
+					ChartState.currentScrip = data.name;
+				}}
+				role
+			>
+				<h3 class="truncate">{fund.fund_name}</h3>
+				<div class="grid grid-cols-4 gap-2 items-center text-xs/tight text-gray-500">
+					<div class="col-start-1 flex flex-row">
+						{#if fund.groww_rating}
+							{fund.groww_rating} <StarIcon width="14" height="14" />
+						{/if}
+					</div>
 
-							<div>{Math.round(fund.aum).toLocaleString('en-IN')} Cr</div>
-						</div>
-						<div
-							class="hover:bg-gray-200 cursor-pointer"
-							onclick={(e) => {
-								e.stopPropagation();
-								isHoldingPage = true;
-								clickedFund = fund;
-							}}
-							role
-						>
-							Open
-						</div>
-
-						<p>{fund.return1y}%</p>
+					<div class="col-start-2 col-span-2">
+						{Math.round(fund.aum).toLocaleString('en-IN')} Cr
+					</div>
+					<div class="col-start-4">
+						{#if sortBy === ''}
+							<p>{fund.return1y}%</p>
+						{:else if fund['return' + sortBy]}
+							<p>{fund['return' + sortBy]}%</p>
+						{/if}
 					</div>
 				</div>
-			{/each}
+
+				<button
+					class="bg-gray-300 cursor-pointer rotate-180 hidden group-hover:block absolute top-1 right-1 rounded-full"
+					onclick={(e) => {
+						e.stopPropagation();
+						isHoldingPage = true;
+						clickedFund = fund;
+					}}
+				>
+					<LeftArrowIcon width="18" height="18" />
+				</button>
+			</div>
+		{/each}
+	</div>
+</div>
+
+<!-- Holding Details -->
+<div class="SchemeHoldings h-full flex flex-col" class:hidden={!isHoldingPage}>
+	<div class="Heading flex flex-row items-start">
+		<button class="cursor-pointer" onclick={() => (isHoldingPage = false)}>
+			<LeftArrowIcon width="24" height="24" />
+		</button>
+		<div
+			class="text-sm/tight ml-2 truncate"
+			role
+			onclick={async () => {
+				const a = await fetch(
+					`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${clickedFund.scheme_code}/graph?benchmark=false&months=1000`)}`
+				);
+				const data = (await a.json()).folio;
+				ChartState.lineData = data.data;
+				ChartState.currentScrip = data.name;
+			}}
+		>
+			<h3 class="truncate">{clickedFund?.fund_name}</h3>
+			<div>{holdingsData.length} holdings</div>
 		</div>
 	</div>
 
-	<div class="MutualFundHoldings" class:hidden={!isHoldingPage}>
-		<div class="hover:bg-gray-200 cursor-pointer" onclick={() => (isHoldingPage = false)} role>
-			Close
-		</div>
-		<div>
-			<h3 class="truncate">{clickedFund?.fund_name}</h3>
-			<p>{holdingsData.length} holdings</p>
-		</div>
-
+	<div class="Content flex-1 overflow-auto">
 		{#each holdingsData as holding}
 			<div
-				class="HoldingCard border-b text-sm p-1"
+				class="HoldingCard border-b border-gray-300 text-xs/tight p-1"
 				onclick={() => {
 					fetchGraphData(holding.symbol);
 					ChartState.currentScrip = holding.company_name;
@@ -129,7 +169,9 @@
 			>
 				<div class="flex flex-row justify-between">
 					<h3 class="truncate">{holding.symbol}</h3>
-					<p>{Math.round(holding.corpus_per * 100) / 100}%</p>
+					{#if holding.corpus_per}
+						<p>{Math.round(holding.corpus_per * 100) / 100}%</p>
+					{/if}
 				</div>
 
 				<h3 class="truncate text-gray-600 text-sm/tight">{holding.company_name}</h3>
