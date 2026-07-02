@@ -27,6 +27,10 @@ export class SmaSeriesPrimitive {
         const smaValues = calculateSMA(mainSeriesData, ChartState.isMonthly ? 12 : 52);
         this._smaSeries.setData(smaValues);
     }
+
+    dataByIndex(index) {
+        return this._smaSeries.dataByIndex(index);
+    }
 }
 
 /**

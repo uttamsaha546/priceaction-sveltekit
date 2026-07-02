@@ -46,15 +46,22 @@ class MeasureRenderer {
             ctx.stroke();
 
             //Draw info text tooltip at the top of the box
-            ctx.fillStyle = '#2196F3';
+            // ctx.fillStyle = '#2196F3';
             ctx.font = '12px sans-serif';
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'center';
 
             const sign = p2.y > p1.y ? +1 : -1;
+            ctx.save();
+            ctx.translate(midX, p2.y);
+            ctx.fillStyle = -p2.y > -p1.y ? 'rgba(41, 98, 255, 1)' : 'rgba(242, 54, 69, 1)';
+            ctx.fillRect(-60, sign * 4, 120, sign * 40);
+            ctx.restore();
+
+            ctx.fillStyle = 'white';
 
             textLines.forEach((line, index) => {
-                ctx.fillText(line, midX, p2.y + sign * (index * 16) + sign * ((textLines.length - 1) * 8));
+                ctx.fillText(line, Math.max(50, midX), p2.y + sign * (index * 16) + sign * ((textLines.length - 1) * 16));
             });
 
             ctx.restore();

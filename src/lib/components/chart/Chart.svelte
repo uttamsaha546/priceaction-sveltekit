@@ -4,7 +4,8 @@
 		createChart,
 		CandlestickSeries,
 		CrosshairMode,
-		PriceScaleMode
+		PriceScaleMode,
+		LineSeries
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
@@ -14,11 +15,14 @@
 	import { MeasureToolPrimitive } from './Tools/MeasureToolPrimitive';
 	import { ToolState } from '$lib/state/ToolState.svelte';
 	import { TrendAnglePrimitive } from './Tools/TrendAnglePrimitive';
+	import { SafeEntryZonePrimitive } from './Tools/SafeEntryZonePrimitive';
 
 	let chart;
 	let container;
 	let mainSeries;
 	let { data, scalingMultiplier = 1 } = $props();
+
+	const TempSerieses = [];
 
 	onMount(() => {
 		chart = createChart(container, {
@@ -60,6 +64,9 @@
 		mainSeries.attachPrimitive(measurePlugin);
 		const trendAnglePlugin = new TrendAnglePrimitive();
 		mainSeries.attachPrimitive(trendAnglePlugin);
+
+		const safeEntryZonePlugin = new SafeEntryZonePrimitive();
+		mainSeries.attachPrimitive(safeEntryZonePlugin);
 
 		if (window.isTouchCapable) {
 			//For touch screen
@@ -230,6 +237,8 @@
 					measurePlugin.updatePoints(start, end);
 				} else if (ToolState.activeTool === 'trendAngle') {
 					trendAnglePlugin.updatePoints(start, end);
+				} else if (ToolState.activeTool === 'trendLine') {
+					safeEntryZonePlugin.updatePoints(start, end);
 				}
 			}
 
@@ -261,6 +270,12 @@
 				const currentTool = ToolState.activeTool;
 				if (currentTool === 'cross' && measureState !== 'locked') return;
 
+				if (ToolState.activeTool === 'clearDrawings') {
+					measurePlugin.updatePoints(null, null);
+					trendAnglePlugin.updatePoints(null, null);
+					safeEntryZonePlugin.updatePoints(null, null);
+				}
+
 				const clickedPoint = {
 					time: param.time,
 					price: mainSeries.coordinateToPrice(param.point.y)
@@ -284,6 +299,49 @@
 					// 1. Update the canvas point first while the active state conditions align
 					updateActivePlugin(startPoint, currentPoint);
 
+					if (ToolState.activeTool === 'trendLine') {
+						const startIndex = chart.timeScale().timeToIndex(startPoint.time);
+						const endIndex = chart.timeScale().timeToIndex(currentPoint.time);
+
+						let diffPct = [];
+						for (let i = startIndex; i <= endIndex; i++) {
+							const mainBar = mainSeries.dataByIndex(i);
+							const bottom = mainBar.close > mainBar.open ? mainBar.open : mainBar.close;
+							const sma = smaSeries.dataByIndex(i);
+							diffPct.push(bottom / sma.value - 1);
+						}
+						const avgDiffPct = diffPct.reduce((a, b) => a + b, 0) / diffPct.length;
+
+						// const data = [];
+						// for (let i = startIndex; i <= endIndex; i++) {
+						// 	const sma = smaSeries.dataByIndex(i);
+						// 	data.push({ time: sma.time, value: sma.value * (1 + avgDiffPct * 0.75) });
+						// }
+
+						// const newseries = chart.addSeries(LineSeries, {
+						// 	crosshairMarkerVisible: false,
+						// 	priceLineVisible: false,
+						// 	zOrder: 'top',
+						// 	color: 'purple'
+						// });
+						// newseries.setData(data);
+
+						// updateActivePlugin(null, null);
+
+						// TempSerieses.push(newseries);
+
+						updateActivePlugin(
+							{
+								time: startPoint.time,
+								price: smaSeries.dataByIndex(startIndex).value * (1 + avgDiffPct * 0.75)
+							},
+							{
+								time: currentPoint.time,
+								price: smaSeries.dataByIndex(endIndex).value * (1 + avgDiffPct * 0.75)
+							}
+						);
+					}
+
 					// 2. Automatically revert the UI sidebar back to the default crosshair tool
 					ToolState.activeTool = 'cross';
 				} else if (measureState === 'locked') {
@@ -296,8 +354,13 @@
 
 					// Always clear the plugin drawing regardless of what activeTool currently is
 					// Clear BOTH plugins to ensure nothing remains stuck on screen
-					measurePlugin.updatePoints(null, null);
-					trendAnglePlugin.updatePoints(null, null);
+					if (ToolState.activeTool === 'clearDrawings') {
+						measurePlugin.updatePoints(null, null);
+						trendAnglePlugin.updatePoints(null, null);
+						// safeEntryZonePlugin.updatePoints(null, null);
+						// TempSerieses.forEach((series) => chart.removeSeries(series));
+						ToolState.activeTool = 'cross';
+					}
 				}
 			});
 		}

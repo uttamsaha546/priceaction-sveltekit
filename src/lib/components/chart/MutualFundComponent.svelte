@@ -9,7 +9,11 @@
 	let sortBy = $state('');
 	let sortedData = $derived.by(() => {
 		if (!data) return [];
-		if (sortBy === '1y') {
+		if (sortBy === '3m') {
+			return [...data].sort((a, b) => b.return3m - a.return3m);
+		} else if (sortBy === '6m') {
+			return [...data].sort((a, b) => b.return6m - a.return6m);
+		} else if (sortBy === '1y') {
 			return [...data].sort((a, b) => b.return1y - a.return1y);
 		} else if (sortBy === '3y') {
 			return [...data].sort((a, b) => b.return3y - a.return3y);
@@ -38,7 +42,8 @@
 
 	async function fetchGraphData(symbol) {
 		const endTime = dayjs().endOf('day').valueOf();
-		let startTime = dayjs(endTime).subtract(10, 'Year').valueOf();
+		// let startTime = dayjs(endTime).subtract(10, 'Year').valueOf();
+		let startTime = 820434600000; //01-01-1996
 		ChartState.isLoading = true;
 		const p = await fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${symbol}?endTimeInMillis=${endTime}&intervalInMinutes=1440&startTimeInMillis=${startTime}`)}`
@@ -75,12 +80,14 @@
 			<option value="Large Cap">Large Cap</option>
 			<option value="Mid Cap">Mid Cap</option>
 			<option value="Small Cap">Small Cap</option>
-			<option value="Thematic">Thematic</option>
 			<option value="Sectoral">Sectoral</option>
+			<option value="Thematic">Thematic</option>
 		</select>
 		<div>{sortedData.length} funds</div>
 		<select bind:value={sortBy}>
 			<option value="">Sort</option>
+			<option value="3m">3M</option>
+			<option value="6m">6M</option>
 			<option value="1y">1Y</option>
 			<option value="3y">3Y</option>
 			<option value="5y">5Y</option>

@@ -3,6 +3,8 @@
 	import TrendAngleIcon from './Icons/TrendAngleIcon.svelte';
 	import { ToolState } from '$lib/state/ToolState.svelte';
 	import CrosshairIcon from './Icons/CrosshairIcon.svelte';
+	import TrendLineIcon from './Icons/TrendLineIcon.svelte';
+	import BroomIcon from './Icons/BroomIcon.svelte';
 </script>
 
 <div class="LeftBarWithDivider h-full w-12 flex flex-row">
@@ -29,9 +31,9 @@
 						const time = window.chart.timeScale().coordinateToTime(paneSize.width / 2);
 						// window.chart.setCrosshairPosition(price, time, window.mainSeries);
 						//window.chart.applyOptions({
-							//handleScale: false,
-							//handleScroll: false
-					//	});
+						//handleScale: false,
+						//handleScroll: false
+						//	});
 					}
 				}}
 			>
@@ -44,6 +46,22 @@
 				onclick={() => (ToolState.activeTool = 'measure')}
 			>
 				<MeasureIcon />
+			</button>
+
+			<!-- TrendLine Tool  -->
+			<button
+				class={`${ToolState.activeTool === 'trendLine' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'trendLine')}
+			>
+				<TrendLineIcon />
+			</button>
+
+			<!-- Clear Drawing Tool  -->
+			<button
+				class={`${ToolState.activeTool === 'clearDrawings' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'clearDrawings')}
+			>
+				<BroomIcon />
 			</button>
 		</div>
 	</div>
