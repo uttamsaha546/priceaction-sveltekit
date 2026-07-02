@@ -87,8 +87,7 @@
 				e.stopPropagation();
 				selectedStockId = stock.symbol;
 				fetchGraphData(stock.symbol);
-
-				ChartState.currentScrip = stock.company_name;
+				ChartState.currentScrip = stock.name;
 			}}
 			role
 		>
