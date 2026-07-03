@@ -7,7 +7,7 @@
 	let selectedStockId = $state('');
 	let sector = $state('');
 	let industry = $state('');
-	let rsi = $state('');
+	let rsi = $state('up');
 
 	let sectorList = $derived(Array.from(new Set((data.data ?? []).map((row) => row.sector))));
 	let industryList = $derived(
