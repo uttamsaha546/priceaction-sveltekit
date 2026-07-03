@@ -2,8 +2,12 @@
 <script>
 	import PriceChart from '$lib/components/mfanalysis/PriceChart.svelte';
 	let { data } = $props();
-	$inspect(data);
+	// $inspect(data);
 </script>
+
+<svelte:head>
+	<title>Chart - {data.category}</title>
+</svelte:head>
 
 <h1>{data.category}</h1>
 
@@ -11,6 +15,7 @@
 	{#each data.funds as fund}
 		<div class="card">
 			<div class="truncate">{fund.name}</div>
+			<!-- <div>{fund.aum.toLocaleString('en-IN')} Cr</div> -->
 			<PriceChart {fund} />
 		</div>
 	{/each}
