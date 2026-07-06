@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { db } from "$lib/utils/database";
+import { db } from "$lib/server/database";
 // import { GET as fetchMissingIndustryClassification } from "../../industry-classification/+server";
 // import { GET as getStockUniverse } from "../+server";
 

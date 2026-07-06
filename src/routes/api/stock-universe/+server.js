@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { db } from "$lib/utils/database";
+import { db } from "$lib/server/database";
 
 export function GET() {
     const data = db.prepare(`SELECT su.*, ic.* FROM stock_universe su JOIN industry_classification ic ON su.symbol=ic.symbol ORDER BY 

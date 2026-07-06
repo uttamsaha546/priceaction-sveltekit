@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { db } from "$lib/utils/database";
+import { db } from "$lib/server/database";
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS flags (

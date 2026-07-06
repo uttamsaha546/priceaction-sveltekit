@@ -1,4 +1,4 @@
-import { db } from '$lib/utils/database';
+import { db } from '$lib/server/database';
 
 export async function load({ params }) {
     const tables = db.prepare(`SELECT name FROM sqlite_schema WHERE type = 'table'`).all();

@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { db } from "$lib/utils/database";
+import { db } from "$lib/server/database";
 
 export function GET() {
     // 1. Fetch the raw rows from the database

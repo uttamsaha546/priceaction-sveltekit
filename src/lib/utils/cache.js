@@ -1,4 +1,4 @@
-import { db } from "./database";
+import { db } from "../server/database";
 
 // Initialize Schema
 db.exec(`

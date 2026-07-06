@@ -1,7 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	let { data } = $props();
-	$inspect(data);
+	// $inspect(data);
 
 	async function browseTable(tableName) {
 		await goto(`/admin/browse-table/${tableName}`);
