@@ -4,43 +4,43 @@
 	// 1. Destructure data arriving from your server load script
 	let { data } = $props();
 
-	let cols = ['Scrip', 'Units', 'NAV Text', 'Current Value', 'Actions'];
+	let cols = ['Scrip', 'Units', 'NAV Text', 'Market Value', 'Actions'];
 
 	// 2. Map real server API data seamlessly into initial row states
 	let rows = $state([
 		{
 			Scrip: 'ICICI Scheme E',
-			Units: 120.45, // Placeholder user units
+			Units: 5859.0438, // Placeholder user units
 			'Latest NAV': data.nps.nav,
 			'NAV Date': data.nps.date,
 			get 'NAV Text'() {
 				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
 			},
-			get 'Current Value'() {
+			get 'Market Value'() {
 				return (this.Units * this['Latest NAV']).toFixed(2);
 			}
 		},
 		{
 			Scrip: 'Edelweiss Mid Cap',
-			Units: 85.32,
+			Units: 2122.856,
 			'Latest NAV': data.midcap.nav,
 			'NAV Date': data.midcap.date,
 			get 'NAV Text'() {
 				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
 			},
-			get 'Current Value'() {
+			get 'Market Value'() {
 				return (this.Units * this['Latest NAV']).toFixed(2);
 			}
 		},
 		{
 			Scrip: 'Bandhan Small Cap',
-			Units: 210.15,
+			Units: 2930.791,
 			'Latest NAV': data.smallcap.nav,
 			'NAV Date': data.smallcap.date,
 			get 'NAV Text'() {
 				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
 			},
-			get 'Current Value'() {
+			get 'Market Value'() {
 				return (this.Units * this['Latest NAV']).toFixed(2);
 			}
 		},
@@ -48,7 +48,7 @@
 			Scrip: 'Direct Stocks',
 			Units: 1,
 			'NAV Text': 1500.0, // Manual asset tracking
-			get 'Current Value'() {
+			get 'Market Value'() {
 				return (this.Units * this['NAV Text']).toFixed(2);
 			}
 		}
@@ -158,14 +158,14 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<div class="p-6 max-w-7xl mx-auto">
+<div class="p-1 max-w-7xl mx-auto">
 	<table
 		class="w-full text-left border-collapse border border-gray-200 shadow-sm rounded-lg overflow-hidden"
 	>
 		<thead>
 			<tr class="bg-gray-100 text-gray-700 font-semibold text-sm">
 				{#each cols as col}
-					<th class="p-3 border border-gray-200">{col}</th>
+					<th class="p-1 border border-gray-200">{col}</th>
 				{/each}
 			</tr>
 		</thead>
@@ -174,28 +174,18 @@
 				<tr class="hover:bg-gray-50 transition-colors">
 					{#each cols as col}
 						{#if col === 'Actions'}
-							<td class="p-3 border border-gray-200">
+							<td class="p-1 border border-gray-200">
 								<div class="flex items-center gap-2">
 									<button
-										class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium px-3 py-1.5 rounded-md text-xs shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+										class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium px-2 py-1 rounded-md text-xs shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
 										onclick={() => handleFetchBtnClick(row.Scrip)}
 									>
 										Fetch Portfolio
 									</button>
-
-									<button
-										class="action-btn inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium px-3 py-1.5 rounded-md text-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
-										onclick={(e) => {
-											e.stopPropagation(); // Stop window catch immediately
-											editingIndex = editingIndex === i ? null : i;
-										}}
-									>
-										{editingIndex === i ? 'Done' : 'Update Units'}
-									</button>
 								</div>
 							</td>
 						{:else}
-							<td class="p-3 border border-gray-200 text-sm text-gray-600">
+							<td class="p-2 border border-gray-200 text-sm text-gray-600">
 								{#if col === 'Units' && editingIndex === i}
 									<input
 										type="number"
@@ -233,3 +223,44 @@
 		</tbody>
 	</table>
 </div>
+
+
+<!-- Breakdown Table Preview Component -->
+{#if fetchedJson?.holdings?.length > 0}
+    <div class="mt-8 p-5 border border-blue-200 bg-blue-50/20 rounded-xl shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h3 class="text-base font-bold text-gray-800">
+                Fetched Portfolio Breakdown of <span class="text-blue-700">{fetchedJson.scrip}</span> as on {fetchedJson.asOn}
+            </h3>
+            <button 
+                class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm"
+                onclick={handleSaveBreakdown}
+            >
+                Save to Row Data
+            </button>
+        </div>
+        
+        <div class="overflow-x-auto border border-gray-200 rounded-lg bg-white">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        {#each Object.keys(fetchedJson.holdings[0]) as header}
+                            <th class="p-2.5 font-semibold text-xs text-gray-600 uppercase tracking-wider">{header}</th>
+                        {/each}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {#each fetchedJson.holdings as item}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            {#each Object.keys(fetchedJson.holdings[0]) as key}
+                                <td class="p-2.5 text-sm text-gray-600">
+                                    {item[key]}
+                                </td>
+                            {/each}
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{/if}
