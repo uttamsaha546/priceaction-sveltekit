@@ -54,6 +54,7 @@ export async function GET(request) {
         const targetUrl = request.url.searchParams.get('url');
         const referer = request.request.headers.get('x-forwarded-referer');
         const userAgent = request.request.headers.get('user-agent');
+        const authorization = request.request.headers.get('authorization');
 
         if (!targetUrl) {
             return json({ error: 'Missing url parameter' }, { status: 400 });
@@ -67,7 +68,8 @@ export async function GET(request) {
                 headers: {
                     'User-Agent': userAgent,
                     // If referer exists, it spreads { 'Referer': referer } into the object.
-                    ...(referer && { 'Referer': referer })
+                    ...(referer && { 'Referer': referer }),
+                    ...(authorization && { 'Authorization': authorization }),
                 }
             });
             console.log("Called GET (Cache Miss)");

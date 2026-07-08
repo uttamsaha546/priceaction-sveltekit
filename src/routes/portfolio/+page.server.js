@@ -1,57 +1,105 @@
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
+import { db } from '$lib/server/database';
+import dayjs from 'dayjs';
 
-export const load = async ({ fetch }) => {
+db.exec(`CREATE TABLE IF NOT EXISTS portfolio (
+    key TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    unit REAL DEFAULT 1,
+    unit_date TEXT,
+    holding TEXT,
+    holding_date TEXT
+    ) WITHOUT ROWID;
+`)
+
+db.exec(`
+    INSERT OR IGNORE INTO portfolio (key, name) VALUES
+    ('nps', 'ICICI Scheme-E'),
+    ('midcap', 'Edelweiss Mid Cap'),
+    ('smallcap', 'Bandhan Small Cap'),
+    ('direct', 'Direct Stocks');
+    `)
+
+
+export const load = async () => {
     try {
-        // Fire all three API requests in parallel
-        const [npsResponse, midcapResponse, smallcapResponse] = await Promise.all([
-            fetch('https://api.icicipension.in/latestnav', {
-                headers: { 'Authorization': 'Bearer e07nxj3145bapcxg' }
-            }),
-            fetch('https://www.amfiindia.com/api/latest-nav?type=&mfid=47&category=Equity%20Scheme%20-%20Mid%20Cap%20Fund&search=growth'),
-            fetch('https://www.amfiindia.com/api/latest-nav?type=&mfid=48&category=Equity%20Scheme%20-%20Small%20Cap%20Fund&search=growth')
-        ]);
+        const dbRows = db.prepare('SELECT * FROM portfolio').all();
 
-        // Check all responses and build an accurate error message
-        const failures = [];
-        if (!npsResponse.ok) failures.push(`NPS (${npsResponse.status})`);
-        if (!midcapResponse.ok) failures.push(`Midcap (${midcapResponse.status})`);
-        if (!smallcapResponse.ok) failures.push(`Smallcap (${smallcapResponse.status})`);
+         // Convert the flat array into a key-value object map: { nps: {...}, midcap: {...} } and parse holding
+        const rowMap = dbRows.reduce((acc, row) => {
+            let parsedHolding = [];
+            
+            if (row.holding) {
+                try {
+                    parsedHolding = JSON.parse(row.holding);
+                } catch (e) {
+                    console.error(`Failed to parse holding JSON string for key: ${row.key}`, e);
+                    parsedHolding = [];
+                }
+            }
 
-        if (failures.length > 0) {
-            throw new Error(`API fetch failed for: ${failures.join(', ')}`);
-        }
-
-        // Parse all JSON arrays safely
-        const [npsData, midcapRaw, smallcapRaw] = await Promise.all([
-            npsResponse.json().catch(() => ({})), // returns {} on JSON failure
-            midcapResponse.json().catch(() => ({})),
-            smallcapResponse.json().catch(() => ({}))
-        ]);
-
-        // Safely dig through AMFI's deeply nested response trees
-        const midcapData = midcapRaw?.data?.[0]?.categories?.[0]?.groups?.[0]?.schemes?.find(x => x.schemeId === '140228');
-        const smallcapData = smallcapRaw?.data?.[0]?.categories?.[0]?.groups?.[0]?.schemes?.find(x => x.schemeId === '147946');
+            acc[row.key] = {
+                ...row,
+                holding: parsedHolding
+            };
+            
+            return acc;
+        }, {});
 
         return {
-            nps: {
-                scrip: 'nps',
-                date: npsData?.government?.date ?? 'N/A',
-                nav: npsData?.government?.tier1_e_gov ?? 0
-            },
-            midcap: {
-                scrip: 'midcap',
-                date: midcapData?.date ?? 'N/A',
-                nav: midcapData?.netAssetValue ?? 0
-            },
-            smallcap: {
-                scrip: 'smallcap',
-                date: smallcapData?.date ?? 'N/A',
-                nav: smallcapData?.netAssetValue ?? 0
-            }
+            nps: rowMap['nps'],
+            midcap: rowMap['midcap'],
+            smallcap: rowMap['smallcap'],
+            direct: rowMap['direct'],
+            my_holding: {}
         };
 
     } catch (err) {
-        console.error('NAV Fetch failed:', err);
-        throw error(502, 'Failed to fetch the latest NAV data.');
+        console.error('Failed to load portfolio data:', err);
+        throw error(502, 'Bad Gateway: DB query processing failed');
+    }
+};
+
+
+export const actions = {
+    saveUnit: async ({ request }) => {
+        const data = await request.formData();
+        const key = data.get('key');
+        const unit = parseFloat(data.get('unit'));
+
+        if (!key) {
+            return fail(400, { message: 'Missing target row key' });
+        }
+
+        try {
+            
+            db.prepare(`UPDATE portfolio SET unit=? WHERE key=?`).run(unit, key);
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Database save failed:', error);
+            return fail(500, { message: 'Failed to write to database storage.' });
+        }
+    },
+
+    saveHolding: async ({ request }) => {
+        const data = await request.formData();
+        const key = data.get('key');
+        const holding = (data.get('holding'));
+        const holding_date = (data.get('holding_date'));
+
+        if (!key) {
+            return fail(400, { message: 'Missing target row key' });
+        }
+
+        try {
+            
+            db.prepare(`UPDATE portfolio SET holding=?, holding_date=? WHERE key=?`).run(holding, holding_date, key);
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Database save failed:', error);
+            return fail(500, { message: 'Failed to write to database storage.' });
+        }
     }
 };

@@ -1,80 +1,70 @@
 <script>
+	import { browser } from '$app/environment';
+	import { invalidateAll } from '$app/navigation';
+	import { deserialize } from '$app/forms';
 	import * as XLSX from 'xlsx';
-
-	// 1. Destructure data arriving from your server load script
+	import dayjs from 'dayjs';
+	// 1. Accept server reactive bounds safely
 	let { data } = $props();
+	let view = $state('holding');
 
-	let cols = ['Scrip', 'Units', 'NAV Text', 'Market Value', 'Actions'];
+	// if (browser) $inspect(data);
 
-	// 2. Map real server API data seamlessly into initial row states
-	let rows = $state([
-		{
-			Scrip: 'ICICI Scheme E',
-			Units: 5859.0438, // Placeholder user units
-			'Latest NAV': data.nps.nav,
-			'NAV Date': data.nps.date,
-			get 'NAV Text'() {
-				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
-			},
-			get 'Market Value'() {
-				return (this.Units * this['Latest NAV']).toFixed(2);
-			}
-		},
-		{
-			Scrip: 'Edelweiss Mid Cap',
-			Units: 2122.856,
-			'Latest NAV': data.midcap.nav,
-			'NAV Date': data.midcap.date,
-			get 'NAV Text'() {
-				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
-			},
-			get 'Market Value'() {
-				return (this.Units * this['Latest NAV']).toFixed(2);
-			}
-		},
-		{
-			Scrip: 'Bandhan Small Cap',
-			Units: 2930.791,
-			'Latest NAV': data.smallcap.nav,
-			'NAV Date': data.smallcap.date,
-			get 'NAV Text'() {
-				return `${this['Latest NAV']}` + ` (${this['NAV Date']})`;
-			},
-			get 'Market Value'() {
-				return (this.Units * this['Latest NAV']).toFixed(2);
-			}
-		},
-		{
-			Scrip: 'Direct Stocks',
-			Units: 1,
-			'NAV Text': 1500.0, // Manual asset tracking
-			get 'Market Value'() {
-				return (this.Units * this['NAV Text']).toFixed(2);
-			}
-		}
-	]);
+	// 2. Initialize an empty local reactive state shell
+	let localRows = $state({ nps: {}, midcap: {}, smallcap: {}, direct: {} });
 
-	let fetchedJson = $state({ asOn: '', holdings: [], scrip: '' });
-	// Track which row is currently being edited
+	// 3. Keep localRows in perfect alignment whenever server `data` changes
+	$effect(async () => {
+		const navData = await fetchNAVData();
+		localRows.nps = { ...data.nps, ...navData.nps };
+		localRows.midcap = { ...data.midcap, ...navData.midcap };
+		localRows.smallcap = { ...data.smallcap, ...navData.smallcap };
+		localRows.direct = { ...data.direct };
+		const my_holding = getMyHoldings($state.snapshot(localRows));
+		localRows.my_holding = { holding: my_holding };
+	});
+	if (browser) $inspect(localRows);
+
+	let fetchedJson = $state({ asOn: '', holdings: [], key: '', scrip: '' });
 	let editingIndex = $state(null);
 
-	// Click outside handler logic
-	function handleWindowClick(event) {
-		// If we aren't editing, do nothing
-		if (editingIndex === null) return;
+	async function triggerServerAction(key, unitValue) {
+		const formData = new FormData();
+		formData.append('key', key);
+		formData.append('unit', unitValue || 0);
 
-		// Check if the click target is inside our editing input or the action buttons
-		const target = event.target;
-		if (!target.closest('.editing-input') && !target.closest('.action-btn')) {
-			editingIndex = null;
+		const response = await fetch('?/saveUnit', {
+			method: 'POST',
+			body: formData
+		});
+
+		const result = deserialize(await response.text());
+
+		if (result.type === 'success') {
+			// Re-runs server load functions. The $effect block above
+			// will automatically re-clone the fresh data down to localRows.
+			await invalidateAll();
+		} else {
+			alert('Failed to save changes to the database.');
 		}
 	}
 
-	async function handleFetchBtnClick(Scrip) {
+	async function handleWindowClick(event) {
+		if (editingIndex === null) return;
+
+		const target = event.target;
+		if (!target.closest('.editing-input') && !target.closest('.action-btn')) {
+			const currentKey = editingIndex;
+			editingIndex = null;
+			await triggerServerAction(currentKey, localRows[currentKey].unit);
+		}
+	}
+
+	async function handleFetchBtnClick(key) {
 		try {
-			if (Scrip === 'ICICI Scheme E') {
+			if (key === 'nps') {
 				const a = await fetch(
-					'/proxy?url=https://api.icicipension.in/get_check/portfolio/jun/2026'
+					`/proxy?url=${encodeURIComponent(`https://api.icicipension.in/get_check/portfolio/${dayjs().subtract(1, 'M').format('MMM').toLocaleLowerCase()}/${dayjs().format('YYYY')}`)}`
 				);
 				const b = await a.json();
 				if (b) {
@@ -89,7 +79,7 @@
 					const workbook = XLSX.read(buffer, { type: 'array' });
 					const worksheet = workbook.Sheets['Scheme E - Tier l'];
 
-					const dated = worksheet.B3?.w ?? 'N/A';
+					const dated = dayjs(worksheet.B3?.w).format('DD-MMM-YYYY') ?? 'N/A';
 					const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 5 });
 
 					let accept = false;
@@ -103,18 +93,18 @@
 							if (accept && row.Particulars) {
 								return {
 									Scrip: row.Particulars,
-									ISIN: row['ISIN No.'] ?? 'N/A',
-									HoldingPct: row['% of Portfolio'] ? (row['% of Portfolio'] * 100).toFixed(2) : 0
+									ISIN: row['ISIN No.'],
+									HoldingPct: parseFloat(row['% of Portfolio']) * 100
 								};
 							}
 							return false;
 						})
 						.filter(Boolean);
 
-					fetchedJson = { asOn: dated, holdings: d, scrip: Scrip };
+					fetchedJson = { asOn: dated, holdings: d, key: key, scrip: localRows[key].name };
 				}
-			} else if (Scrip === 'Edelweiss Mid Cap' || Scrip === 'Bandhan Small Cap') {
-				const isin = Scrip === 'Edelweiss Mid Cap' ? 'INF843K01AO4' : 'INF194KB1AL4';
+			} else if (key === 'midcap' || key === 'smallcap') {
+				const isin = key === 'midcap' ? 'INF843K01AO4' : 'INF194KB1AL4';
 				const a = await fetch('/proxy?url=https://mf-openweb-search.dhan.co/SectorAllocation', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -127,7 +117,7 @@
 				}).then((x) => x.json());
 
 				if (a.status === 'success' && a.data?.length > 0) {
-					const dated = a.data[0].pmd_portfolio_date;
+					const dated = dayjs(a.data[0].pmd_portfolio_date).format('DD-MMM-YYYY');
 					const b = a.data
 						.sort((m, n) => parseFloat(n.pmd_weighting) - parseFloat(m.pmd_weighting))
 						.map((row) => {
@@ -135,12 +125,12 @@
 							return {
 								Scrip: row.pmd_name,
 								ISIN: row.pmd_isin,
-								HoldingPct: parseFloat(row.pmd_weighting).toFixed(2)
+								HoldingPct: parseFloat(row.pmd_weighting)
 							};
 						})
 						.filter(Boolean);
 
-					fetchedJson = { asOn: dated, holdings: b, scrip: Scrip };
+					fetchedJson = { asOn: dated, holdings: b, key: key, scrip: localRows[key].name };
 				}
 			}
 		} catch (err) {
@@ -149,10 +139,168 @@
 		}
 	}
 
-	// Fixed: Included the missing button event handler
-	function handleSaveBreakdown() {
-		console.log(`Saving portfolio state data for ${fetchedJson.scrip}`, fetchedJson.holdings);
-		alert(`Saved breakdown parameters for ${fetchedJson.scrip}!`);
+	async function handleSaveBreakdown(key, holding, holding_date) {
+		const formData = new FormData();
+		formData.append('key', key);
+		formData.append('holding', holding);
+		formData.append('holding_date', holding_date);
+
+		const response = await fetch('?/saveHolding', {
+			method: 'POST',
+			body: formData
+		});
+
+		const result = deserialize(await response.text());
+
+		if (result.type === 'success') {
+			// Re-runs server load functions. The $effect block above
+			// will automatically re-clone the fresh data down to localRows.
+			await invalidateAll();
+		} else {
+			alert('Failed to save changes to the database.');
+		}
+	}
+
+	async function fetchNAVData() {
+		const [npsResponse, midcapResponse, smallcapResponse] = await Promise.all([
+			fetch('/proxy?url=https://api.icicipension.in/latestnav', {
+				headers: { authorization: 'Bearer e07nxj3145bapcxg' }
+			}),
+			fetch(
+				`/proxy?url=${encodeURIComponent('https://www.amfiindia.com/api/latest-nav?type=&mfid=47&category=Equity%20Scheme%20-%20Mid%20Cap%20Fund&search=growth')}`
+			),
+			fetch(
+				`/proxy?url=${encodeURIComponent('https://www.amfiindia.com/api/latest-nav?type=&mfid=48&category=Equity%20Scheme%20-%20Small%20Cap%20Fund&search=growth')}`
+			)
+		]);
+
+		const failures = [];
+		if (!npsResponse.ok) failures.push(`NPS (${npsResponse.status})`);
+		if (!midcapResponse.ok) failures.push(`Midcap (${midcapResponse.status})`);
+		if (!smallcapResponse.ok) failures.push(`Smallcap (${smallcapResponse.status})`);
+
+		if (failures.length > 0) {
+			throw new Error(`API fetch failed for: ${failures.join(', ')}`);
+		}
+
+		const [npsRaw, midcapRaw, smallcapRaw] = await Promise.all([
+			npsResponse.json().catch(() => ({})), // returns {} on JSON failure
+			midcapResponse.json().catch(() => ({})),
+			smallcapResponse.json().catch(() => ({}))
+		]);
+
+		const npsData = npsRaw?.government;
+		const midcapData = midcapRaw?.data?.[0]?.categories?.[0]?.groups?.[0]?.schemes?.find(
+			(x) => x.schemeId === '140228'
+		);
+		const smallcapData = smallcapRaw?.data?.[0]?.categories?.[0]?.groups?.[0]?.schemes?.find(
+			(x) => x.schemeId === '147946'
+		);
+
+		return {
+			nps: {
+				nav: parseFloat(npsData?.tier1_e_gov),
+				nav_date: dayjs(npsData?.government?.date).format('DD-MMM-YYYY')
+			},
+			midcap: {
+				nav: parseFloat(midcapData?.netAssetValue),
+				nav_date: dayjs(midcapData?.date).format('DD-MMM-YYYY')
+			},
+			smallcap: {
+				nav: parseFloat(smallcapData?.netAssetValue),
+				nav_date: dayjs(smallcapData?.date).format('DD-MMM-YYYY')
+			}
+		};
+	}
+
+	function getMyHoldings(localRows) {
+		console.log(localRows);
+		const isinSet = [
+			...new Set([
+				...localRows.nps.holding.map((x) => x.ISIN),
+				...localRows.midcap.holding.map((x) => x.ISIN),
+				...localRows.smallcap.holding.map((x) => x.ISIN)
+			])
+		];
+
+		const npsHoldingMap = new Map(localRows.nps.holding.map((x) => [x.ISIN, x]));
+		const midcapHoldingMap = new Map(localRows.midcap.holding.map((x) => [x.ISIN, x]));
+		const smallcapHoldingMap = new Map(localRows.smallcap.holding.map((x) => [x.ISIN, x]));
+
+		const my_holding = isinSet
+			.map((isin) => {
+				const Scrip =
+					npsHoldingMap.get(isin)?.Scrip ??
+					midcapHoldingMap.get(isin)?.Scrip ??
+					smallcapHoldingMap.get(isin)?.Scrip;
+
+				const ISIN = isin;
+				const HoldingAmt =
+					(npsHoldingMap.get(isin)
+						? (npsHoldingMap.get(isin).HoldingPct * localRows.nps.nav * localRows.nps.unit) / 100
+						: 0) +
+					(midcapHoldingMap.get(isin)
+						? (midcapHoldingMap.get(isin).HoldingPct *
+								localRows.midcap.nav *
+								localRows.midcap.unit) /
+							100
+						: 0) +
+					(smallcapHoldingMap.get(isin)
+						? (smallcapHoldingMap.get(isin).HoldingPct *
+								localRows.smallcap.nav *
+								localRows.smallcap.unit) /
+							100
+						: 0);
+
+				const HoldingPct =
+					(HoldingAmt * 100) /
+					(localRows.nps.nav * localRows.nps.unit +
+						localRows.midcap.nav * localRows.midcap.unit +
+						localRows.smallcap.nav * localRows.smallcap.unit);
+
+				const hasIn =
+					(npsHoldingMap.get(isin)
+						? `NPS (${Math.round((npsHoldingMap.get(isin).HoldingPct * localRows.nps.nav * localRows.nps.unit) / 100).toLocaleString('en-IN')}), `
+						: '') +
+					(midcapHoldingMap.get(isin)
+						? `Mid Cap (${Math.round((midcapHoldingMap.get(isin).HoldingPct * localRows.midcap.nav * localRows.midcap.unit) / 100).toLocaleString('en-IN')}), `
+						: '') +
+					(smallcapHoldingMap.get(isin)
+						? `Small Cap (${Math.round((smallcapHoldingMap.get(isin).HoldingPct * localRows.smallcap.nav * localRows.smallcap.unit) / 100).toLocaleString('en-IN')}),`
+						: '');
+
+				return {
+					Scrip,
+					ISIN,
+					HoldingAmt: Math.round(HoldingAmt).toLocaleString('en-IN'),
+					HoldingPct: HoldingPct.toFixed(2),
+					hasIn
+				};
+			})
+			.sort((a, b) => b.HoldingPct - a.HoldingPct);
+
+		return my_holding;
+	}
+
+	async function mapMarketcap() {
+		const buffer = await fetch(
+			`/proxy?url=https://portal.amfiindia.com/spages/AverageMarketCapitalization30Jun2026.xlsx`
+		).then((x) => x.arrayBuffer());
+
+		const workbook = XLSX.read(buffer, { type: 'array' });
+		const sheetName = workbook.SheetNames[0];
+		const sheet = workbook.Sheets[sheetName];
+		const json = XLSX.utils
+			.sheet_to_json(sheet, { range: 1 })
+			.slice(0, 2000)
+			.map((row) => {
+				return {
+					Scrip: row['Company name'],
+					ISIN: row['ISIN'],
+					Marketcap: row['Categorization as per SEBI Circular dated Oct 6, 2017']
+				};
+			});
+		console.log(json);
 	}
 </script>
 
@@ -164,103 +312,191 @@
 	>
 		<thead>
 			<tr class="bg-gray-100 text-gray-700 font-semibold text-sm">
-				{#each cols as col}
-					<th class="p-1 border border-gray-200">{col}</th>
-				{/each}
+				<th class="p-1 border border-gray-200">Name</th>
+				<th class="p-1 border border-gray-200">Unit</th>
+				<th class="p-1 border border-gray-200">NAV</th>
+				<th class="p-1 border border-gray-200">Market Value</th>
+				<th class="p-1 border border-gray-200">Action</th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each rows as row, i}
+			{#snippet tableRow(key)}
+				{@const row = localRows[key]}
 				<tr class="hover:bg-gray-50 transition-colors">
-					{#each cols as col}
-						{#if col === 'Actions'}
-							<td class="p-1 border border-gray-200">
-								<div class="flex items-center gap-2">
-									<button
-										class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium px-2 py-1 rounded-md text-xs shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
-										onclick={() => handleFetchBtnClick(row.Scrip)}
-									>
-										Fetch Portfolio
-									</button>
-								</div>
-							</td>
-						{:else}
-							<td class="p-2 border border-gray-200 text-sm text-gray-600">
-								{#if col === 'Units' && editingIndex === i}
-									<input
-										type="number"
-										step="any"
-										class="editing-input w-full px-2 py-1 border border-indigo-500 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-										bind:value={row.Units}
-										onkeydown={(e) => {
-											if (e.key === 'Enter' || e.key === 'Escape') {
-												editingIndex = null;
-											}
-										}}
-										autofocus
-									/>
-								{:else if col === 'Units'}
-									<span
-										class="cursor-pointer border-b border-dashed border-gray-400 hover:text-indigo-600"
-										onclick={(e) => {
-											e.stopPropagation(); // Avoid triggering immediate clickaway close
-											editingIndex = i;
-										}}
-										role="button"
-										tabindex="0"
-										onkeydown={(e) => e.key === 'Enter' && (editingIndex = i)}
-									>
-										{row[col]}
-									</span>
-								{:else}
-									{row[col]}
-								{/if}
-							</td>
+					<td class="p-2 border border-gray-200 text-sm text-gray-600">
+						{row.name}
+						{#if row.holding}
+							<span class="block text-xs text-green-600 font-normal mt-0.5">
+								✓ Allocation composition synced ({row.holding_date})
+							</span>
 						{/if}
-					{/each}
+					</td>
+
+					<td class="p-2 border border-gray-200 text-sm text-gray-600">
+						{#if editingIndex === key}
+							<input
+								bind:value={localRows[key].unit}
+								type="number"
+								step="any"
+								class="editing-input w-32 px-2 py-1 border border-indigo-500 rounded bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+								onkeydown={async (e) => {
+									if (e.key === 'Enter') {
+										const currentKey = editingIndex;
+										editingIndex = null;
+										await triggerServerAction(currentKey, localRows[currentKey].unit);
+									} else if (e.key === 'Escape') {
+										editingIndex = null;
+										row.unit = data[key].unit;
+									}
+								}}
+								autofocus
+							/>
+						{:else}
+							<button
+								class="text-left cursor-pointer border-b border-dashed border-gray-400 hover:text-indigo-600 focus:outline-none"
+								onclick={(e) => {
+									e.stopPropagation();
+									editingIndex = key;
+								}}
+							>
+								{row.unit ?? 0}
+							</button>
+						{/if}
+					</td>
+
+					<td class="p-2 border border-gray-200 text-sm text-gray-600">
+						<div>{row.nav ? row.nav.toFixed(2) : '0.00'}</div>
+						<div class="text-xs">({row.nav_date})</div>
+					</td>
+
+					<td class="p-2 border border-gray-200 text-sm text-gray-600">
+						{((row.unit ?? 0) * (row.nav ?? 0)).toLocaleString('en-IN', {
+							minimumFractionDigits: 2,
+							maximumFractionDigits: 2
+						})}
+					</td>
+
+					<td class="p-1 border border-gray-200">
+						<button
+							class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium px-2 py-1 rounded-md text-xs shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+							onclick={() => handleFetchBtnClick(key)}
+						>
+							Fetch Portfolio
+						</button>
+					</td>
 				</tr>
-			{/each}
+			{/snippet}
+			{@render tableRow('nps')}
+			{@render tableRow('midcap')}
+			{@render tableRow('smallcap')}
+			<!-- {@render tableRow('direct', data['direct'].name, data['direct'].unit, data['direct'].nav)} -->
 		</tbody>
 	</table>
 </div>
 
-
 <!-- Breakdown Table Preview Component -->
 {#if fetchedJson?.holdings?.length > 0}
-    <div class="mt-8 p-5 border border-blue-200 bg-blue-50/20 rounded-xl shadow-sm">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h3 class="text-base font-bold text-gray-800">
-                Fetched Portfolio Breakdown of <span class="text-blue-700">{fetchedJson.scrip}</span> as on {fetchedJson.asOn}
-            </h3>
-            <button 
-                class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm"
-                onclick={handleSaveBreakdown}
-            >
-                Save to Row Data
-            </button>
-        </div>
-        
-        <div class="overflow-x-auto border border-gray-200 rounded-lg bg-white">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200">
-                        {#each Object.keys(fetchedJson.holdings[0]) as header}
-                            <th class="p-2.5 font-semibold text-xs text-gray-600 uppercase tracking-wider">{header}</th>
-                        {/each}
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {#each fetchedJson.holdings as item}
-                        <tr class="hover:bg-gray-50/50 transition-colors">
-                            {#each Object.keys(fetchedJson.holdings[0]) as key}
-                                <td class="p-2.5 text-sm text-gray-600">
-                                    {item[key]}
-                                </td>
-                            {/each}
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-    </div>
+	<div class="mt-8 p-5 border border-blue-200 bg-blue-50/20 rounded-xl shadow-sm">
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+			<h3 class="text-base font-bold text-gray-800">
+				Fetched Portfolio Breakdown of <span class="text-blue-700">{fetchedJson.scrip}</span> as on {fetchedJson.asOn}
+			</h3>
+			<div>
+				<button
+					class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm"
+					onclick={async () => {
+						await handleSaveBreakdown(
+							fetchedJson.key,
+							JSON.stringify(fetchedJson.holdings),
+							fetchedJson.asOn
+						);
+						fetchedJson = null;
+					}}
+				>
+					Save to Row Data
+				</button>
+
+				<button
+					onclick={() => (fetchedJson = null)}
+					class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm"
+					>Ok</button
+				>
+			</div>
+		</div>
+
+		<div class="overflow-x-auto border border-gray-200 rounded-lg bg-white">
+			<table class="w-full text-left border-collapse">
+				<thead>
+					<tr class="bg-gray-50 border-b border-gray-200">
+						{#each Object.keys(fetchedJson.holdings[0]) as header}
+							<th class="p-2.5 font-semibold text-xs text-gray-600 uppercase tracking-wider"
+								>{header}</th
+							>
+						{/each}
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200">
+					{#each fetchedJson.holdings as item}
+						<tr class="hover:bg-gray-50/50 transition-colors">
+							{#each Object.keys(fetchedJson.holdings[0]) as key}
+								<td class="p-2.5 text-sm text-gray-600">
+									{item[key]}
+								</td>
+							{/each}
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</div>
 {/if}
+
+<!-- My Holdings -->
+<div>
+	<button onclick={mapMarketcap}>Map Marketcap</button>
+	<div class="flex flex-row justify-around bg-gray-200 p-2 m-2">
+		<button
+			onclick={() => (view = 'holding')}
+			class="rounded px-2 py-1.5"
+			class:bg-indigo-600={view === 'holding'}
+			class:text-white={view === 'holding'}>All Holdings</button
+		>
+		<button
+			onclick={() => (view = 'analysis')}
+			class="rounded px-2 py-1.5"
+			class:bg-indigo-600={view === 'analysis'}
+			class:text-white={view === 'analysis'}>Top 10 Holdings</button
+		>
+		<h2>Sector Allocation</h2>
+	</div>
+
+	{#if (localRows?.my_holding?.holding?.length > 0) & (view == 'holding')}
+		<table class="w-full text-left border-collapse">
+			<thead>
+				<tr class="bg-gray-50 border-b border-gray-200">
+					<th class="p-2.5 font-semibold text-xs text-gray-600 uppercase tracking-wider">Sl. No.</th
+					>
+					{#each Object.keys(localRows.my_holding.holding[0]) as header}
+						<th class="p-2.5 font-semibold text-xs text-gray-600 uppercase tracking-wider"
+							>{header}</th
+						>
+					{/each}
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-gray-200">
+				{#each localRows.my_holding.holding as item, index}
+					<tr class="hover:bg-gray-50/50 transition-colors">
+						<td class="p-2.5 text-sm text-gray-600">
+							{index + 1}
+						</td>
+						{#each Object.keys(localRows.my_holding.holding[0]) as key}
+							<td class="p-2.5 text-sm text-gray-600">
+								{item[key]}
+							</td>
+						{/each}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+</div>
