@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { deserialize } from '$app/forms';
 	import * as XLSX from 'xlsx';
+	import Pie from './Pie.svelte';
 	import dayjs from 'dayjs';
 	// 1. Accept server reactive bounds safely
 	let { data } = $props();
@@ -577,5 +578,13 @@
 				'en-IN'
 			)})
 		</p>
+		
+		{@const sections = [
+      { value: marketcap_weight.large_amt, percent: marketcap_weight.large_pct, color: '#ff6b6b', text: 'Large' },
+      { value: marketcap_weight.mid_amt, percent: marketcap_weight.mid_pct, color: '#4dadf7', text: 'Mid' },
+      { value: marketcap_weight.small_amt, percent: marketcap_weight.small_pct, color: '#33d9b2', text: 'Small' },
+      { value: marketcap_weight.other_amt, percent: marketcap_weight.other_pct, color: '#ffb142', text: 'Other' }
+    ]}
+		<Pie {sections} size={300}/>
 	{/if}
 </div>
