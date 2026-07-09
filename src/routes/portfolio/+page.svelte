@@ -6,7 +6,14 @@
 	import dayjs from 'dayjs';
 	// 1. Accept server reactive bounds safely
 	let { data } = $props();
-	let view = $state('holding');
+
+	const initialView = browser ? localStorage.getItem('lastview') : null;
+	let view = $state(initialView || 'holding');
+
+	$effect(() => {
+		// This automatically runs whenever the 'view' variable changes
+		localStorage.setItem('lastview', view);
+	});
 
 	// if (browser) $inspect(data);
 
@@ -16,12 +23,19 @@
 	// 3. Keep localRows in perfect alignment whenever server `data` changes
 	$effect(async () => {
 		const navData = await fetchNAVData();
-		localRows.nps = { ...data.nps, ...navData.nps };
-		localRows.midcap = { ...data.midcap, ...navData.midcap };
-		localRows.smallcap = { ...data.smallcap, ...navData.smallcap };
-		localRows.direct = { ...data.direct };
+		// localRows.nps = { ...data.nps, ...navData.nps };
+		// localRows.midcap = { ...data.midcap, ...navData.midcap };
+		// localRows.smallcap = { ...data.smallcap, ...navData.smallcap };
+		// localRows.direct = { ...data.direct };
+		localRows = {
+			nps: { ...data.nps, ...navData.nps },
+			midcap: { ...data.midcap, ...navData.midcap },
+			smallcap: { ...data.smallcap, ...navData.smallcap },
+			direct: { ...data.direct },
+			amfi: { ...data.amfi }
+		};
 		const my_holding = getMyHoldings($state.snapshot(localRows));
-		localRows.my_holding = { holding: my_holding };
+		localRows.my_holding = { ...my_holding };
 	});
 	if (browser) $inspect(localRows);
 
@@ -214,7 +228,7 @@
 	}
 
 	function getMyHoldings(localRows) {
-		console.log(localRows);
+		// console.log(localRows);
 		const isinSet = [
 			...new Set([
 				...localRows.nps.holding.map((x) => x.ISIN),
@@ -226,6 +240,7 @@
 		const npsHoldingMap = new Map(localRows.nps.holding.map((x) => [x.ISIN, x]));
 		const midcapHoldingMap = new Map(localRows.midcap.holding.map((x) => [x.ISIN, x]));
 		const smallcapHoldingMap = new Map(localRows.smallcap.holding.map((x) => [x.ISIN, x]));
+		const amfiMarketcapMap = new Map(localRows.amfi.holding.map((x) => [x.ISIN, x]));
 
 		const my_holding = isinSet
 			.map((isin) => {
@@ -272,14 +287,49 @@
 				return {
 					Scrip,
 					ISIN,
+					HoldingAmt_num: Math.round(HoldingAmt),
 					HoldingAmt: Math.round(HoldingAmt).toLocaleString('en-IN'),
+					HoldingPct_num: HoldingPct,
 					HoldingPct: HoldingPct.toFixed(2),
 					hasIn
 				};
 			})
 			.sort((a, b) => b.HoldingPct - a.HoldingPct);
 
-		return my_holding;
+		const marketcap_weight = {
+			large_amt: 0,
+			large_pct: 0,
+			mid_amt: 0,
+			mid_pct: 0,
+			small_amt: 0,
+			small_pct: 0,
+			other_amt: 0,
+			other_pct: 0
+		};
+		my_holding.map((row) => {
+			const isin = row.ISIN;
+			if (amfiMarketcapMap.get(isin)) {
+				const mcap = amfiMarketcapMap.get(isin).Marketcap;
+				if (mcap === 'Large Cap') {
+					marketcap_weight.large_amt += row.HoldingAmt_num;
+					marketcap_weight.large_pct += row.HoldingPct_num;
+				} else if (mcap === 'Mid Cap') {
+					marketcap_weight.mid_amt += row.HoldingAmt_num;
+					marketcap_weight.mid_pct += row.HoldingPct_num;
+				} else if (mcap === 'Small Cap') {
+					marketcap_weight.small_amt += row.HoldingAmt_num;
+					marketcap_weight.small_pct += row.HoldingPct_num;
+				} else {
+					marketcap_weight.other_amt += row.HoldingAmt_num;
+					marketcap_weight.other_pct += row.HoldingPct_num;
+				}
+			} else {
+				marketcap_weight.other_amt += row.HoldingAmt_num;
+				marketcap_weight.other_pct += row.HoldingPct_num;
+			}
+		});
+
+		return { holding: my_holding, marketcap_weight };
 	}
 
 	async function mapMarketcap() {
@@ -301,6 +351,12 @@
 				};
 			});
 		console.log(json);
+		fetchedJson = {
+			asOn: dayjs().format('DD-MMM-YYYY'),
+			holdings: json,
+			key: 'amfi',
+			scrip: 'Marketcap Map'
+		};
 	}
 </script>
 
@@ -470,7 +526,7 @@
 		<h2>Sector Allocation</h2>
 	</div>
 
-	{#if (localRows?.my_holding?.holding?.length > 0) & (view == 'holding')}
+	{#if (localRows?.my_holding?.holding?.length > 0) & (view === 'holding')}
 		<table class="w-full text-left border-collapse">
 			<thead>
 				<tr class="bg-gray-50 border-b border-gray-200">
@@ -498,5 +554,28 @@
 				{/each}
 			</tbody>
 		</table>
+	{/if}
+
+	{#if (localRows?.my_holding?.holding?.length > 0) & (view === 'analysis')}
+		{@const marketcap_weight = localRows.my_holding.marketcap_weight}
+		<p>
+			Large: {marketcap_weight.large_pct.toFixed(2)}
+			({marketcap_weight.large_amt.toLocaleString('en-IN')})
+		</p>
+		<p>
+			Mid: {marketcap_weight.mid_pct.toFixed(2)} ({marketcap_weight.mid_amt.toLocaleString(
+				'en-IN'
+			)})
+		</p>
+		<p>
+			Small: {marketcap_weight.small_pct.toFixed(2)} ({marketcap_weight.small_amt.toLocaleString(
+				'en-IN'
+			)})
+		</p>
+		<p>
+			Other: {marketcap_weight.other_pct.toFixed(2)} ({marketcap_weight.other_amt.toLocaleString(
+				'en-IN'
+			)})
+		</p>
 	{/if}
 </div>

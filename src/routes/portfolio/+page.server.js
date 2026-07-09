@@ -17,7 +17,8 @@ db.exec(`
     ('nps', 'ICICI Scheme-E'),
     ('midcap', 'Edelweiss Mid Cap'),
     ('smallcap', 'Bandhan Small Cap'),
-    ('direct', 'Direct Stocks');
+    ('direct', 'Direct Stocks'),
+    ('amfi', 'Marketcap Map');
     `)
 
 
@@ -51,6 +52,7 @@ export const load = async () => {
             midcap: rowMap['midcap'],
             smallcap: rowMap['smallcap'],
             direct: rowMap['direct'],
+            amfi: rowMap['amfi'],
             my_holding: {}
         };
 
