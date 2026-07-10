@@ -12,6 +12,9 @@
 	const initialView = browser ? localStorage.getItem('lastview') : null;
 	let view = $state(initialView || 'holding');
 
+	let inputElements = {};
+	let textareaElement;
+
 	$effect(() => {
 		// This automatically runs whenever the 'view' variable changes
 		localStorage.setItem('lastview', view);
@@ -21,6 +24,7 @@
 
 	// 2. Initialize an empty local reactive state shell
 	let localRows = $state({ nps: {}, midcap: {}, smallcap: {}, direct: {} });
+	let textareaString = $derived(JSON.stringify(localRows.direct.holding, null, 2));
 
 	// 3. Keep localRows in perfect alignment whenever server `data` changes
 	$effect(async () => {
@@ -41,7 +45,7 @@
 	let fetchedJson = $state({ asOn: '', holdings: [], key: '', scrip: '' });
 	let editingIndex = $state(null);
 
-	async function triggerServerAction(key, unitValue) {
+	async function saveUnit(key, unitValue) {
 		const formData = new FormData();
 		formData.append('key', key);
 		formData.append('unit', unitValue || 0);
@@ -54,8 +58,6 @@
 		const result = deserialize(await response.text());
 
 		if (result.type === 'success') {
-			// Re-runs server load functions. The $effect block above
-			// will automatically re-clone the fresh data down to localRows.
 			await invalidateAll();
 		} else {
 			alert('Failed to save changes to the database.');
@@ -66,10 +68,22 @@
 		if (editingIndex === null) return;
 
 		const target = event.target;
-		if (!target.closest('.editing-input') && !target.closest('.action-btn')) {
-			const currentKey = editingIndex;
+		const currentKey = editingIndex;
+
+		const activeElement = currentKey === 'direct' ? textareaElement : inputElements[currentKey];
+
+		if (target !== activeElement) {
 			editingIndex = null;
-			await triggerServerAction(currentKey, localRows[currentKey].unit);
+			if (currentKey === 'direct') {
+				localRows.direct.holding = JSON.parse(textareaString);
+				await saveHolding(
+					currentKey,
+					JSON.stringify(localRows[currentKey].holding),
+					dayjs().format('DD-MMM-YYYY')
+				);
+			} else {
+				await saveUnit(currentKey, localRows[currentKey].unit);
+			}
 		}
 	}
 
@@ -152,7 +166,7 @@
 		}
 	}
 
-	async function handleSaveBreakdown(key, holding, holding_date) {
+	async function saveHolding(key, holding, holding_date) {
 		const formData = new FormData();
 		formData.append('key', key);
 		formData.append('holding', holding);
@@ -166,8 +180,6 @@
 		const result = deserialize(await response.text());
 
 		if (result.type === 'success') {
-			// Re-runs server load functions. The $effect block above
-			// will automatically re-clone the fresh data down to localRows.
 			await invalidateAll();
 		} else {
 			alert('Failed to save changes to the database.');
@@ -232,21 +244,35 @@
 			...new Set([
 				...localRows.nps.holding.map((x) => x.ISIN),
 				...localRows.midcap.holding.map((x) => x.ISIN),
-				...localRows.smallcap.holding.map((x) => x.ISIN)
+				...localRows.smallcap.holding.map((x) => x.ISIN),
+				...localRows.direct.holding.map((x) => x.ISIN)
 			])
 		];
 
 		const npsHoldingMap = new Map(localRows.nps.holding.map((x) => [x.ISIN, x]));
 		const midcapHoldingMap = new Map(localRows.midcap.holding.map((x) => [x.ISIN, x]));
 		const smallcapHoldingMap = new Map(localRows.smallcap.holding.map((x) => [x.ISIN, x]));
+		const directHoldingMap = new Map(localRows.direct.holding.map((x) => [x.ISIN, x]));
 		const amfiMarketcapMap = new Map(localRows.amfi.holding.map((x) => [x.ISIN, x]));
+
+		const totalDirectHolding = localRows.direct.holding.reduce((acc, row) => {
+			acc += row.unit * row.nav;
+			return acc;
+		}, 0);
+
+		const totalHolding =
+			totalDirectHolding +
+			localRows.nps.nav * localRows.nps.unit +
+			localRows.midcap.nav * localRows.midcap.unit +
+			localRows.smallcap.nav * localRows.smallcap.unit;
 
 		const my_holding = isinSet
 			.map((isin) => {
 				const Scrip =
 					npsHoldingMap.get(isin)?.Scrip ??
 					midcapHoldingMap.get(isin)?.Scrip ??
-					smallcapHoldingMap.get(isin)?.Scrip;
+					smallcapHoldingMap.get(isin)?.Scrip ??
+					directHoldingMap.get(isin).Scrip;
 
 				const ISIN = isin;
 				const HoldingAmt =
@@ -264,13 +290,12 @@
 								localRows.smallcap.nav *
 								localRows.smallcap.unit) /
 							100
+						: 0) +
+					(directHoldingMap.get(isin)
+						? directHoldingMap.get(isin).unit * directHoldingMap.get(isin).nav
 						: 0);
 
-				const HoldingPct =
-					(HoldingAmt * 100) /
-					(localRows.nps.nav * localRows.nps.unit +
-						localRows.midcap.nav * localRows.midcap.unit +
-						localRows.smallcap.nav * localRows.smallcap.unit);
+				const HoldingPct = (HoldingAmt * 100) / totalHolding;
 
 				const hasIn =
 					(npsHoldingMap.get(isin)
@@ -281,6 +306,9 @@
 						: '') +
 					(smallcapHoldingMap.get(isin)
 						? `Small Cap (${Math.round((smallcapHoldingMap.get(isin).HoldingPct * localRows.smallcap.nav * localRows.smallcap.unit) / 100).toLocaleString('en-IN')}),`
+						: '') +
+					(directHoldingMap.get(isin)
+						? `Direct (${Math.round(directHoldingMap.get(isin).unit * directHoldingMap.get(isin).nav).toLocaleString('en-IN')}),`
 						: '');
 
 				return {
@@ -361,7 +389,7 @@
 	}
 </script>
 
-<svelte:window onclick={handleWindowClick} />
+<svelte:window onclickcapture={handleWindowClick} />
 
 <div class="p-1 max-w-7xl mx-auto">
 	<table
@@ -392,6 +420,7 @@
 					<td class="p-2 border border-gray-200 text-sm text-gray-600">
 						{#if editingIndex === key}
 							<input
+								bind:this={inputElements[key]}
 								bind:value={localRows[key].unit}
 								type="number"
 								step="any"
@@ -400,10 +429,10 @@
 									if (e.key === 'Enter') {
 										const currentKey = editingIndex;
 										editingIndex = null;
-										await triggerServerAction(currentKey, localRows[currentKey].unit);
+										await saveUnit(currentKey, localRows[currentKey].unit);
 									} else if (e.key === 'Escape') {
 										editingIndex = null;
-										row.unit = data[key].unit;
+										localRows[key].unit = data[key].unit;
 									}
 								}}
 								use:autofocus
@@ -446,9 +475,19 @@
 			{@render tableRow('nps')}
 			{@render tableRow('midcap')}
 			{@render tableRow('smallcap')}
-			<!-- {@render tableRow('direct', data['direct'].name, data['direct'].unit, data['direct'].nav)} -->
 		</tbody>
 	</table>
+
+	<h1>Direct Stocks</h1>
+	<textarea
+		class="editing-input w-full border-amber-500 border outline-amber-500 rounded p-2"
+		rows="5"
+		bind:value={textareaString}
+		bind:this={textareaElement}
+		onfocus={() => {
+			editingIndex = 'direct';
+		}}
+	></textarea>
 </div>
 
 <!-- Breakdown Table Preview Component -->
@@ -462,7 +501,7 @@
 				<button
 					class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors shadow-sm"
 					onclick={async () => {
-						await handleSaveBreakdown(
+						await saveHolding(
 							fetchedJson.key,
 							JSON.stringify(fetchedJson.holdings),
 							fetchedJson.asOn
@@ -533,7 +572,7 @@
 			<button
 				class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-2 py-0.5 rounded-md shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
 				onclick={() =>
-					handleSaveBreakdown(
+					saveHolding(
 						'my_holding',
 						JSON.stringify(localRows.my_holding.holding),
 						dayjs().format('DD-MMM-YYYY')

@@ -23,14 +23,14 @@ db.exec(`
     `)
 
 
-export const load = async () => {
+export const load = async ({ fetch }) => {
     try {
         const dbRows = db.prepare('SELECT * FROM portfolio').all();
 
-         // Convert the flat array into a key-value object map: { nps: {...}, midcap: {...} } and parse holding
+        // Convert the flat array into a key-value object map: { nps: {...}, midcap: {...} } and parse holding
         const rowMap = dbRows.reduce((acc, row) => {
             let parsedHolding = [];
-            
+
             if (row.holding) {
                 try {
                     parsedHolding = JSON.parse(row.holding);
@@ -44,9 +44,35 @@ export const load = async () => {
                 ...row,
                 holding: parsedHolding
             };
-            
+
             return acc;
         }, {});
+
+
+        const requests = rowMap['direct'].holding.map(x => {
+            return fetch(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${x.symbol}/daily?intervalInMinutes=1&minimal=true`)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.candles && data.candles.length > 0) {
+                        return { symbol: x.symbol, nav: data.candles.at(-1)[1] };
+                    }
+                    return ({ symbol: x.symbol, nav: null });
+                })
+                .catch(() => ({ symbol: x.symbol, nav: null }));
+        });
+
+        const dynamicPrices = await Promise.all(requests);
+
+        // console.log(dynamicPrices)
+
+        const priceMap = Object.fromEntries(dynamicPrices.map(p => [p.symbol, p.nav]));
+
+        rowMap['direct'].holding = rowMap['direct'].holding.map(item => ({
+            ...item,
+            nav: priceMap[item.symbol] ?? null,
+            marketValue: priceMap[item.symbol] ? (priceMap[item.symbol] * (item.unit || 0)) : null
+        }));
+
 
         return {
             nps: rowMap['nps'],
@@ -75,9 +101,9 @@ export const actions = {
         }
 
         try {
-            
+
             db.prepare(`UPDATE portfolio SET unit=? WHERE key=?`).run(unit, key);
-            
+
             return { success: true };
         } catch (error) {
             console.error('Database save failed:', error);
@@ -96,9 +122,9 @@ export const actions = {
         }
 
         try {
-            
+
             db.prepare(`UPDATE portfolio SET holding=?, holding_date=? WHERE key=?`).run(holding, holding_date, key);
-            
+
             return { success: true };
         } catch (error) {
             console.error('Database save failed:', error);
