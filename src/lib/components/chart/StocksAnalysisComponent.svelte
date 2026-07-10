@@ -106,5 +106,12 @@
 </div>
 
 <div class="overflow-auto flex-1">
-	<StockBlock data={filteredStockList} {selectedStockId} />
+	<StockBlock
+		data={filteredStockList.map((x) => ({
+			symbol: x.symbol,
+			name: x.name,
+			value: `${Math.round(x.marketcap / 10000000).toLocaleString('en-IN')} Cr`
+		}))}
+		{selectedStockId}
+	/>
 </div>

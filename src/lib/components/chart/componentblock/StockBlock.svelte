@@ -3,6 +3,10 @@
 	import FlagIcon from '../Icons/FlagIcon.svelte';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 
+	/**
+	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc]
+	 */
+
 	let { data, selectedStockId } = $props();
 	let contextMenu = $state({ visible: false, x: 0, y: 0, stock: null });
 	let stockColors = $derived(ChartState.flags);
@@ -95,7 +99,7 @@
 				<span class="text-sm/tight">{stock.symbol}</span>
 
 				<span class="text-xs/tight text-gray-500">
-					{Math.floor(stock.marketcap / 10000000).toLocaleString('en-IN')} Cr
+					{stock.value}
 				</span>
 			</div>
 

@@ -18,7 +18,8 @@ db.exec(`
     ('midcap', 'Edelweiss Mid Cap'),
     ('smallcap', 'Bandhan Small Cap'),
     ('direct', 'Direct Stocks'),
-    ('amfi', 'Marketcap Map');
+    ('amfi', 'Marketcap Map'),
+    ('my_holding', 'My Holding');
     `)
 
 
@@ -53,7 +54,7 @@ export const load = async () => {
             smallcap: rowMap['smallcap'],
             direct: rowMap['direct'],
             amfi: rowMap['amfi'],
-            my_holding: {}
+            my_holding: rowMap['my_holding']
         };
 
     } catch (err) {

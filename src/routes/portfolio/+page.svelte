@@ -24,19 +24,16 @@
 	// 3. Keep localRows in perfect alignment whenever server `data` changes
 	$effect(async () => {
 		const navData = await fetchNAVData();
-		// localRows.nps = { ...data.nps, ...navData.nps };
-		// localRows.midcap = { ...data.midcap, ...navData.midcap };
-		// localRows.smallcap = { ...data.smallcap, ...navData.smallcap };
-		// localRows.direct = { ...data.direct };
 		localRows = {
 			nps: { ...data.nps, ...navData.nps },
 			midcap: { ...data.midcap, ...navData.midcap },
 			smallcap: { ...data.smallcap, ...navData.smallcap },
 			direct: { ...data.direct },
-			amfi: { ...data.amfi }
+			amfi: { ...data.amfi },
+			my_holding: { ...data.my_holding }
 		};
 		const my_holding = getMyHoldings($state.snapshot(localRows));
-		localRows.my_holding = { ...my_holding };
+		localRows.my_holding = { ...localRows.my_holding, ...my_holding };
 	});
 	if (browser) $inspect(localRows);
 
@@ -288,6 +285,7 @@
 				return {
 					Scrip,
 					ISIN,
+					symbol: amfiMarketcapMap.get(isin)?.symbol,
 					HoldingAmt_num: Math.round(HoldingAmt),
 					HoldingAmt: Math.round(HoldingAmt).toLocaleString('en-IN'),
 					HoldingPct_num: HoldingPct,
@@ -348,6 +346,7 @@
 				return {
 					Scrip: row['Company name'],
 					ISIN: row['ISIN'],
+					symbol: row['NSE Symbol'] === '-' ? row['BSE Symbol'] : row['NSE Symbol'],
 					Marketcap: row['Categorization as per SEBI Circular dated Oct 6, 2017']
 				};
 			});
@@ -528,6 +527,18 @@
 	</div>
 
 	{#if (localRows?.my_holding?.holding?.length > 0) & (view === 'holding')}
+		<div class="flex flex-row justify-end gap-2 p-2">
+			<p>Last Saved: {localRows.my_holding.holding_date}</p>
+			<button
+				class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-2 py-0.5 rounded-md shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+				onclick={() =>
+					handleSaveBreakdown(
+						'my_holding',
+						JSON.stringify(localRows.my_holding.holding),
+						dayjs().format('DD-MMM-YYYY')
+					)}>Save</button
+			>
+		</div>
 		<table class="w-full text-left border-collapse">
 			<thead>
 				<tr class="bg-gray-50 border-b border-gray-200">
@@ -578,13 +589,33 @@
 				'en-IN'
 			)})
 		</p>
-		
+
 		{@const sections = [
-      { value: marketcap_weight.large_amt, percent: marketcap_weight.large_pct, color: '#ff6b6b', text: 'Large' },
-      { value: marketcap_weight.mid_amt, percent: marketcap_weight.mid_pct, color: '#4dadf7', text: 'Mid' },
-      { value: marketcap_weight.small_amt, percent: marketcap_weight.small_pct, color: '#33d9b2', text: 'Small' },
-      { value: marketcap_weight.other_amt, percent: marketcap_weight.other_pct, color: '#ffb142', text: 'Other' }
-    ]}
-		<Pie {sections} size={300}/>
+			{
+				value: marketcap_weight.large_amt,
+				percent: marketcap_weight.large_pct,
+				color: '#ff6b6b',
+				text: 'Large'
+			},
+			{
+				value: marketcap_weight.mid_amt,
+				percent: marketcap_weight.mid_pct,
+				color: '#4dadf7',
+				text: 'Mid'
+			},
+			{
+				value: marketcap_weight.small_amt,
+				percent: marketcap_weight.small_pct,
+				color: '#33d9b2',
+				text: 'Small'
+			},
+			{
+				value: marketcap_weight.other_amt,
+				percent: marketcap_weight.other_pct,
+				color: '#ffb142',
+				text: 'Other'
+			}
+		]}
+		<Pie {sections} size={300} />
 	{/if}
 </div>
