@@ -55,7 +55,7 @@
 		data={filteredStockList.map((x) => ({
 			symbol: x.symbol,
 			name: x.Scrip,
-			value: `${x.HoldingPct}%`
+			value: `${x.HoldingPct}% (${x.HoldingAmt})`
 		}))}
 		{selectedStockId}
 	/>
