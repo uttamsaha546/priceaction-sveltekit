@@ -5,6 +5,7 @@
 	import * as XLSX from 'xlsx';
 	import Pie from './Pie.svelte';
 	import dayjs from 'dayjs';
+	import { autofocus } from './temp';
 	// 1. Accept server reactive bounds safely
 	let { data } = $props();
 
@@ -405,7 +406,7 @@
 										row.unit = data[key].unit;
 									}
 								}}
-								autofocus
+								use:autofocus
 							/>
 						{:else}
 							<button
