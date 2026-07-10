@@ -4,7 +4,8 @@
 	import StarIcon from './Icons/StarIcon.svelte';
 	import LeftArrowIcon from './Icons/LeftArrowIcon.svelte';
 
-	let selectedFundType = $state(null);
+let isLocked = $state(true);
+	let selectedFundType = $state('Mid Cap');
 	let data = $state([]);
 	let sortBy = $state('');
 	let sortedData = $derived.by(() => {
@@ -93,12 +94,16 @@
 			<option value="5y">5Y</option>
 		</select>
 	</div>
+	
+	<input type="checkbox" bind:checked ={isLocked}/>
 
 	<div class="Content flex-1 overflow-auto">
 		{#each sortedData as fund}
 			<div
 				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"
 				onclick={async () => {
+				
+				if(isLocked){
 					ChartState.isLoading = true;
 					const a = await fetch(
 						`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
@@ -107,6 +112,10 @@
 					ChartState.lineData = data.data;
 					ChartState.currentScrip = data.name;
 					ChartState.isLoading = false;
+					}else{
+					isHoldingPage = true;
+					clickedFund = fund;
+					}
 				}}
 				role
 			>
