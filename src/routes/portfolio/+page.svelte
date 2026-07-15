@@ -131,31 +131,35 @@
 					fetchedJson = { asOn: dated, holdings: d, key: key, scrip: localRows[key].name };
 				}
 			} else if (key === 'midcap' || key === 'smallcap') {
-				const isin = key === 'midcap' ? 'INF843K01AO4' : 'INF194KB1AL4';
-				const a = await fetch('/proxy?url=https://mf-openweb-search.dhan.co/SectorAllocation', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						entity_id: 'DhanWeb',
-						source: 'W',
-						token_id: '9c5688945773312281d7',
-						data: { scheme_isin: isin }
-					})
-				}).then((x) => x.json());
+				const id =
+					key === 'midcap'
+						? 'edelweiss-mid-and-small-cap-fund-direct-growth'
+						: 'bandhan-small-cap-fund-direct-growth';
+				const a = await fetch(
+					`/proxy?url=https://groww.in/v1/api/data/mf/web/v6/scheme/search/${id}`
+				).then((x) => x.json());
 
-				if (a.status === 'success' && a.data?.length > 0) {
-					const dated = dayjs(a.data[0].pmd_portfolio_date).format('DD-MMM-YYYY');
-					const b = a.data
-						.sort((m, n) => parseFloat(n.pmd_weighting) - parseFloat(m.pmd_weighting))
+				const IdToIsinMap = new Map(
+					(await fetch('/api/groww').then((x) => x.json())).map((x) => [x.searchId, x.isin])
+				);
+
+				console.log(a);
+
+				if (a?.holdings?.length > 0) {
+					const dated = dayjs(a.holdings[0].portfolio_date).format('DD-MMM-YYYY');
+					const b = a.holdings
+						.sort((m, n) => parseFloat(n.corpus_per) - parseFloat(m.corpus_per))
 						.map((row) => {
-							if (row.pmd_holdingtype !== 'E' || row.pmd_weighting === '0') return false;
+							if (row.instrument_name !== 'Equity' || row.corpus_per === '0') return false;
 							return {
-								Scrip: row.pmd_name,
-								ISIN: row.pmd_isin,
-								HoldingPct: parseFloat(row.pmd_weighting)
+								Scrip: row.company_name,
+								ISIN: IdToIsinMap.get(row.stock_search_id),
+								HoldingPct: parseFloat(row.corpus_per)
 							};
 						})
 						.filter(Boolean);
+
+					console.log(b);
 
 					fetchedJson = { asOn: dated, holdings: b, key: key, scrip: localRows[key].name };
 				}
@@ -360,7 +364,7 @@
 		return { holding: my_holding, marketcap_weight };
 	}
 
-	async function mapMarketcap() {
+	async function mapISINToMarketcap() {
 		const buffer = await fetch(
 			`/proxy?url=https://portal.amfiindia.com/spages/AverageMarketCapitalization30Jun2026.xlsx`
 		).then((x) => x.arrayBuffer());
@@ -547,9 +551,11 @@
 	</div>
 {/if}
 
+<section>
+	<button onclick={mapISINToMarketcap}>Map ISIN - Large, Mid, Small</button>
+</section>
 <!-- My Holdings -->
-<div>
-	<button onclick={mapMarketcap}>Map Marketcap</button>
+<section>
 	<div class="flex flex-row justify-around bg-gray-200 p-2 m-2">
 		<button
 			onclick={() => (view = 'holding')}
@@ -658,4 +664,4 @@
 		]}
 		<Pie {sections} size={300} />
 	{/if}
-</div>
+</section>
