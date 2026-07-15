@@ -8,6 +8,7 @@ export const ChartState = (() => {
     let currentScrip = $state('');
     let groww = $state(null);
     let isLoading = $state(false);
+    let bottomRight = $state(null);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
 
@@ -37,6 +38,9 @@ export const ChartState = (() => {
 
         get isLoading() { return isLoading },
         set isLoading(val) { isLoading = val },
+
+        get bottomRight() { return bottomRight },
+        set bottomRight(val) { bottomRight = val },
     };
 })();
 

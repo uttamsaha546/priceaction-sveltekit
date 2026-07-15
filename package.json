@@ -32,7 +32,9 @@
 	},
 	"dependencies": {
 		"dayjs": "^1.11.21",
+		"fast-xml-parser": "^5.10.0",
 		"lightweight-charts": "^5.2.0",
-		"xlsx": "^0.18.5"
+		"xlsx": "^0.18.5",
+		"yahoo-finance2": "^4.0.0"
 	}
 }

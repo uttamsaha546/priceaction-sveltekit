@@ -78,6 +78,20 @@
 				>
 			</div>
 
+			<div class="Timeframe absolute bottom-10 right-16 z-20 flex items-center justify-center">
+				{#if ChartState.bottomRight}
+					<table>
+						<thead><tr><th>Current Year</th><th>Next Year</th></tr></thead><tbody>
+							<tr
+								><td>{ChartState?.bottomRight.currentYear}</td><td
+									>{ChartState?.bottomRight.nextYear}</td
+								></tr
+							></tbody
+						>
+					</table>
+				{/if}
+			</div>
+
 			{#if ChartState.isLoading}
 				<div class="absolute top-0 left-0 z-20 bg-gray-50/50 w-full h-full"></div>
 			{/if}
@@ -90,4 +104,47 @@
 	/* .main-container {
 		background-color: rgb(235, 235, 235);
 	} */
+
+	/* Table Layout and Typography */
+	table {
+		border-collapse: collapse; /* Merges borders into single clean lines */
+
+		font-size: 0.9rem;
+		font-family: sans-serif;
+
+		width: 100%;
+	}
+
+	/* Header Styling */
+	thead tr {
+		background-color: #009879;
+		color: #ffffff;
+		text-align: left;
+		font-weight: bold;
+	}
+
+	/* Cell Padding */
+	th,
+	td {
+		padding: 5px 8px;
+	}
+
+	/* Row Borders & Alternating Zebra Stripes */
+	tbody tr {
+		border-bottom: 1px solid #dddddd;
+	}
+
+	tbody tr:nth-of-type(even) {
+		background-color: #f3f3f3; /* Darkens every second row */
+	}
+
+	/* Bottom Highlight Line */
+	tbody tr:last-of-type {
+		border-bottom: 2px solid #009879;
+	}
+
+	/* Interactive Hover Feedback */
+	tbody tr:hover {
+		background-color: #f1f1f1;
+	}
 </style>
