@@ -32,12 +32,12 @@ export async function POST() {
                             "min": 0
                         },
                         "MARKET_CAP": {
-                            "min": 1000000000000,
+                            "min": 500000000000,
                             "max": 3000000000000000
                         }
                     },
                     "page": "0",
-                    "size": "2000",
+                    "size": "3000",
                     "sortBy": "MARKET_CAP",
                     "sortType": "DESC"
                 }
@@ -83,6 +83,17 @@ export async function POST() {
 
                 insertstatement.run(symbol, companyName, searchId, isin, bseScriptCode, nseScriptCode);
             }
+
+            insertstatement.run("BSE", "BSE Ltd", "bse-ltd", "INE118H01025", null, "BSE");
+            insertstatement.run("AFCOM", "Afcom Holdings", "afcom-holdings-ltd", "INE0OXY01013", "544224", null);
+            insertstatement.run("AMIRCHAND", "Amir Chand Jagdish Kumar (Exports) Ltd", "amir-chand-jagdish-kumar-exports-ltd", "INE05TO01019", "544743", "AMIRCHAND");
+            insertstatement.run("ANLON", "Anlon Technology Solution Ltd", "anlon-technology-solution-ltd", "INE0LR101013", null, "ANLON");
+            insertstatement.run("HEXAGON", "Hexagon Nutrition", "hexagon-nutrition-ltd", "INE0JUI01012", "544785", "HEXAGON");
+            insertstatement.run("HORIZON", "Horizon Reclaim (India) Ltd", "horizon-reclaim-india-ltd", "INE1SEO01013", "544794", null);
+            insertstatement.run("POWERICA", "Powerica Ltd", "powerica-ltd", "INE921L01032", "544744", "POWERICA");
+            insertstatement.run("KISSHT", "OnEMI Technology Solutions Ltd", "onemi-technology-solutions-ltd", "INE12F801023", "544754", "KISSHT");
+            insertstatement.run("FINBUD", "Finbud Financial Services Ltd", "finbud-financial-services-ltd", "INE0EDU01014", null, "FINBUD");
+            insertstatement.run("GUJENERGY", "Gujarat Energy Ltd", "gujarat-gas-ltd", "INE844O01030", "539336", "GUJENERGY");
 
             upsertMeta.run({
                 tablename: "groww",
