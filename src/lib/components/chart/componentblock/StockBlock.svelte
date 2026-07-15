@@ -117,7 +117,7 @@
 
 <svelte:window onclick={closeMenu} />
 
-{#each data as stock, stockIndex (stock.symbol)}
+{#each data as stock, stockIndex (stockIndex)}
 	<div
 		role="listbox"
 		tabindex={selectedStockId === stock.symbol ? 0 : -1}
