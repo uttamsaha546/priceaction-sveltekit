@@ -3,8 +3,9 @@
 	import dayjs from 'dayjs';
 	import StarIcon from './Icons/StarIcon.svelte';
 	import LeftArrowIcon from './Icons/LeftArrowIcon.svelte';
+	import StockBlock from './componentblock/StockBlock.svelte';
 
-let isLocked = $state(true);
+	let isLocked = $state(true);
 	let selectedFundType = $state('Mid Cap');
 	let data = $state([]);
 	let sortBy = $state('');
@@ -94,27 +95,26 @@ let isLocked = $state(true);
 			<option value="5y">5Y</option>
 		</select>
 	</div>
-	
-	<input type="checkbox" bind:checked ={isLocked}/>
+
+	<input type="checkbox" bind:checked={isLocked} />
 
 	<div class="Content flex-1 overflow-auto">
 		{#each sortedData as fund}
 			<div
 				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"
 				onclick={async () => {
-				
-				if(isLocked){
-					ChartState.isLoading = true;
-					const a = await fetch(
-						`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
-					);
-					const data = (await a.json()).folio;
-					ChartState.lineData = data.data;
-					ChartState.currentScrip = data.name;
-					ChartState.isLoading = false;
-					}else{
-					isHoldingPage = true;
-					clickedFund = fund;
+					if (isLocked) {
+						ChartState.isLoading = true;
+						const a = await fetch(
+							`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/data/mf/web/v1/scheme/${fund.scheme_code}/graph?benchmark=false&months=1000`)}`
+						);
+						const data = (await a.json()).folio;
+						ChartState.lineData = data.data;
+						ChartState.currentScrip = data.name;
+						ChartState.isLoading = false;
+					} else {
+						isHoldingPage = true;
+						clickedFund = fund;
 					}
 				}}
 				role
@@ -180,7 +180,7 @@ let isLocked = $state(true);
 	</div>
 
 	<div class="Content flex-1 overflow-auto">
-		{#each holdingsData as holding}
+		<!-- {#each holdingsData as holding}
 			<div
 				class="HoldingCard border-b border-gray-300 text-xs/tight p-1"
 				onclick={() => {
@@ -198,6 +198,13 @@ let isLocked = $state(true);
 
 				<h3 class="truncate text-gray-600 text-sm/tight">{holding.company_name}</h3>
 			</div>
-		{/each}
+		{/each} -->
+		<StockBlock
+			data={holdingsData.map((holding) => ({
+				symbol: holding.symbol,
+				name: holding.company_name,
+				value: `${Math.round(holding.corpus_per * 100) / 100}}%`
+			}))}
+		/>
 	</div>
 </div>

@@ -7,7 +7,7 @@
 	import { extractNseXbrlData } from './func';
 
 	/**
-	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc]
+	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
 	 */
 
 	let { data, selectedStockId } = $props();
