@@ -5,6 +5,7 @@
 	import { deserialize } from '$app/forms';
 
 	import { extractNseXbrlData } from './func';
+	import NSeScraper from './NseScraper';
 
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
@@ -25,6 +26,8 @@
 		transparent: 'transparent'
 	};
 
+	const nseScraper = new NSeScraper();
+
 	const flagColors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan', 'pink'];
 
 	async function fetchGraphData(symbol) {
@@ -43,71 +46,58 @@
 	}
 
 	async function getEarningsTrend(symbol) {
-		const [resA, resB] = await Promise.all([
-			fetch(
-				`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/corporates-financial-results?index=equities&symbol=NAVINFLUOR&period=Quarterly`)}`
-			),
-			fetch(
-				`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/integrated-filing-results?&symbol=NAVINFLUOR&type=Integrated%20Filing-%20Financials&page=1&size=20`)}`
-			)
-		]);
-
-		const [financialResults, integratedFiling] = await Promise.all([resA.json(), resB.json()]);
-
-		const x = [...integratedFiling.data, ...financialResults];
-
-		const y = x.filter((x) => x.xbrl.endsWith('.xml') && x.consolidated === 'Consolidated');
-
-		const periodEnded = y.map((x) => x.toDate || x.qe_Date);
-
-		const promises = y.map((x) => extractNseXbrlData(`/proxy?url=${encodeURIComponent(x.xbrl)}`));
-
-		const allP = await Promise.all(promises);
-
-		// console.log(allP);
-
-		const obj = allP.reduce((acc, currentDocument) => {
-			// Dynamically loop through every financial key present ('revenue', 'netProfit', etc.)
-			Object.keys(currentDocument).forEach((key) => {
-				if (Array.isArray(currentDocument[key])) {
-					const quarterlyDocument = currentDocument[key].filter(
-						(x) => dayjs(x.endDate).diff(x.startDate, 'day') < 100
-					);
-					acc[key] = [...(acc[key] || []), ...quarterlyDocument];
-				}
-			});
-			return acc;
-		}, {});
-
-		const ttmNetProfit = [];
-		for (let i = 0; i < obj.netProfit.length - 4; i++) {
-			const ttmValue = obj.netProfit.slice(i, i + 4).reduce((acc, x) => {
-				return acc + x.value;
-			}, 0);
-
-			ttmNetProfit.push({ quarterEnding: obj.netProfit[i].endDate, value: ttmValue });
-		}
-
-		for (let i = 1; i < ttmNetProfit.length; i++) {
-			const pctCh = (ttmNetProfit[i - 1].value / ttmNetProfit[i].value - 1) * 100;
-			console.log([ttmNetProfit[i - 1].quarterEnding, pctCh]);
-		}
-
-		const formData = new FormData();
-		formData.append('symbol', symbol);
-
-		const a = await fetch('?/getEarningsTrend', {
-			method: 'POST',
-			body: formData
-		});
-		const b = deserialize(await a.text());
-		// console.log(b);
-		const earningsTrend = b.data.earningsTrend.trend;
-		const currentYear =
-			Math.round(earningsTrend.find((x) => x.period === '0y').growth * 10000) / 100;
-		const nextYear = Math.round(earningsTrend.find((x) => x.period === '+1y').growth * 10000) / 100;
-
-		ChartState.bottomRight = { currentYear, nextYear };
+		console.log(await nseScraper.get(symbol.split('.')[0]));
+		// const [resA, resB] = await Promise.all([
+		// 	fetch(
+		// 		`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/corporates-financial-results?index=equities&symbol=NAVINFLUOR&period=Quarterly`)}`
+		// 	),
+		// 	fetch(
+		// 		`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/integrated-filing-results?&symbol=NAVINFLUOR&type=Integrated%20Filing-%20Financials&page=1&size=20`)}`
+		// 	)
+		// ]);
+		// const [financialResults, integratedFiling] = await Promise.all([resA.json(), resB.json()]);
+		// const x = [...integratedFiling.data, ...financialResults];
+		// const y = x.filter((x) => x.xbrl.endsWith('.xml') && x.consolidated === 'Consolidated');
+		// const periodEnded = y.map((x) => x.toDate || x.qe_Date);
+		// const promises = y.map((x) => extractNseXbrlData(`/proxy?url=${encodeURIComponent(x.xbrl)}`));
+		// const allP = await Promise.all(promises);
+		// // console.log(allP);
+		// const obj = allP.reduce((acc, currentDocument) => {
+		// 	// Dynamically loop through every financial key present ('revenue', 'netProfit', etc.)
+		// 	Object.keys(currentDocument).forEach((key) => {
+		// 		if (Array.isArray(currentDocument[key])) {
+		// 			const quarterlyDocument = currentDocument[key].filter(
+		// 				(x) => dayjs(x.endDate).diff(x.startDate, 'day') < 100
+		// 			);
+		// 			acc[key] = [...(acc[key] || []), ...quarterlyDocument];
+		// 		}
+		// 	});
+		// 	return acc;
+		// }, {});
+		// const ttmNetProfit = [];
+		// for (let i = 0; i < obj.netProfit.length - 4; i++) {
+		// 	const ttmValue = obj.netProfit.slice(i, i + 4).reduce((acc, x) => {
+		// 		return acc + x.value;
+		// 	}, 0);
+		// 	ttmNetProfit.push({ quarterEnding: obj.netProfit[i].endDate, value: ttmValue });
+		// }
+		// for (let i = 1; i < ttmNetProfit.length; i++) {
+		// 	const pctCh = (ttmNetProfit[i - 1].value / ttmNetProfit[i].value - 1) * 100;
+		// 	console.log([ttmNetProfit[i - 1].quarterEnding, pctCh]);
+		// }
+		// const formData = new FormData();
+		// formData.append('symbol', symbol);
+		// const a = await fetch('?/getEarningsTrend', {
+		// 	method: 'POST',
+		// 	body: formData
+		// });
+		// const b = deserialize(await a.text());
+		// // console.log(b);
+		// const earningsTrend = b.data.earningsTrend.trend;
+		// const currentYear =
+		// 	Math.round(earningsTrend.find((x) => x.period === '0y').growth * 10000) / 100;
+		// const nextYear = Math.round(earningsTrend.find((x) => x.period === '+1y').growth * 10000) / 100;
+		// ChartState.bottomRight = { currentYear, nextYear };
 	}
 
 	function closeMenu() {
