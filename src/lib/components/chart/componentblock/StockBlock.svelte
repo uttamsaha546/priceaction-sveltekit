@@ -4,8 +4,6 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { deserialize } from '$app/forms';
 
-	import { extractNseXbrlData } from './func';
-
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
 	 */
@@ -98,16 +96,37 @@
 	}
 
 	async function getFinancialResults(symbol) {
-		const formData = new FormData();
-		formData.append('symbol', symbol);
-
-		const response = await fetch(`?/getFinancialResults`, {
-			method: 'POST',
-			body: formData
-		});
-		const data = deserialize(await response.text());
-
-		console.log(data);
+		// const formData = new FormData();
+		// formData.append('symbol', symbol);
+		// const response = await fetch(`?/getFinancialResults`, {
+		// 	method: 'POST',
+		// 	body: formData
+		// });
+		// const responseData = deserialize(await response.text());
+		// const quarterlyResults = responseData.data.quarterlyResults;
+		// console.log(quarterlyResults);
+		// const ttmResult = quarterlyResults.reduce((accumulator, currentValue, currentIndex, array) => {
+		// 	if (currentIndex >= 3) {
+		// 		const ttmRevenue =
+		// 			array[currentIndex].RevenueFromOperations +
+		// 			array[currentIndex - 1].RevenueFromOperations +
+		// 			array[currentIndex - 2].RevenueFromOperations +
+		// 			array[currentIndex - 3].RevenueFromOperations;
+		// 		const ttmProfit =
+		// 			array[currentIndex].NetProfit +
+		// 			array[currentIndex - 1].NetProfit +
+		// 			array[currentIndex - 2].NetProfit +
+		// 			array[currentIndex - 3].NetProfit;
+		// 		const timestamp = dayjs(array[currentIndex].EndOfReportingPeriod).unix();
+		// 		accumulator.push({
+		// 			time: array[currentIndex].EndOfReportingPeriod,
+		// 			value: ttmRevenue / 1000000000
+		// 		});
+		// 	}
+		// 	return accumulator;
+		// }, []);
+		// ChartState.ttmResult = ttmResult;
+		// console.log(ttmResult);
 	}
 
 	function closeMenu() {

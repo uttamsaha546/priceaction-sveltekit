@@ -5,7 +5,8 @@
 		CandlestickSeries,
 		CrosshairMode,
 		PriceScaleMode,
-		LineSeries
+		LineSeries,
+		HistogramSeries
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
@@ -20,6 +21,7 @@
 	let chart;
 	let container;
 	let mainSeries;
+	let histogramSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
 	const TempSerieses = [];
@@ -48,6 +50,7 @@
 		window.chart = chart;
 
 		mainSeries = chart.addSeries(CandlestickSeries);
+		// histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
 
 		window.mainSeries = mainSeries;
 
@@ -373,6 +376,7 @@
 		if (!mainSeries || !data || !chart || !data.length === 0) return;
 
 		mainSeries.setData(data);
+		// histogramSeries.setData(ChartState.ttmResult);
 
 		const priceScale = chart.priceScale('right');
 

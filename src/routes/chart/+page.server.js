@@ -36,12 +36,22 @@ export const actions = {
         };
     },
 
-    getFinancialResults: async ({request})=>{
+    getFinancialResults: async ({ request }) => {
         const formData = await request.formData();
         const symbol = formData.get('symbol');
 
-        const a = await nseScraper.getFinancialResults(symbol);
+        const quarterlyResults = await nseScraper.getFinancialResults(symbol);
 
-        return {...a}
+        const seenPeriods = new Set();
+        const uniqueQuarters = quarterlyResults.filter(x => {
+            if (seenPeriods.has(x.EndOfReportingPeriod)) {
+                return false;
+            }
+            seenPeriods.add(x.EndOfReportingPeriod);
+            return true;
+        });
+        console.log(uniqueQuarters)
+
+        return { quarterlyResults: uniqueQuarters }
     }
 };
