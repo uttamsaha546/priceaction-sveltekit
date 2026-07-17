@@ -1,7 +1,9 @@
 import { db } from '$lib/server/database';
 import YahooFinance from 'yahoo-finance2';
+import NseScraper from './NseScraper';
 
 const yahooFinance = new YahooFinance();
+const nseScraper = new NseScraper(db);
 
 export const actions = {
     getPortfolioHolding: async ({ request }) => {
@@ -32,5 +34,14 @@ export const actions = {
         return {
             ...quote
         };
+    },
+
+    getFinancialResults: async ({request})=>{
+        const formData = await request.formData();
+        const symbol = formData.get('symbol');
+
+        const a = await nseScraper.getFinancialResults(symbol);
+
+        return {...a}
     }
 };

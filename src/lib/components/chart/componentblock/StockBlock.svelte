@@ -5,7 +5,6 @@
 	import { deserialize } from '$app/forms';
 
 	import { extractNseXbrlData } from './func';
-	import NSeScraper from './NseScraper';
 
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
@@ -26,8 +25,6 @@
 		transparent: 'transparent'
 	};
 
-	const nseScraper = new NSeScraper();
-
 	const flagColors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan', 'pink'];
 
 	async function fetchGraphData(symbol) {
@@ -46,7 +43,7 @@
 	}
 
 	async function getEarningsTrend(symbol) {
-		console.log(await nseScraper.get(symbol.split('.')[0]));
+		// console.log(await nseScraper.get(symbol.split('.')[0]));
 		// const [resA, resB] = await Promise.all([
 		// 	fetch(
 		// 		`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/corporates-financial-results?index=equities&symbol=NAVINFLUOR&period=Quarterly`)}`
@@ -98,6 +95,19 @@
 		// 	Math.round(earningsTrend.find((x) => x.period === '0y').growth * 10000) / 100;
 		// const nextYear = Math.round(earningsTrend.find((x) => x.period === '+1y').growth * 10000) / 100;
 		// ChartState.bottomRight = { currentYear, nextYear };
+	}
+
+	async function getFinancialResults(symbol) {
+		const formData = new FormData();
+		formData.append('symbol', symbol);
+
+		const response = await fetch(`?/getFinancialResults`, {
+			method: 'POST',
+			body: formData
+		});
+		const data = deserialize(await response.text());
+
+		console.log(data);
 	}
 
 	function closeMenu() {
@@ -154,7 +164,8 @@
 				fetchGraphData(stock.symbol);
 				ChartState.currentScrip = stock.name;
 
-				getEarningsTrend(`${stock.symbol}.NS`);
+				// getEarningsTrend(`${stock.symbol}.NS`);
+				getFinancialResults(stock.symbol);
 			}}
 			role
 		>
