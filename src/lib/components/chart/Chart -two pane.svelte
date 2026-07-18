@@ -111,13 +111,8 @@
 
 		histogramSeries.priceScale().applyOptions({
 			mode: PriceScaleMode.Logarithmic,
-			autoScale: true // Let our provider handle the sliding viewport windows,
+			autoScale: true // Let our provider handle the sliding viewport windows
 		});
-
-		// const x = 1;
-		chart.panes()[0].setStretchFactor(0.7);
-		chart.panes()[1].setStretchFactor(0.3);
-		console.log(chart.panes()[0].getStretchFactor());
 
 		window.mainSeries = mainSeries;
 
