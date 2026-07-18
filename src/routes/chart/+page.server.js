@@ -50,7 +50,7 @@ export const actions = {
             seenPeriods.add(x.EndOfReportingPeriod);
             return true;
         });
-        console.log(uniqueQuarters)
+        // console.log(uniqueQuarters)
 
         return { quarterlyResults: uniqueQuarters }
     }

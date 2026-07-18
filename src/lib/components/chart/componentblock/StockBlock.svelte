@@ -96,36 +96,48 @@
 	}
 
 	async function getFinancialResults(symbol) {
-		// const formData = new FormData();
-		// formData.append('symbol', symbol);
-		// const response = await fetch(`?/getFinancialResults`, {
-		// 	method: 'POST',
-		// 	body: formData
-		// });
-		// const responseData = deserialize(await response.text());
-		// const quarterlyResults = responseData.data.quarterlyResults;
+		const formData = new FormData();
+		formData.append('symbol', symbol);
+		const response = await fetch(`?/getFinancialResults`, {
+			method: 'POST',
+			body: formData
+		});
+		const responseData = deserialize(await response.text());
+		const quarterlyResults = responseData.data.quarterlyResults;
 		// console.log(quarterlyResults);
-		// const ttmResult = quarterlyResults.reduce((accumulator, currentValue, currentIndex, array) => {
-		// 	if (currentIndex >= 3) {
-		// 		const ttmRevenue =
-		// 			array[currentIndex].RevenueFromOperations +
-		// 			array[currentIndex - 1].RevenueFromOperations +
-		// 			array[currentIndex - 2].RevenueFromOperations +
-		// 			array[currentIndex - 3].RevenueFromOperations;
-		// 		const ttmProfit =
-		// 			array[currentIndex].NetProfit +
-		// 			array[currentIndex - 1].NetProfit +
-		// 			array[currentIndex - 2].NetProfit +
-		// 			array[currentIndex - 3].NetProfit;
-		// 		const timestamp = dayjs(array[currentIndex].EndOfReportingPeriod).unix();
-		// 		accumulator.push({
-		// 			time: array[currentIndex].EndOfReportingPeriod,
-		// 			value: ttmRevenue / 1000000000
-		// 		});
-		// 	}
-		// 	return accumulator;
-		// }, []);
-		// ChartState.ttmResult = ttmResult;
+		const ttmResult = quarterlyResults.reduce((accumulator, currentValue, currentIndex, array) => {
+			if (currentIndex >= 3) {
+				const ttmRevenue =
+					array[currentIndex].RevenueFromOperations +
+					array[currentIndex - 1].RevenueFromOperations +
+					array[currentIndex - 2].RevenueFromOperations +
+					array[currentIndex - 3].RevenueFromOperations;
+				const ttmProfit =
+					array[currentIndex].NetProfit +
+					array[currentIndex - 1].NetProfit +
+					array[currentIndex - 2].NetProfit +
+					array[currentIndex - 3].NetProfit;
+				const timestamp = dayjs(array[currentIndex].EndOfReportingPeriod).unix();
+				const revenue = ttmRevenue / 1000000000;
+				const profit = ttmProfit / 1000000000;
+				accumulator.push({
+					time: array[currentIndex].EndOfReportingPeriod,
+					revenue,
+					profit
+				});
+			}
+			return accumulator;
+		}, []);
+
+		const a = ttmResult
+			.map((x, i) => {
+				if (i === 0) return false;
+				const revGrowth = Math.round((x.revenue / ttmResult[i - 1].revenue - 1) * 1000) / 10;
+				const profGrowth = Math.round((x.profit / ttmResult[i - 1].profit - 1) * 1000) / 10;
+				return { ...x, revGrowth, profGrowth };
+			})
+			.filter(Boolean);
+		ChartState.ttmResult = a;
 		// console.log(ttmResult);
 	}
 

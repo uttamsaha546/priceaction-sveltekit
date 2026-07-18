@@ -38,9 +38,10 @@
 			my_holding: { ...data.my_holding }
 		};
 		const my_holding = getMyHoldings($state.snapshot(localRows));
+		console.log(my_holding);
 		localRows.my_holding = { ...localRows.my_holding, ...my_holding };
 	});
-	if (browser) $inspect(localRows);
+	// if (browser) $inspect(localRows);
 
 	let fetchedJson = $state({ asOn: '', holdings: [], key: '', scrip: '' });
 	let editingIndex = $state(null);
@@ -326,6 +327,7 @@
 					hasIn
 				};
 			})
+			.filter((x) => x.HoldingAmt_num > 0)
 			.sort((a, b) => b.HoldingPct - a.HoldingPct);
 
 		const marketcap_weight = {

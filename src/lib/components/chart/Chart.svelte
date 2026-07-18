@@ -6,6 +6,7 @@
 		CrosshairMode,
 		PriceScaleMode,
 		LineSeries,
+		createSeriesMarkers,
 		HistogramSeries
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
@@ -50,7 +51,68 @@
 		window.chart = chart;
 
 		mainSeries = chart.addSeries(CandlestickSeries);
-		// histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
+		// histogramSeries = chart.addSeries(
+		// 	HistogramSeries,
+		// 	{
+		// 		// priceScaleId: '',
+		// 		// priceFormat: { type: 'volume' }
+		// 	},
+		// 	1
+		// );
+
+		// histogramSeries.priceScale().applyOptions({
+		// 	// set the positioning of the volume series
+		// 	// scaleMargins: {
+		// 	// 	top: 0.8, // highest point of the series will be 70% away from the top
+		// 	// 	bottom: 0
+		// 	// },
+		// 	mode: PriceScaleMode.Logarithmic
+		// });
+
+		histogramSeries = chart.addSeries(
+			HistogramSeries,
+			{
+				autoscaleInfoProvider: () => {
+					if (!chart || !histogramSeries) return null;
+
+					const logicalRange = chart.timeScale().getVisibleLogicalRange();
+					if (!logicalRange) return null;
+
+					let maxVisibleVolume = 0;
+
+					// Loop through visible bars to grab the highest peak currently shown
+					for (let i = Math.floor(logicalRange.from); i <= Math.ceil(logicalRange.to); i++) {
+						const dataPoint = histogramSeries.dataByIndex(i);
+						if (dataPoint && dataPoint.value > maxVisibleVolume) {
+							maxVisibleVolume = dataPoint.value;
+						}
+					}
+
+					if (maxVisibleVolume === 0) return null;
+
+					// 2. Apply your "50 pixels to double" logarithmic scale math
+					const paneHeight = chart.panes()[1]?.getHeight() || 150;
+					const scaleFactor = paneHeight / 50;
+
+					// In log base 2, dividing the top value by (2 ^ scaleFactor)
+					// ensures your exact fixed logarithmic distance math is satisfied
+					const scaleFloor = maxVisibleVolume / scaleFactor;
+
+					return {
+						priceRange: {
+							minValue: scaleFloor,
+							maxValue: maxVisibleVolume
+						}
+					};
+				}
+			},
+			1 // Pinned to Pane 1
+		);
+
+		histogramSeries.priceScale().applyOptions({
+			mode: PriceScaleMode.Logarithmic,
+			autoScale: true // Let our provider handle the sliding viewport windows
+		});
 
 		window.mainSeries = mainSeries;
 
@@ -376,16 +438,70 @@
 		if (!mainSeries || !data || !chart || !data.length === 0) return;
 
 		mainSeries.setData(data);
-		// histogramSeries.setData(ChartState.ttmResult);
 
 		const priceScale = chart.priceScale('right');
 
 		// keep zoom locked. make the price double every 100 pixel
-		const scalingFactor = Math.round((chart.panes()[0].getHeight() / 100) * 100) / 100;
+		const scalingFactor = chart.panes()[0].getHeight() / 100;
 		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
 		// 🔥 pan vertically if needed
 		panPriceScaleIntoView(priceScale, data, scalingFactor * scalingMultiplier);
+	});
+
+	$effect(() => {
+		const data = ChartState.ttmResult;
+		// $inspect(data);
+		// const min = Math.min(...data.map((x) => x.revenue));
+		// console.log(min);
+		const markers = data.map((x) => {
+			return {
+				time: x.time,
+				value: x.revenue
+			};
+		});
+		// console.log(markers);
+
+		// histogramSeries.priceScale().applyOptions({ autoScale: true });
+		histogramSeries.setData(markers);
+		// console.log(chart.panes()[0].getHeight());
+		// setPriceToPixelRatio(histogramSeries.priceScale(), chart.panes()[1].getHeight() / 50);
+		// histogramSeries.priceScale().applyOptions({ autoScale: false });
+
+		// chart.timeScale().subscribeVisibleLogicalRangeChange((logicalRange) => {
+		// 	if (!logicalRange) return;
+
+		// 	// Get all the data points currently loaded in your series
+		// 	const allData = histogramSeries.data();
+		// 	if (allData.length === 0) return;
+
+		// 	let maxVisibleVolume = 0;
+
+		// 	// Find the highest volume value within the currently visible horizontal window
+		// 	for (let i = Math.floor(logicalRange.from); i <= Math.ceil(logicalRange.to); i++) {
+		// 		// Map logical index back to data array index
+		// 		const dataPoint = histogramSeries.dataByIndex(i);
+		// 		if (dataPoint && dataPoint.value > maxVisibleVolume) {
+		// 			maxVisibleVolume = dataPoint.value;
+		// 		}
+		// 	}
+
+		// 	if (maxVisibleVolume > 0) {
+		// 		// Calculate your lower bound based on your "50 pixels to double" logic.
+		// 		// For example, if your pane height is roughly 150px (3 doubles max),
+		// 		// we can set the bottom floor relative to the current max peak.
+		// 		const scaleFloor = maxVisibleVolume / (chart.panes()[1].getHeight() / 50); // Adjust divisor based on your specific grid setup
+
+		// 		histogramSeries.priceScale().applyOptions({
+		// 			autoscaleInfoProvider: () => ({
+		// 				priceRange: {
+		// 					minValue: scaleFloor,
+		// 					maxValue: maxVisibleVolume
+		// 				}
+		// 			})
+		// 		});
+		// 	}
+		// });
 	});
 
 	// Functions Start
