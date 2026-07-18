@@ -115,8 +115,8 @@
 		});
 
 		// const x = 1;
-		chart.panes()[0].setStretchFactor(0.7);
-		chart.panes()[1].setStretchFactor(0.3);
+		chart.panes()[0].setStretchFactor(0.75);
+		chart.panes()[1].setStretchFactor(0.25);
 		console.log(chart.panes()[0].getStretchFactor());
 
 		window.mainSeries = mainSeries;
