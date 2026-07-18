@@ -151,6 +151,7 @@ export class _52WeekHighPrimitive {
     }
 
     updateAllViews() {
+        // console.log('rendered')
         this.update();
     }
 

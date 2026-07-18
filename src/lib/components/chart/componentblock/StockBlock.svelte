@@ -120,24 +120,25 @@
 				const timestamp = dayjs(array[currentIndex].EndOfReportingPeriod).unix();
 				const revenue = ttmRevenue / 1000000000;
 				const profit = ttmProfit / 1000000000;
-				accumulator.push({
-					time: array[currentIndex].EndOfReportingPeriod,
-					revenue,
-					profit
-				});
+				accumulator.push([
+					timestamp,
+					revenue
+					// profit,
+				]);
 			}
 			return accumulator;
 		}, []);
 
-		const a = ttmResult
-			.map((x, i) => {
-				if (i === 0) return false;
-				const revGrowth = Math.round((x.revenue / ttmResult[i - 1].revenue - 1) * 1000) / 10;
-				const profGrowth = Math.round((x.profit / ttmResult[i - 1].profit - 1) * 1000) / 10;
-				return { ...x, revGrowth, profGrowth };
-			})
-			.filter(Boolean);
-		ChartState.ttmResult = a;
+		// const a = ttmResult
+		// 	.map((x, i) => {
+		// 		if (i === 0) return false;
+		// 		const revenueGrowth = Math.round((x.revenue / ttmResult[i - 1].revenue - 1) * 1000) / 10;
+		// 		// const profitGrowth = Math.round((x.profit / ttmResult[i - 1].profit - 1) * 1000) / 10;
+		// 		return [x.timestamp, revenueGrowth];
+		// 	})
+		// 	.filter(Boolean);
+		// console.log(a);
+		ChartState.ttmResult = ttmResult;
 		// console.log(ttmResult);
 	}
 

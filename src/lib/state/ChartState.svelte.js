@@ -12,6 +12,7 @@ export const ChartState = (() => {
     let ttmResult = $state([]);
 
     let barData = $derived(LineDataToBarData(lineData, isMonthly ? "M" : "W"));
+    let histogramData = $derived(formatTtmResult(ttmResult, isMonthly ? "M" : "W"));
 
     return {
         get lineData() { return lineData; },
@@ -45,6 +46,8 @@ export const ChartState = (() => {
 
         get ttmResult() { return ttmResult },
         set ttmResult(val) { ttmResult = val },
+
+        get histogramData() { return histogramData },
     };
 })();
 
@@ -110,6 +113,50 @@ function LineDataToBarData(lineData, interval) {
     return [...intervalStartMap.values()];
 }
 
+function formatTtmResult(lineData, interval) {
+    // console.log(lineData)
+    if (interval !== 'W' && interval !== 'M') {
+        throw new Error(`Unsupported interval: ${interval}`);
+    }
+
+    const intervalStartMap = new Map();
+
+    for (let [timestamp, value] of lineData) {
+        const length = String(timestamp).length;
+
+        if (length === 9 || length === 10) {
+            timestamp *= 1000; //convert to miliseconds if in seconds, 9 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        } else if (length == 12 || length === 13) {
+            //keep timestamp as it is in milisecond, 12 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        }
+        else {
+            console.warn(`Unexpected timestamp length: ${length}. Timestamp: ${timestamp}`);
+            continue;
+        }
+
+        if (value == null) continue;
+
+        const date = new Date(timestamp);
+
+        const intervalStartKey =
+            interval === 'W'
+                ? getWeekStartUTC(timestamp)
+                : getMonthStartUTC(timestamp);
+
+        if (!intervalStartMap.has(intervalStartKey)) {
+            intervalStartMap.set(intervalStartKey, {
+                time: Math.floor(intervalStartKey / 1000),
+                value: value
+            });
+        } else {
+            const candle = intervalStartMap.get(intervalStartKey);
+
+            candle.value = value;
+        }
+    }
+
+    return [...intervalStartMap.values()];
+}
 
 function getWeekStartUTC(timestamp) {
     const d = new Date(timestamp);
