@@ -67,7 +67,7 @@
 		<div
 			class="ChartArea h-full W-Flex-1 flex flex-1 min-w-0 cursor-crosshair active:cursor-grabbing relative"
 		>
-			<Chart data={ChartState.barData} scalingMultiplier={ChartState.isMonthly ? 6 : 1} />
+			<Chart data={ChartState.barData} scalingMultiplier={ChartState.isMonthly ? 4 : 1} />
 			<div
 				class="Timeframe absolute bottom-0 right-0 z-20 h-7 w-16 flex items-center justify-center"
 			>

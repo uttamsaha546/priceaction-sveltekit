@@ -203,7 +203,7 @@
 			data={holdingsData.map((holding) => ({
 				symbol: holding.symbol,
 				name: holding.company_name,
-				value: `${Math.round(holding.corpus_per * 100) / 100}}%`
+				value: `${Math.round(holding.corpus_per * 100) / 100}%`
 			}))}
 		/>
 	</div>
