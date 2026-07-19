@@ -23,6 +23,8 @@
 	let { data, scalingMultiplier = 1 } = $props();
 
 	const TempSerieses = [];
+	
+	let secondPane = false;
 
 	onMount(() => {
 		chart = createChart(container, {
@@ -49,6 +51,7 @@
 
 		mainSeries = chart.addSeries(CandlestickSeries);
 
+  if(secondPane){
 		histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
 		histLineSeries = chart.addSeries(LineSeries, { lineWidth: 2 }, 1);
 
@@ -58,7 +61,7 @@
 
 		mainSeries.getPane().setStretchFactor(0.75);
 		histogramSeries.getPane().setStretchFactor(0.25);
-
+  }
 		window.mainSeries = mainSeries;
 
 		const smaSeries = new SmaSeriesPrimitive();
@@ -395,6 +398,7 @@
 	});
 
 	$effect(() => {
+	if(!histogramSeries) return;
 		const data = ChartState.histogramData;
 		const priceScale = histogramSeries.priceScale();
 		priceScale.setAutoScale(true);
