@@ -72,7 +72,7 @@ db.exec(`
         ) WITHOUT ROWID;
     `);
 
-const defaultEntries = JSON.stringify([{ symbol: 'VBL' }]);
+const defaultEntries = 'VBL';
 
 // Note: The exact method name depends on your library (e.g., db.prepare or db.run)
 const stmt = db.prepare(`INSERT INTO watchlists (name, entries) VALUES (?, ?)`);

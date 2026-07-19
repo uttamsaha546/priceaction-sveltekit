@@ -7,6 +7,9 @@
 	import BroomIcon from './Icons/BroomIcon.svelte';
 	import Modal from './Modal.svelte';
 	import SymbolSearchModalContent from './SymbolSearchModalContent.svelte';
+	import CreateWatchlistModalContent from './CreateWatchlistModalContent.svelte';
+	
+	import StockBlock from './componentblock/StockBlock.svelte';
 
 	let watchlists = $state([]);
 	let currentWatchlist = $state([]);
@@ -18,6 +21,13 @@
 
 	let isOpen = $state(false);
 	let isModal = $state(false);
+	
+	const modalIdMap ={
+	'CREATE WATCHLIST': 1,
+	'ADD SYMBOL':2
+	}
+	
+	let modalId = $state(0);
 
 	function toggleDropdown() {
 		isOpen = !isOpen;
@@ -51,7 +61,9 @@
 			>
 				<button class="flex flex-row"><PencilIcon /><span>Rename</span></button>
 				<button class="flex flex-row"><BroomIcon /><span>Clear list</span></button>
-				<button class="flex flex-row"><NewWatchlistIcon /><span>Create new list...</span></button>
+				<button class="flex flex-row"
+				onclick={()=>{modalId=1; isModal=true}}
+				><NewWatchlistIcon /><span>Create new list...</span></button>
 
 				<hr />
 				{#each watchlists as watchlist}
@@ -66,25 +78,28 @@
 			</div>
 		{/if}
 	</div>
-	<button class="hover:bg-gray-200 rounded" onclick={() => (isModal = true)}>
+	<button class="hover:bg-gray-200 rounded" onclick={() => {modalId=2; isModal = true}}>
 		<PlusIcon />
 	</button>
 </div>
 
 <div>
-	{#each currentWatchlist?.entries as entry}
-		<div>{entry?.symbol}</div>
-	{/each}
+
+<StockBlock data={currentWatchlist?.entries}/>
 </div>
 
 <!-- {#if isModal} -->
 <Modal
 	isOpen={isModal}
-	title={'Add symbol'}
+	title={modalId===2? 'Add symbol': 'Create Watchlist'}
 	onClose={() => (isModal = false)}
 	size={'large'}
 	backdrop={false}
 >
+{#if (modalId ===2)}
 	<SymbolSearchModalContent />
+	{:else if (modalId===1)}
+	 <CreateWatchlistModalContent/>
+	{/if}
 </Modal>
 <!-- {/if} -->

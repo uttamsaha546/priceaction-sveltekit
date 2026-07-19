@@ -24,7 +24,7 @@
 
 	const TempSerieses = [];
 	
-	let secondPane = false;
+	let secondPane = true;
 
 	onMount(() => {
 		chart = createChart(container, {

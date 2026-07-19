@@ -7,6 +7,8 @@ import MoneyControlScraper from '$lib/scraper/MoneyControlScraper';
 const screenerScraper = new ScreenerScraper();
 const mcScraper = new MoneyControlScraper();
 
+const createWatchlistStmt = db.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`);
+
 export const actions = {
     getPortfolioHolding: async ({ request }) => {
         const data = await request.formData();
@@ -45,5 +47,15 @@ export const actions = {
         const [past, estimate] = await Promise.all([screenerScraper.scrape(symbol), mcScraper.scrape(symbol)]);
 
         return { past, estimate }
+    },
+    
+    createWatchlist: async ({request})=>{
+      const formData = await request.formData();
+        const name = formData.get('name');
+        const entries = formData.get('entries');
+        
+        createWatchlistStmt.run(name, entries);
+        
+        return {name, entries}
     }
 };
