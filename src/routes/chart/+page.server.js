@@ -1,9 +1,11 @@
 import { db } from '$lib/server/database';
-import YahooFinance from 'yahoo-finance2';
-import NseScraper from './NseScraper';
+// import YahooFinance from 'yahoo-finance2';
+import ScreenerScraper from '$lib/scraper/ScreenerScraper';
+import MoneyControlScraper from '$lib/scraper/MoneyControlScraper';
 
-const yahooFinance = new YahooFinance();
-const nseScraper = new NseScraper(db);
+// const yahooFinance = new YahooFinance();
+const screenerScraper = new ScreenerScraper();
+const mcScraper = new MoneyControlScraper();
 
 export const actions = {
     getPortfolioHolding: async ({ request }) => {
@@ -40,18 +42,8 @@ export const actions = {
         const formData = await request.formData();
         const symbol = formData.get('symbol');
 
-        const quarterlyResults = await nseScraper.getFinancialResults(symbol);
+        const [past, estimate] = await Promise.all([screenerScraper.scrape(symbol), mcScraper.scrape(symbol)]);
 
-        const seenPeriods = new Set();
-        const uniqueQuarters = quarterlyResults.filter(x => {
-            if (seenPeriods.has(x.EndOfReportingPeriod)) {
-                return false;
-            }
-            seenPeriods.add(x.EndOfReportingPeriod);
-            return true;
-        });
-        // console.log(uniqueQuarters)
-
-        return { quarterlyResults: uniqueQuarters }
+        return { past, estimate }
     }
 };

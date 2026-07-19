@@ -19,7 +19,7 @@
 	import { SafeEntryZonePrimitive } from './Tools/SafeEntryZonePrimitive';
 	import dayjs from 'dayjs';
 
-	let chart, container, mainSeries, histogramSeries;
+	let chart, container, mainSeries, histogramSeries, histLineSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
 	const TempSerieses = [];
@@ -50,6 +50,7 @@
 		mainSeries = chart.addSeries(CandlestickSeries);
 
 		histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
+		histLineSeries = chart.addSeries(LineSeries, { lineWidth: 2 }, 1);
 
 		histogramSeries.priceScale().applyOptions({
 			mode: PriceScaleMode.Logarithmic
@@ -398,6 +399,7 @@
 		const priceScale = histogramSeries.priceScale();
 		priceScale.setAutoScale(true);
 		histogramSeries.setData(data);
+		histLineSeries.setData(data);
 
 		const visiblePriceRange = priceScale.getVisibleRange();
 		if (!visiblePriceRange) return;

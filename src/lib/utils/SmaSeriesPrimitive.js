@@ -23,7 +23,7 @@ export class SmaSeriesPrimitive {
     }
 
     _updateData = () => {
-        // console.log('renered')
+        console.log('renered')
         const mainSeriesData = this._mainSeries.data();
         const smaValues = calculateSMA(mainSeriesData, ChartState.isMonthly ? 12 : 52);
         this._smaSeries.setData(smaValues);

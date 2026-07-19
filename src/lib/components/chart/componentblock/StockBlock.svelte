@@ -103,43 +103,10 @@
 			body: formData
 		});
 		const responseData = deserialize(await response.text());
-		const quarterlyResults = responseData.data.quarterlyResults;
-		// console.log(quarterlyResults);
-		const ttmResult = quarterlyResults.reduce((accumulator, currentValue, currentIndex, array) => {
-			if (currentIndex >= 3) {
-				const ttmRevenue =
-					array[currentIndex].RevenueFromOperations +
-					array[currentIndex - 1].RevenueFromOperations +
-					array[currentIndex - 2].RevenueFromOperations +
-					array[currentIndex - 3].RevenueFromOperations;
-				const ttmProfit =
-					array[currentIndex].NetProfit +
-					array[currentIndex - 1].NetProfit +
-					array[currentIndex - 2].NetProfit +
-					array[currentIndex - 3].NetProfit;
-				const timestamp = dayjs(array[currentIndex].EndOfReportingPeriod).unix();
-				const revenue = ttmRevenue / 1000000000;
-				const profit = ttmProfit / 1000000000;
-				accumulator.push([
-					timestamp,
-					revenue
-					// profit,
-				]);
-			}
-			return accumulator;
-		}, []);
 
-		// const a = ttmResult
-		// 	.map((x, i) => {
-		// 		if (i === 0) return false;
-		// 		const revenueGrowth = Math.round((x.revenue / ttmResult[i - 1].revenue - 1) * 1000) / 10;
-		// 		// const profitGrowth = Math.round((x.profit / ttmResult[i - 1].profit - 1) * 1000) / 10;
-		// 		return [x.timestamp, revenueGrowth];
-		// 	})
-		// 	.filter(Boolean);
-		// console.log(a);
-		ChartState.ttmResult = ttmResult;
-		// console.log(ttmResult);
+		ChartState.EarningsData = responseData.data;
+		// console.log(responseData);
+		// console.log(ChartState.histogramData);
 	}
 
 	function closeMenu() {
