@@ -7,19 +7,21 @@ export function GET() {
     const rows = db.prepare(`SELECT * FROM watchlists`).all();
     
     const stockUniverse = db.prepare('SELECT symbol, name, marketcap FROM stock_universe').all();
+    const myPortfolio = db.prepare(`SELECT holding FROM portfolio WHERE key='my_holding'`).get();
     
     const symbolMap = new Map(stockUniverse.map(x=>([x.symbol, x])));
+    const myPortfolioMap = new Map(JSON.parse(myPortfolio.holding).map(x=>([x.symbol, x.HoldingAmt])));
+    console.log(myPortfolioMap)
 
     // 2. Map through and parse the 'entries' string back into a JS array/object
     const data = rows.map(row => ({
         ...row,
         entries: row.entries ? row.entries.split(",").map(symbol=>{
-          if(symbolMap.has(symbol)) return symbolMap.get(symbol);
-          return {symbol, name: null, marketcap: null}
+          if(symbolMap.has(symbol)) return {...symbolMap.get(symbol), value: myPortfolioMap.has(symbol)? myPortfolioMap.get(symbol): null};
+          return {symbol, name: null, marketcap: null, value: null}
         }
           ) : []
     }));
-console.log(data)
     // 3. Return the clean, nested JSON structure
     return json({ data });
 }
