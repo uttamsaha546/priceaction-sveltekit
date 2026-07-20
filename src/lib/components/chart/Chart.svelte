@@ -390,7 +390,7 @@
 		mainSeries.setData(data);
 
 		// keep zoom locked. make the price double every 100 pixel
-		const scalingFactor = mainSeries.getPane().getHeight() / (100 * window.devicePixelRatio);
+		const scalingFactor = mainSeries.getPane().getHeight() / (20 * window.devicePixelRatio);
 		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
 		// 🔥 pan vertically if needed
