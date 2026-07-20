@@ -8,7 +8,12 @@
 	}
 
 	async function updateTable(tableName) {
-		if (tableName === 'groww') {
+		if (tableName === 'stock_universe') {
+			const a = await fetch(`/api/stock-universe/update`, {
+				method: 'POST',
+				body: JSON.stringify({})
+			});
+		} else if (tableName === 'groww') {
 			const a = await fetch(`/api/groww/update`, {
 				method: 'POST',
 				body: JSON.stringify({})

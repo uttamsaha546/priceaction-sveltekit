@@ -1,4 +1,4 @@
-import { db } from "../server/database";
+import { cachedb as db} from "$lib/server/cachedb";
 
 // Initialize Schema
 db.exec(`

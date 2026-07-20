@@ -1,7 +1,5 @@
 import { json } from "@sveltejs/kit";
 import { db } from "$lib/server/database";
-// import { GET as fetchMissingIndustryClassification } from "../../industry-classification/+server";
-// import { GET as getStockUniverse } from "../+server";
 
 db.exec(`DROP TABLE IF EXISTS groww;`);
 
@@ -55,13 +53,13 @@ export async function POST() {
         const stocks = data.records;
 
         const insertstatement = db.prepare(`
-            INSERT INTO groww (
+            INSERT OR REPLACE INTO groww (
                 symbol, companyName, searchId, isin, bseScriptCode, nseScriptCode
             ) VALUES (?, ?, ?, ?, ?, ?)
         `);
 
         const upsertMeta = db.prepare(`
-            INSERT INTO meta (tablename, data)
+            INSERT OR REPLACE INTO meta (tablename, data)
             VALUES (:tablename, :data)
             ON CONFLICT(tablename) DO UPDATE SET
                 data = excluded.data

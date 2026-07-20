@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { cache } from '$lib/utils/cache';
+import { cache } from './cache';
 
 /** Read response safely into a cache-safe, JSON-serializable form */
 async function readResponse(res) {

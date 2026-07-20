@@ -3,7 +3,7 @@ import { db } from "$lib/server/database";
 
 export function GET() {
     // 1. Fetch the raw rows from the database
-    db.exec(`UPDATE watchlists SET entries='VBL' WHERE name='Default Watchlist'`);
+    db.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`).run('Default Watchlist', 'VBL');
     const rows = db.prepare(`SELECT * FROM watchlists`).all();
     
     const stockUniverse = db.prepare('SELECT symbol, name, marketcap FROM stock_universe').all();
@@ -11,9 +11,9 @@ export function GET() {
     
     const symbolMap = new Map(stockUniverse.map(x=>([x.symbol, x])));
     const myPortfolioMap = new Map(JSON.parse(myPortfolio.holding).map(x=>([x.symbol, x.HoldingAmt])));
-    console.log(myPortfolioMap)
+    // // console.log(myPortfolioMap)
 
-    // 2. Map through and parse the 'entries' string back into a JS array/object
+    // // 2. Map through and parse the 'entries' string back into a JS array/object
     const data = rows.map(row => ({
         ...row,
         entries: row.entries ? row.entries.split(",").map(symbol=>{
