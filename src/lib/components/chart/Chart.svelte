@@ -45,7 +45,7 @@
 				scaleMargins: { top: 0.1, bottom: 0 },
 				mode: PriceScaleMode.Logarithmic
 			},
-			timeScale: { rightOffset: 10, barSpacing: 4 * dpr },
+			timeScale: { rightOffset: 10, barSpacing: 4 },
 			autoSize: true
 		});
 
