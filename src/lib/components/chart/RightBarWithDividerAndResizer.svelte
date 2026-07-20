@@ -9,7 +9,7 @@
 	import PortfolioComponent from './PortfolioComponent.svelte';
 
 	let width = $state(0);
-	let lastExpandedWidth = $state(200);
+	let lastExpandedWidth = $state(190);
 	let isDragging = $state(false);
 	let dragStartPointX = $state(0);
 	let dragStartWidth = $state(0);
