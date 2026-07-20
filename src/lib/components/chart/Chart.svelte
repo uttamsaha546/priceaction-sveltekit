@@ -22,6 +22,8 @@
 	let chart, container, mainSeries, histogramSeries, histLineSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
+	let dpr = $state(1);
+
 	const TempSerieses = [];
 
 	let secondPane = false;
@@ -43,7 +45,7 @@
 				scaleMargins: { top: 0.1, bottom: 0 },
 				mode: PriceScaleMode.Logarithmic
 			},
-			timeScale: { rightOffset: 10, barSpacing: 4 },
+			timeScale: { rightOffset: 10, barSpacing: 4 * dpr },
 			autoSize: true
 		});
 
@@ -383,7 +385,7 @@
 
 	// For subsequent data updates
 	$effect(() => {
-		if (!mainSeries || !data || !chart || !data.length === 0) return;
+		if (!mainSeries || !data || !chart || data.length === 0) return;
 		// console.log(mainSeries.getPane().getHeight(), histogramSeries.getPane().getHeight());
 		const priceScale = mainSeries.priceScale();
 		priceScale.setAutoScale(true);
@@ -391,6 +393,7 @@
 
 		// keep zoom locked. make the price double every 100 pixel
 		const scalingFactor = mainSeries.getPane().getHeight() / (20 * window.devicePixelRatio);
+		// alert(window.devicePixelRatio);
 		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
 		// 🔥 pan vertically if needed
@@ -461,6 +464,8 @@
 	}
 	// Functions End
 </script>
+
+<svelte:window bind:devicePixelRatio={dpr} />
 
 <div class="h-full w-full relative">
 	<div bind:this={container} class="ChartContainer w-full h-full"></div>
