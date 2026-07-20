@@ -392,12 +392,36 @@
 		mainSeries.setData(data);
 
 		// keep zoom locked. make the price double every 100 pixel
-		const scalingFactor = mainSeries.getPane().getHeight() / dpr;
-		// alert(window.devicePixelRatio);
+		const scalingFactor = mainSeries.getPane().getHeight() / (getDeviceDimensionsInInches() * 5);
+		console.log([window.screen.height, window.screen.width, window.screen]);
 		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
 		// 🔥 pan vertically if needed
 		// panPriceScaleIntoView(priceScale, data, scalingFactor * scalingMultiplier);
+
+		function getDeviceDimensionsInInches() {
+			// 1. Create a hidden element exactly 1 inch by 1 inch
+			const dpiElement = document.createElement('div');
+			dpiElement.style.width = '1in';
+			dpiElement.style.height = '1in';
+			dpiElement.style.position = 'fixed';
+			dpiElement.style.top = '100%';
+			dpiElement.style.left = '100%';
+			document.body.appendChild(dpiElement);
+
+			// 2. Measure how many screen pixels represent 1 inch
+			const dpiX = dpiElement.offsetWidth;
+			const dpiY = dpiElement.offsetHeight;
+
+			// Remove the temporary element from the DOM
+			document.body.removeChild(dpiElement);
+
+			// 3. Divide screen pixel dimensions by the DPI value
+			const widthInInches = window.screen.width / dpiX;
+			const heightInInches = window.screen.height / dpiY;
+
+			return heightInInches;
+		}
 	});
 
 	$effect(() => {
