@@ -23,7 +23,7 @@
 	let { data, scalingMultiplier = 1 } = $props();
 
 	const TempSerieses = [];
-	
+
 	let secondPane = false;
 
 	onMount(() => {
@@ -51,17 +51,17 @@
 
 		mainSeries = chart.addSeries(CandlestickSeries);
 
-  if(secondPane){
-		histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
-		histLineSeries = chart.addSeries(LineSeries, { lineWidth: 2 }, 1);
+		if (secondPane) {
+			histogramSeries = chart.addSeries(HistogramSeries, {}, 1);
+			histLineSeries = chart.addSeries(LineSeries, { lineWidth: 2 }, 1);
 
-		histogramSeries.priceScale().applyOptions({
-			mode: PriceScaleMode.Logarithmic
-		});
+			histogramSeries.priceScale().applyOptions({
+				mode: PriceScaleMode.Logarithmic
+			});
 
-		mainSeries.getPane().setStretchFactor(0.75);
-		histogramSeries.getPane().setStretchFactor(0.25);
-  }
+			mainSeries.getPane().setStretchFactor(0.75);
+			histogramSeries.getPane().setStretchFactor(0.25);
+		}
 		window.mainSeries = mainSeries;
 
 		const smaSeries = new SmaSeriesPrimitive();
@@ -390,7 +390,7 @@
 		mainSeries.setData(data);
 
 		// keep zoom locked. make the price double every 100 pixel
-		const scalingFactor = mainSeries.getPane().getHeight() / 100;
+		const scalingFactor = mainSeries.getPane().getHeight() / (100 * window.devicePixelRatio);
 		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
 		// 🔥 pan vertically if needed
@@ -398,7 +398,7 @@
 	});
 
 	$effect(() => {
-	if(!histogramSeries) return;
+		if (!histogramSeries) return;
 		const data = ChartState.histogramData;
 		const priceScale = histogramSeries.priceScale();
 		priceScale.setAutoScale(true);

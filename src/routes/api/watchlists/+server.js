@@ -11,7 +11,7 @@ export function GET() {
     
     const symbolMap = new Map(stockUniverse.map(x=>([x.symbol, x])));
     const myPortfolioHoldingMap = new Map(JSON.parse(myPortfolio.holding).map(x=>([x.symbol, x.HoldingAmt])));
-    console.log(myPortfolioHoldingMap)
+    //console.log(myPortfolioHoldingMap)
 
     // // 2. Map through and parse the 'entries' string back into a JS array/object
     const data = watchlists.map(watchlist => ({
