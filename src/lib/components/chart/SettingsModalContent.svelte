@@ -56,8 +56,8 @@
 
 	<label>
 		Squeeze price scale in Monthly timeframe by
-		<input type="range" min="0.01" max="1" step="0.01" bind:value={squeezeM} />
-		<input min="0.1" max="100" bind:value={squeezeM} />
+		<input type="range" min="0.01" max="50" step="0.01" bind:value={squeezeM} />
+		<input min="0.1" max="50" bind:value={squeezeM} />
 	</label>
 
 	<div>
