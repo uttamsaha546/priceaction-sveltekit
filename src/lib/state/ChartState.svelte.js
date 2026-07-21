@@ -10,6 +10,8 @@ export const ChartState = (() => {
     let isLoading = $state(false);
     let bottomRight = $state(null);
     let EarningsData = $state([]);
+    let scaleW = $state();
+    let scaleM = $state();
 
     let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
     let histogramData = $derived(fillWhitespaceGaps(EarningsDataToHistogramData(EarningsData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
@@ -48,6 +50,12 @@ export const ChartState = (() => {
         set EarningsData(val) { EarningsData = val },
 
         get histogramData() { return histogramData },
+
+        get scaleW() { return scaleW },
+        set scaleW(val) { scaleW = val },
+
+        get scaleM() { return scaleM },
+        set scaleM(val) { scaleM = val },
     };
 })();
 

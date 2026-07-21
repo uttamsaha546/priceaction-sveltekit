@@ -60,9 +60,8 @@
 	});
 
 	let scalingMultiplier = $derived.by(() => {
-		if (!ChartState.isMonthly) return 1;
-		if (window.isTouchCapable) return 10;
-		return 30;
+		if (ChartState.isMonthly) return ChartState.scaleM;
+		return ChartState.scaleW;
 	});
 </script>
 

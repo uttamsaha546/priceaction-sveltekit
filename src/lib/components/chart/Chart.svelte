@@ -22,8 +22,6 @@
 	let chart, container, mainSeries, histogramSeries, histLineSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
-	let dpr = $state(1);
-
 	const TempSerieses = [];
 
 	let secondPane = false;
@@ -392,10 +390,10 @@
 		mainSeries.setData(data);
 
 		// keep zoom locked. make the price double every 100 pixel
-		const scalingFactor = mainSeries.getPane().getHeight() / 100;
+		const scalingFactor = mainSeries.getPane().getHeight() / scalingMultiplier;
 
-		ChartState.scaleFactor = (scalingFactor * scalingMultiplier).toFixed(1);
-		setPriceToPixelRatio(priceScale, scalingFactor * scalingMultiplier);
+		// ChartState.scaleFactor = scalingFactor.toFixed(1);
+		setPriceToPixelRatio(priceScale, scalingFactor);
 		// 🔥 pan vertically if needed
 		// panPriceScaleIntoView(priceScale, data, scalingFactor * scalingMultiplier);
 	});
@@ -464,8 +462,6 @@
 	}
 	// Functions End
 </script>
-
-<svelte:window bind:devicePixelRatio={dpr} />
 
 <div class="h-full w-full relative">
 	<div bind:this={container} class="ChartContainer w-full h-full"></div>
