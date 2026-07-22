@@ -8,18 +8,18 @@ db.exec(`
     ) WITHOUT ROWID;
 `)
 
+const selectAllFlagsStmt = db.prepare('SELECT * FROM flags');
+const upsertFlagStmt = db.prepare('INSERT OR REPLACE INTO flags (symbol, color) VALUES (:symbol, :color)');
+
 export function GET() {
-    const rows = db.prepare('SELECT * FROM flags').all();
+    const rows = selectAllFlagsStmt.all();
     const data = Object.fromEntries(rows.map(row => [row.symbol, row.color]));
     return json(data);
 }
 
 export async function POST({ request }) {
     const incomingData = await request.json();
-
-    const statement = db.prepare('INSERT OR REPLACE INTO flags (symbol, color) VALUES(:symbol, :color)');
-
-    statement.run({ symbol: incomingData.symbol, color: incomingData.color });
+    upsertFlagStmt.run({ symbol: incomingData.symbol, color: incomingData.color });
 
     const rows = db.prepare('SELECT * FROM flags').all();
     const data = Object.fromEntries(rows.map(row => [row.symbol, row.color]));

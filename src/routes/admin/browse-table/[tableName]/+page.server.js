@@ -1,14 +1,16 @@
 import { db } from '$lib/server/database';
 import { error } from '@sveltejs/kit';
 
+const selectValidTablesStmt = db.prepare(`
+	SELECT name FROM sqlite_schema 
+	WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+`);
+
 export async function load({ params }) {
     const { tableName } = params;
 
     // 1. Fetch the list of valid, non-system tables
-    const validTables = db
-        .prepare(`SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`)
-        .all()
-        .map(t => t.name);
+    const validTables = selectValidTablesStmt.all().map(t => t.name);
 
     // 2. Strict Whitelist Check: If the requested table isn't valid, throw a 404
     if (!validTables.includes(tableName)) {

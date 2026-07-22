@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import dayjs from 'dayjs';
+import { cache } from '../proxy/cache';
 
 db.exec(`CREATE TABLE IF NOT EXISTS portfolio (
     key TEXT PRIMARY KEY,
@@ -22,10 +23,14 @@ db.exec(`
     ('my_holding', 'My Holding');
     `)
 
+// Pre-compile SQL statements once at the module level for blazing-fast DB queries
+const getPortfolioStmt = db.prepare('SELECT * FROM portfolio');
+const updateUnitStmt = db.prepare('UPDATE portfolio SET unit=? WHERE key=?');
+const updateHoldingStmt = db.prepare('UPDATE portfolio SET holding=?, holding_date=? WHERE key=?');    
 
 export const load = async ({ fetch }) => {
     try {
-        const dbRows = db.prepare('SELECT * FROM portfolio').all();
+        const dbRows = getPortfolioStmt.all();
 
         // Convert the flat array into a key-value object map: { nps: {...}, midcap: {...} } and parse holding
         const rowMap = dbRows.reduce((acc, row) => {
@@ -48,16 +53,22 @@ export const load = async ({ fetch }) => {
             return acc;
         }, {});
 
-
+        // Optimize external API requests by caching them inside our pre-compiled SQLite-backed cache
+		// and using promise collapsing to prevent API rate limits / socket exhaustion under concurrent loads.
         const requests = rowMap['direct'].holding.map(x => {
-            return fetch(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${x.symbol}/daily?intervalInMinutes=1&minimal=true`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
+            const cacheKey = `groww:stock_price:${x.symbol}`;
+            return cache.fetch(cacheKey, async ()=>{
+                const res = await fetch(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${x.symbol}/daily?intervalInMinutes=1&minimal=true`);
+                if (!res.ok) {
+					throw new Error(`Upstream returned ${res.status} for ${x.symbol}`);
+				}
+                const data = await res.json();
                     if (data && data.candles && data.candles.length > 0) {
-                        return { symbol: x.symbol, nav: data.candles.at(-1)[1] };
+                        return data.candles.at(-1)[1];
                     }
-                    return ({ symbol: x.symbol, nav: null });
-                })
+                    return null;
+                }, 300) // Cache stock price for 5 minutes (300 seconds)
+                .then((nav)=>({symbol: x.symbol, nav}))
                 .catch(() => ({ symbol: x.symbol, nav: null }));
         });
 
@@ -101,9 +112,7 @@ export const actions = {
         }
 
         try {
-
-            db.prepare(`UPDATE portfolio SET unit=? WHERE key=?`).run(unit, key);
-
+            updateUnitStmt.run(unit, key);
             return { success: true };
         } catch (error) {
             console.error('Database save failed:', error);
@@ -123,7 +132,7 @@ export const actions = {
 
         try {
 
-            db.prepare(`UPDATE portfolio SET holding=?, holding_date=? WHERE key=?`).run(holding, holding_date, key);
+            updateHoldingStmt.run(holding, holding_date, key);
 
             return { success: true };
         } catch (error) {

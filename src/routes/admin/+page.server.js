@@ -1,7 +1,9 @@
 import { db } from '$lib/server/database';
 
+const selectTablesStmt = db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table'");
+
 export async function load({ params }) {
-    const tables = db.prepare(`SELECT name FROM sqlite_schema WHERE type = 'table'`).all();
+    const tables = selectTablesStmt.all();
 
     const tablesWithCounts = tables.map(table => {
         const result = db.prepare(`SELECT COUNT(*) AS count FROM "${table.name}"`).get();
