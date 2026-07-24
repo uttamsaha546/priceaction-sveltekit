@@ -10,6 +10,7 @@
 	} from 'lightweight-charts';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
+	import { SmaSeriesPrimitive as _21WeekSmaSeriesPrimitive } from '$lib/utils/21WeekSmaSeriesPrimitive';
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 	import { DonchianHighPrimitive } from '$lib/utils/DonchianHighPrimitive';
 	import { _52WeekHighPrimitive } from '$lib/utils/52WeekHighPrimitive';
@@ -66,6 +67,10 @@
 
 		const smaSeries = new SmaSeriesPrimitive();
 		mainSeries.attachPrimitive(smaSeries);
+
+		const _21WeekSmaSeries = new _21WeekSmaSeriesPrimitive();
+		// mainSeries.attachPrimitive(_21WeekSmaSeries);
+
 		const rsiSeries = new CustomShapePrimitive();
 		mainSeries.attachPrimitive(rsiSeries);
 		const donchianHighSeries = new DonchianHighPrimitive();
@@ -385,6 +390,7 @@
 	$effect(() => {
 		if (!mainSeries || !data || !chart || data.length === 0) return;
 		// console.log(mainSeries.getPane().getHeight(), histogramSeries.getPane().getHeight());
+
 		const priceScale = mainSeries.priceScale();
 		priceScale.setAutoScale(true);
 		mainSeries.setData(data);
@@ -392,7 +398,7 @@
 		// keep zoom locked. make the price double every 100 pixel
 		const scalingFactor = mainSeries.getPane().getHeight() / scalingMultiplier;
 
-		// ChartState.scaleFactor = scalingFactor.toFixed(1);
+		ChartState.scaleFactor = scalingFactor.toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor);
 		// 🔥 pan vertically if needed
 		// panPriceScaleIntoView(priceScale, data, scalingFactor * scalingMultiplier);

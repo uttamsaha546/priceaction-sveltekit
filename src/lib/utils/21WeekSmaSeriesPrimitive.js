@@ -10,8 +10,8 @@ export class SmaSeriesPrimitive {
 
 
         this._smaSeries = this._chart.addSeries(LineSeries, {
-            color: '#2962FF',
-            lineWidth: 2,
+            color: 'purple',
+            lineWidth: 1,
             priceScaleId: 'right',
             crosshairMarkerVisible: false,
             priceLineVisible: false,
@@ -25,7 +25,7 @@ export class SmaSeriesPrimitive {
     _updateData = () => {
         // console.log('renered')
         const mainSeriesData = this._mainSeries.data();
-        const smaValues = calculateSMA(mainSeriesData, ChartState.isMonthly ? 12 : 52);
+        const smaValues = calculateSMA(mainSeriesData, ChartState.isMonthly ? 0 : 21);
         this._smaSeries.setData(smaValues);
     }
 
