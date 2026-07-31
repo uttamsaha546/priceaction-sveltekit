@@ -15,16 +15,21 @@
 			</index>
 		</table>
 		<table name="groww_mutual_funds" prior="groww_mutual_fund" >
+			<column name="scheme_code" type="INT" mandatory="y" />
 			<column name="fund_name" type="TEXT" mandatory="y" />
 			<column name="search_id" prior="id" type="TEXT" mandatory="y" />
-			<column name="scheme_code" type="INT" mandatory="y" />
+			<column name="category" type="TEXT" />
+			<column name="sub_category" type="TEXT" />
+			<column name="sub_sub_category" type="TEXT" />
+			<column name="index" type="TEXT" />
 			<index name="pk_groww_mutual_funds" unique="PRIMARY_KEY" >
 				<column name="scheme_code" />
 			</index>
 		</table>
 		<table name="groww_stocks" prior="groww_stoc" >
-			<column name="name" type="TEXT" mandatory="y" />
 			<column name="isin" type="TEXT" mandatory="y" />
+			<column name="name" type="TEXT" mandatory="y" />
+			<column name="symbol" type="TEXT" />
 			<column name="search_id" type="TEXT" mandatory="y" />
 			<column name="nse_code" type="TEXT" />
 			<column name="bse_code" type="INT" />
@@ -58,6 +63,16 @@
 - Get a better understanding of the schema by creating multiple diagrams.
 - Save the design to the model file, and deploy from 'Schema / Create into the database'.]]></comment>
 			</callout>
+			<query id="6d478558-d632-41fb-baea-b03d068b93b1" name="groww_mutual_funds" confirmed="y" >
+				<query_table schema="Default" name="groww_mutual_funds" alias="gmf" x="57" y="57" >
+					<column name="scheme_code" />
+					<column name="fund_name" />
+					<column name="search_id" />
+					<column name="category" />
+					<column name="sub_category" />
+					<column name="sub_sub_category" />
+				</query_table>
+			</query>
 		</diagram>
 	</diagram_group>
 </project>

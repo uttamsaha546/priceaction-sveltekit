@@ -1,4 +1,23 @@
 import { json, error as svelteError } from "@sveltejs/kit";
+import { db } from "$lib/server/database";
+
+db.exec(`
+	CREATE TABLE IF NOT EXISTS groww_mutual_funds (
+		scheme_code INT PRIMARY KEY,
+		fund_name TEXT NOT NULL,
+		search_id TEXT NOT NULL,
+		category TEXT,
+		sub_category TEXT,
+		sub_sub_category TEXT,
+		is_index TEXT
+	) WITHOUT ROWID;
+`);
+
+const insertStmt = db.prepare(`
+	INSERT OR REPLACE INTO groww_mutual_funds 
+	(scheme_code, fund_name, search_id, category, sub_category, sub_sub_category, is_index)
+	VALUES (?,?,?,?,?,?,?);
+	`);
 
 export async function POST() {
 	let allContents = [];
@@ -6,7 +25,7 @@ export async function POST() {
 
 	try {
 		// Fetch initial page
-		const initialUrl = `https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?available_for_investment=true&cat=Equity&doc_type=scheme&index=false&page=0&plan_type=Direct&scheme_type=Growth&size=${PAGE_SIZE}&sort_by=3&sub_cat=Sectoral&sub_sub_cat=null&tags=null`;
+		const initialUrl = `https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?available_for_investment=true&doc_type=scheme&index=false&page=0&plan_type=Direct&scheme_type=Growth&size=${PAGE_SIZE}&sort_by=3`;
 
 		const res = await fetch(initialUrl);
 
@@ -27,7 +46,7 @@ export async function POST() {
 			const promises = [];
 
 			for (let page = 1; page < totalPages; page++) {
-				const url = `https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?available_for_investment=true&cat=Equity&doc_type=scheme&index=false&page=${page}&plan_type=Direct&scheme_type=Growth&size=${PAGE_SIZE}&sort_by=3&sub_cat=Sectoral&sub_sub_cat=null&tags=null`;
+				const url = `https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?available_for_investment=true&doc_type=scheme&index=false&page=${page}&plan_type=Direct&scheme_type=Growth&size=${PAGE_SIZE}&sort_by=3`;
 
 				promises.push(
 					fetch(url).then(async (r) => {
@@ -45,6 +64,25 @@ export async function POST() {
 					allContents.push(...pageData.content);
 				}
 			}
+		}
+
+		db.exec("BEGIN TRANSACTION;");
+		try {
+			for (const row of allContents) {
+				insertStmt.run(
+					row.scheme_code,
+					row.fund_name,
+					row.search_id,
+					row.category ?? null,
+					row.sub_category ?? null,
+					row.sub_sub_category[0] ?? null,
+					row.is_index ?? null
+				);
+			}
+			db.exec("COMMIT;");
+		} catch (dbError) {
+			db.exec("ROLLBACK;");
+			throw dbError;
 		}
 
 		return json({ success: true, count: allContents.length, data: allContents });
