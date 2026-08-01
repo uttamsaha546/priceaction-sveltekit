@@ -39,8 +39,8 @@
 		</table>
 		<table name="ns" prior="n" />
 		<table name="nse_industry_classifications" prior="nse_industry_classification" >
-			<column name="name" type="TEXT" mandatory="y" />
 			<column name="isin" type="TEXT" mandatory="y" />
+			<column name="name" type="TEXT" mandatory="y" />
 			<column name="symbol" type="TEXT" mandatory="y" />
 			<column name="macro" type="TEXT" mandatory="y" />
 			<column name="sector" type="TEXT" mandatory="y" />
