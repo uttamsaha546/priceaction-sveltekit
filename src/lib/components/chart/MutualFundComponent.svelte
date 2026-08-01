@@ -29,7 +29,8 @@
 			'6m': 'return6m',
 			'1y': 'return1y',
 			'3y': 'return3y',
-			'5y': 'return5y'
+			'5y': 'return5y',
+			'10y': 'return10y'
 		};
 		const key = sortKeyMap[sortBy] ?? 'aum';
 
@@ -115,6 +116,7 @@
 			<option value="1y">1Y</option>
 			<option value="3y">3Y</option>
 			<option value="5y">5Y</option>
+			<option value="10y">10Y</option>
 		</select>
 	</div>
 	<div class="2ndFilters flex flex-row items-center justify-between text-sm/tight">
