@@ -69,7 +69,7 @@
 		mainSeries.attachPrimitive(smaSeries);
 
 		const _21WeekSmaSeries = new _21WeekSmaSeriesPrimitive();
-		// mainSeries.attachPrimitive(_21WeekSmaSeries);
+		mainSeries.attachPrimitive(_21WeekSmaSeries);
 
 		const rsiSeries = new CustomShapePrimitive();
 		mainSeries.attachPrimitive(rsiSeries);

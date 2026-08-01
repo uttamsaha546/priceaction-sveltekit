@@ -7,23 +7,40 @@
 
 	let isLocked = $state(true);
 	let selectedFundType = $state('Mid Cap');
+	let selectedSubCategory = $state('');
+	let subCategorySet = $state(new Set());
 	let data = $state([]);
 	let sortBy = $state('');
-	let sortedData = $derived.by(() => {
+
+	let filteredData = $derived.by(() => {
 		if (!data) return [];
-		if (sortBy === '3m') {
-			return [...data].sort((a, b) => b.return3m - a.return3m);
-		} else if (sortBy === '6m') {
-			return [...data].sort((a, b) => b.return6m - a.return6m);
-		} else if (sortBy === '1y') {
-			return [...data].sort((a, b) => b.return1y - a.return1y);
-		} else if (sortBy === '3y') {
-			return [...data].sort((a, b) => b.return3y - a.return3y);
-		} else if (sortBy === '5y') {
-			return [...data].sort((a, b) => b.return5y - a.return5y);
-		} else {
-			return [...data].sort((a, b) => b.aum - a.aum);
+		if (selectedSubCategory) {
+			return data.filter((item) => item.sub_sub_category[0] === selectedSubCategory);
 		}
+		return data;
+	});
+
+	let sortedData = $derived.by(() => {
+		if (!filteredData) return [];
+
+		// Map short code to exact property name, default to 'aum'
+		const sortKeyMap = {
+			'3m': 'return3m',
+			'6m': 'return6m',
+			'1y': 'return1y',
+			'3y': 'return3y',
+			'5y': 'return5y'
+		};
+		const key = sortKeyMap[sortBy] ?? 'aum';
+
+		// Helper to extract a valid numeric value, treating null/undefined as -Infinity (sorts to end)
+		const getVal = (item) => {
+			const val = item?.[key];
+			return val === null || val === undefined || Number.isNaN(val) ? -Infinity : Number(val);
+		};
+
+		// Copy array with [...] before sorting
+		return [...filteredData].sort((a, b) => getVal(b) - getVal(a));
 	});
 
 	// $inspect(sortedData);
@@ -62,7 +79,12 @@
 		const a = await fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/search/v1/derived/scheme?available_for_investment=true&doc_type=scheme&page=0&plan_type=Direct&q=&size=200&sort_by=1&sub_category=${selectedFundType}`)}`
 		);
-		data = (await a.json()).content.filter((item) => !item.index);
+		const b = (await a.json()).content.filter((item) => !item.index);
+		data = b;
+
+		subCategorySet = new Set(
+			b.map((item) => item.sub_sub_category[0] ?? null).filter((item) => item !== null)
+		);
 	});
 
 	$effect(async () => {
@@ -95,10 +117,17 @@
 			<option value="5y">5Y</option>
 		</select>
 	</div>
+	<div class="2ndFilters flex flex-row items-center justify-between text-sm/tight">
+		<select bind:value={selectedSubCategory}>
+			<option value="">Sub Category</option>
+			{#each subCategorySet as subCategory}
+				<option value={subCategory}>{subCategory}</option>
+			{/each}
+		</select>
+		<input type="checkbox" bind:checked={isLocked} />
+	</div>
 
-	<input type="checkbox" bind:checked={isLocked} />
-
-	<div class="Content flex-1 overflow-auto">
+	<div class="Content flex-1 overflow-auto mt-2">
 		{#each sortedData as fund}
 			<div
 				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"

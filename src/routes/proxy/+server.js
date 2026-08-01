@@ -72,7 +72,7 @@ export async function GET(request) {
                     ...(authorization && { 'Authorization': authorization }),
                 }
             });
-            console.log("Called GET (Cache Miss)");
+            // console.log("Called GET (Cache Miss)");
 
             if (!upstream.ok) {
                 // Throwing an error lets the engine know NOT to cache this failure
