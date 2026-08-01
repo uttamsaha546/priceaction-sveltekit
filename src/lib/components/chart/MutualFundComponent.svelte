@@ -11,11 +11,15 @@
 	let subCategorySet = $state(new Set());
 	let data = $state([]);
 	let sortBy = $state('');
+	let selectedFundIndex = $state(-1);
 
 	let filteredData = $derived.by(() => {
 		if (!data) return [];
-		if (selectedSubCategory) {
+		if (selectedSubCategory !== 'null' && selectedSubCategory !== '') {
 			return data.filter((item) => item.sub_sub_category[0] === selectedSubCategory);
+		}
+		if (selectedSubCategory === 'null') {
+			return data.filter((item) => !item.sub_sub_category[0]);
 		}
 		return data;
 	});
@@ -83,10 +87,11 @@
 		const b = (await a.json()).content.filter((item) => !item.index);
 		data = b;
 
-		subCategorySet = new Set(
-			b.map((item) => item.sub_sub_category[0] ?? null).filter((item) => item !== null)
-		);
+		subCategorySet = new Set(b.map((item) => item.sub_sub_category[0] ?? 'null'));
+		selectedSubCategory = '';
 	});
+
+	$inspect(subCategorySet);
 
 	$effect(async () => {
 		if (!clickedFund) return;
@@ -130,9 +135,10 @@
 	</div>
 
 	<div class="Content flex-1 overflow-auto mt-2">
-		{#each sortedData as fund}
+		{#each sortedData as fund, index}
 			<div
-				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer"
+				class="FundCard border-b border-gray-200 text-sm p-1 group relative hover:bg-gray-100 cursor-pointer
+				{selectedFundIndex === index ? 'ring-2 ring-inset rounded-md' : ''}"
 				onclick={async () => {
 					if (isLocked) {
 						ChartState.isLoading = true;
@@ -143,6 +149,7 @@
 						ChartState.lineData = data.data;
 						ChartState.currentScrip = data.name;
 						ChartState.isLoading = false;
+						selectedFundIndex = index;
 					} else {
 						isHoldingPage = true;
 						clickedFund = fund;
