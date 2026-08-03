@@ -8,6 +8,7 @@
 	let isLocked = $state(true);
 	let selectedFundType = $state('Mid Cap');
 	let selectedSubCategory = $state('');
+	let selectedCategory = $state('Equity');
 	let subCategorySet = $state(new Set());
 	let data = $state([]);
 	let sortBy = $state('');
@@ -112,6 +113,8 @@
 			<option value="Small Cap">Small Cap</option>
 			<option value="Sectoral">Sectoral</option>
 			<option value="Thematic">Thematic</option>
+			<option value="Flexi Cap">Flexi Cap</option>
+			<option value="Value Oriented">Value Oriented</option>
 		</select>
 		<div>{sortedData.length} funds</div>
 		<select bind:value={sortBy}>
@@ -130,6 +133,9 @@
 			{#each subCategorySet as subCategory}
 				<option value={subCategory}>{subCategory}</option>
 			{/each}
+		</select>
+		<select bind:value = {selectedCategory}>
+		  <option value="Equity">Equity</option>
 		</select>
 		<input type="checkbox" bind:checked={isLocked} />
 	</div>
