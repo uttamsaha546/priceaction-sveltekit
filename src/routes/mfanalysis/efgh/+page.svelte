@@ -56,7 +56,7 @@
 
 				try {
 					const response = await fetch(
-						`/mfanalysis/def/api/getInfoFromNSE?symbol=${encodeURIComponent(symbol.trim())}`
+						`/mfanalysis/efgh/api/getInfoFromNSE?symbol=${encodeURIComponent(symbol.trim())}`
 					);
 
 					if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
