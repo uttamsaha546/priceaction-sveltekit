@@ -67,11 +67,11 @@
 
 					return {
 						...element,
-						Macro: secInfo.macro || 'N/A',
-						Sector: secInfo.sector || 'N/A',
-						Industry: secInfo.industryInfo || 'N/A',
-						'Basic Industry': secInfo.basicIndustry || 'N/A',
-						Index: secInfo.index || 'N/A'
+						Macro: secInfo.macro || '-',
+						Sector: secInfo.sector || '-',
+						Industry: secInfo.industryInfo || '-',
+						'Basic Industry': secInfo.basicIndustry || '-',
+						Index: secInfo.index || '-'
 					};
 				} catch (err) {
 					console.warn(`Failed metadata query resolution for ticket: ${symbol}`, err);
@@ -281,7 +281,7 @@
 								<tr class="hover:bg-slate-50/80 transition-colors odd:bg-white even:bg-slate-50/30">
 									{#each tableHeaders as header}
 										<td class="p-3 border-r border-slate-200/40 last:border-0 font-medium">
-											{#if row[header] === 'N/A' || !row[header]}
+											{#if !row[header]}
 												<span class="text-slate-400 italic">—</span>
 											{:else if header === 'Fetch Error'}
 												<span class="text-red-500 font-semibold">{row[header]}</span>

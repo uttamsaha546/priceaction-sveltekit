@@ -1,8 +1,43 @@
 import { json } from '@sveltejs/kit';
+import { DatabaseSync } from 'node:sqlite';
+import zlib from 'node:zlib';
 
+const db = new DatabaseSync('nse-cache.db');
 const hotCache = new Map();
 let cachedCookie = '';
 let cookieExpiry = 0;
+
+db.exec(`CREATE TABLE IF NOT EXISTS nse_cache (
+    url TEXT PRIMARY KEY,
+    response BLOB NOT NULL
+    ) WITHOUT ROWID;`
+);
+
+const getCacheStmt = db.prepare('SELECT response FROM nse_cache WHERE url=?');
+const setCacheStmt = db.prepare('INSERT OR REPLACE INTO nse_cache (url, response) VALUES (?, ?)');
+
+function getCache(url) {
+    const cache = hotCache.get(url);
+    if (cache !== undefined) return cache;
+    const row = getCacheStmt.get(url);
+    if (!row) return null;
+
+    const decompressed = zlib.zstdDecompressSync(row.response);
+    const value = JSON.parse(decompressed.toString('utf8'));
+    hotCache.set(url, value);
+    return value;
+}
+
+/**
+ * 
+ * @param {*} url url as key
+ * @param {*} response json object response as value. stringyfy json before saving.
+ */
+function setCache(url, response) {
+    hotCache.set(url, response);
+    const compressed = zlib.zstdCompressSync(Buffer.from(JSON.stringify(response), 'utf8'));
+    setCacheStmt.run(url, compressed);
+}
 
 // Fake standard desktop browser fingerprints to bypass basic firewall rule sets
 const HEADERS = {
@@ -25,18 +60,17 @@ async function getNseCookie() {
 
     try {
         const response = await fetch('https://www.nseindia.com/', { headers: HEADERS });
-        const cookies = response.headers.get('set-cookie');
-        
-        if (!cookies) throw new Error('NSE failed to issue session tokens');
+        const cookies = response.headers.getSetCookie();
+
+        if (!cookies || cookies.length === 0) throw new Error('NSE failed to issue session tokens');
 
         // Isolate and extract relevant security tracking parameters
         cachedCookie = cookies
-            .split(',')
             .map(c => c.split(';')[0].trim())
             .filter(c => c.startsWith('nsit') || c.startsWith('nseappid') || c.startsWith('ak_bmsc') || c.startsWith('bm_sv'))
             .join('; ');
 
-        cookieExpiry = now + 5 * 60 * 1000; 
+        cookieExpiry = now + 5 * 60 * 1000;
         return cachedCookie;
     } catch (err) {
         console.error('NSE Cookie Initialization Failure:', err.message);
@@ -48,8 +82,9 @@ async function getNseCookie() {
  * Generic fetch wrapper injected with appropriate cookies & spoofed user agents
  */
 async function fetchWithNseSession(url) {
-    if (hotCache.has(url)) {
-        return hotCache.get(url);
+    const cached = getCache(url);
+    if (cached !== null) {
+        return cached;
     }
 
     const cookie = await getNseCookie();
@@ -62,7 +97,7 @@ async function fetchWithNseSession(url) {
     }
 
     const data = await response.json();
-    hotCache.set(url, data);
+    setCache(url, data);
     return data;
 }
 
@@ -85,7 +120,7 @@ export async function GET({ url }) {
         // Step B: Fetch final transactional quotes using configurations retrieved from Step A
         const activeSeries = metaData.activeSeries[0];
         const marketType = metaData.marketType || 'N';
-        
+
         const symbolDataUrl = `https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=${marketType}&series=${activeSeries}&symbol=${encodeURIComponent(symbol)}`;
         const symbolData = await fetchWithNseSession(symbolDataUrl);
 
@@ -104,5 +139,3 @@ export async function GET({ url }) {
         return json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
-
-
