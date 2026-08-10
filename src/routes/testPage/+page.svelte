@@ -13,13 +13,4 @@
 	>
 		Click to Test
 	</button>
-
-	<div class="bg-red-800 square">A</div>
 </div>
-
-<style>
-	.square {
-		width: 1in;
-		height: 1in;
-	}
-</style>
