@@ -65,13 +65,19 @@
 					const secInfo = result.data?.nseData?.equityResponse?.[0]?.secInfo;
 					if (!secInfo) return element;
 
+					const a = await fetch(
+						`/mfanalysis/efgh/api/isHeldByMF?symbol=${encodeURIComponent(symbol.trim())}`
+					);
+					const b = await a.json();
+
 					return {
 						...element,
 						Macro: secInfo.macro || '-',
 						Sector: secInfo.sector || '-',
 						Industry: secInfo.industryInfo || '-',
 						'Basic Industry': secInfo.basicIndustry || '-',
-						Index: secInfo.index || '-'
+						Index: secInfo.index || '-',
+						isHeldByMF: b.heldByMF
 					};
 				} catch (err) {
 					console.warn(`Failed metadata query resolution for ticket: ${symbol}`, err);
