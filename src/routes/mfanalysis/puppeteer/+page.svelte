@@ -6,6 +6,23 @@
 	let parsing = $state({});
 	let saving = $state({});
 	let messages = $state({});
+	let portfolioMonth = $state('');
+
+	const portfolioMonths = $derived(
+		Array.from({ length: 12 }, (_, i) => {
+			const date = new Date();
+			date.setMonth(date.getMonth() - i);
+
+			const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+			const label = date.toLocaleDateString('en-IN', {
+				month: 'long',
+				year: 'numeric'
+			});
+
+			return { value, label };
+		})
+	);
 
 	const portfolioUrl = {
 		'HSBC Mutual Fund':
@@ -75,7 +92,7 @@
 			});
 	});
 
-	$inspect(data);
+	//$inspect(data);
 	function handleFileUpload(event, row) {
 		const file = event.target.files?.[0];
 
@@ -86,6 +103,7 @@
 
 		Papa.parse(file, {
 			header: true,
+			transformHeader: (header) => header.trim(),
 			skipEmptyLines: true,
 			dynamicTyping: true,
 
@@ -102,6 +120,17 @@
 
 					return;
 				}
+
+				// const lastrow = results.data.length - 1;
+
+				results.data = results.data.map((x) => {
+					return {
+						name: x.name.trim(),
+						isin: x.isin.trim(),
+						qty: parseInt(String(x.qty).replaceAll(',', '')),
+						weight: parseFloat(String(x.weight).replaceAll('%', ''))
+					};
+				});
 
 				csvData[row.fund_name] = results.data;
 
@@ -130,6 +159,15 @@
 
 		if (!rows?.length) return;
 
+		if (!portfolioMonth) {
+			messages[fundName] = {
+				type: 'error',
+				text: 'Please select a portfolio month first.'
+			};
+
+			return;
+		}
+
 		saving[fundName] = true;
 		messages[fundName] = null;
 
@@ -140,7 +178,8 @@
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					fund: row,
+					fund: row.search_id,
+					portfolio_month: portfolioMonth,
 					data: rows
 				})
 			});
@@ -155,9 +194,6 @@
 				type: 'success',
 				text: result.message || 'Data saved successfully.'
 			};
-
-			// Optional: clear parsed data after successful save
-			// delete csvData[fundName];
 		} catch (error) {
 			console.error('Save error:', error);
 
@@ -178,6 +214,26 @@
 		<p class="mt-1 text-sm text-gray-500">
 			Upload fund data and save it to the database. {data?.length} Funds
 		</p>
+
+		<div class="mt-4 flex items-center gap-3">
+			<label for="portfolio-month" class="text-sm font-medium text-gray-700">
+				Portfolio Month
+			</label>
+
+			<select
+				id="portfolio-month"
+				bind:value={portfolioMonth}
+				class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+			>
+				<option value="" disabled>Select month</option>
+
+				{#each portfolioMonths as month}
+					<option value={month.value}>
+						{month.label}
+					</option>
+				{/each}
+			</select>
+		</div>
 	</div>
 
 	<div class="overflow-x-auto">
@@ -290,7 +346,7 @@
 						<td class="px-6 py-4 text-center">
 							<button
 								type="button"
-								disabled={!parsedRows?.length || saving[fundName]}
+								disabled={!parsedRows?.length || !portfolioMonth || saving[fundName]}
 								onclick={() => saveToDatabase(row)}
 								class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-300"
 							>
