@@ -42,7 +42,7 @@
 			<column name="response" type="BLOB" mandatory="y" />
 			<column name="isin" type="TEXT" mandatory="y" />
 			<column name="symbol" type="TEXT" mandatory="y" />
-			<column name="type" type="ENUM" mandatory="y" >
+			<column name="function_name" prior="type" type="ENUM" >
 				<enumeration><![CDATA[getMetaData, getSymbolData]]></enumeration>
 			</column>
 			<index name="pk_nse_cache" unique="PRIMARY_KEY" >
@@ -74,7 +74,7 @@
 			<entity schema="Default" name="groww_mutual_funds" color="C1D8EE" x="532" y="152" />
 			<entity schema="Default" name="groww_stocks" color="C1D8EE" x="722" y="152" />
 			<entity schema="Default" name="nse_cache" color="C1D8EE" x="57" y="342" />
-			<entity schema="Default" name="nse_industry_classifications" color="C1D8EE" x="190" y="342" />
+			<entity schema="Default" name="nse_industry_classifications" color="C1D8EE" x="247" y="342" />
 			<callout x="76" y="57" pointer="Round" >
 				<comment><![CDATA[- Right-click the diagram to create new tables. 
 - Double-click table headers to edit. 

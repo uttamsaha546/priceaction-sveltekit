@@ -1,5 +1,6 @@
 <script>
 	import AmfiStockClassification from './components/AmfiStockClassification.svelte';
+	import NseIndustryClassification from './components/NseIndustryClassification.svelte';
 	import HowToDefineStockUniverse from './HowToDefineStockUniverse.svelte';
 </script>
 
@@ -23,7 +24,7 @@
 		<AmfiStockClassification />
 	</article>
 	<article>
-		<h1>Step 2: Pull Data from AMFI Marketcap classification</h1>
+		<h1>Step 2: Pull Data for NSE Industry classification</h1>
 		<p>
 			For each symbols in amfi_marketcap_classifications, fetch
 			https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series=EQ&symbol=VBL
@@ -46,6 +47,8 @@
 			NULL, basic_industry TEXT NOT NULL, primary_index TEXT DEFAULT NULL, all_index TEXT DEFAULT
 			NULL ) WITHOUT ROWID; Compress response in zstd
 		</p>
+
+		<NseIndustryClassification />
 	</article>
 	<article>
 		<h1>Step 3: Pull all Mutual funds holdings except debt from Groww</h1>
