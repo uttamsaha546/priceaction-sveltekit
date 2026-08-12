@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 
-export const db = new DatabaseSync('database.db');
+export const db = new DatabaseSync('databases/database.db');
 
 //Allows parallel reading queries to execute while the set() or cleanup() methods of 
 // cache are writing to disk.
@@ -41,7 +41,7 @@ db.exec(`
 
 // To store industry classification data from NSE API
 db.exec(`
-        CREATE TABLE IF NOT EXISTS industry_classification (
+        CREATE TABLE IF NOT EXISTS nse_industry_classifications (
         symbol TEXT PRIMARY KEY NOT NULL,
         name TEXT,
         isin TEXT,

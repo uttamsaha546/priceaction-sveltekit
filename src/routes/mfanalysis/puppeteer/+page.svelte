@@ -1,7 +1,10 @@
 <script>
+	import { invalidate } from '$app/navigation';
 	import Papa from 'papaparse';
 
-	let data = $state();
+	let { data: portfolio } = $props();
+	// $inspect(portfolio);
+	let fundList = $state();
 	let csvData = $state({});
 	let parsing = $state({});
 	let saving = $state({});
@@ -86,13 +89,12 @@
 		fetch('/mfanalysis/puppeteer/api/getFundList?sub_category=Mid Cap')
 			.then((res) => res.json())
 			.then((res) => {
-				data = res.content.filter(
+				fundList = res.content.filter(
 					(fund) => fund.index === false && !fund.scheme_name?.toLowerCase().includes('etf')
 				);
 			});
 	});
 
-	//$inspect(data);
 	function handleFileUpload(event, row) {
 		const file = event.target.files?.[0];
 
@@ -120,8 +122,6 @@
 
 					return;
 				}
-
-				// const lastrow = results.data.length - 1;
 
 				results.data = results.data.map((x) => {
 					return {
@@ -178,9 +178,9 @@
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					fund: row.search_id,
-					portfolio_month: portfolioMonth,
-					data: rows
+					groww_id: row.search_id,
+					month: portfolioMonth,
+					portfolio: rows
 				})
 			});
 
@@ -194,6 +194,8 @@
 				type: 'success',
 				text: result.message || 'Data saved successfully.'
 			};
+
+			await invalidate('app:portfolio');
 		} catch (error) {
 			console.error('Save error:', error);
 
@@ -212,7 +214,7 @@
 		<h2 class="text-lg font-semibold text-gray-900">Mid Cap Funds</h2>
 
 		<p class="mt-1 text-sm text-gray-500">
-			Upload fund data and save it to the database. {data?.length} Funds
+			Upload fund data and save it to the database. {fundList?.length} Funds
 		</p>
 
 		<div class="mt-4 flex items-center gap-3">
@@ -242,6 +244,8 @@
 				<tr>
 					<th class="px-6 py-3 font-semibold"> Fund </th>
 
+					<th class="px-6 py-3 font-semibold"> Portfolio </th>
+
 					<th class="px-6 py-3 font-semibold"> 6M Return </th>
 
 					<th class="px-6 py-3 font-semibold"> 1Y Return </th>
@@ -253,9 +257,10 @@
 			</thead>
 
 			<tbody class="divide-y divide-gray-100">
-				{#each data ?? [] as row}
+				{#each fundList ?? [] as row}
 					{@const fundName = row.fund_name}
 					{@const parsedRows = csvData[fundName]}
+					{@const this_portfolio = portfolio?.data.find((x) => x.groww_id === row.id)}
 
 					<tr class="transition-colors hover:bg-gray-50">
 						<!-- Fund -->
@@ -277,6 +282,21 @@
 									<p class="text-xs text-gray-500">Mid Cap</p>
 								</div>
 							</div>
+						</td>
+
+						<!-- Portfolio -->
+						<td class="px-6 py-4">
+							<span
+								class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+							>
+								{this_portfolio?.portfolio?.length ?? 0}
+							</span>
+
+							<span
+								class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+							>
+								{this_portfolio?.month ?? ''}
+							</span>
 						</td>
 
 						<!-- 6M -->

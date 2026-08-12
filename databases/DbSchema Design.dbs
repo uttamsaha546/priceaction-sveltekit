@@ -2,10 +2,9 @@
 <project name="priceaction-sveltekit-db-schema" database="Sqlite" id="5c85dd7d-0028-4598-94b6-cafafcf04f87" >
 	<schema name="Default" >
 		<table name="amfi_marketcap_classifications" prior="amfi_marketcap_classification" >
-			<column name="name" type="TEXT" mandatory="y" />
 			<column name="isin" type="TEXT" mandatory="y" />
-			<column name="bse_symbol" type="TEXT" />
-			<column name="nse_symbol" type="TEXT" />
+			<column name="symbol" prior="bse_symbol" type="TEXT" />
+			<column name="name" type="TEXT" mandatory="y" />
 			<column name="marketcap" type="INT" mandatory="y" />
 			<column name="category" type="ENUM" mandatory="y" >
 				<enumeration><![CDATA['Large Cap', 'Mid Cap', 'Small Cap']]></enumeration>
@@ -38,14 +37,32 @@
 			</index>
 		</table>
 		<table name="ns" prior="n" />
+		<table name="nse_cache" prior="nse_cac" >
+			<column name="url" type="TEXT" mandatory="y" />
+			<column name="response" type="BLOB" mandatory="y" />
+			<column name="isin" type="TEXT" mandatory="y" />
+			<column name="symbol" type="TEXT" mandatory="y" />
+			<column name="type" type="ENUM" mandatory="y" >
+				<enumeration><![CDATA[getMetaData, getSymbolData]]></enumeration>
+			</column>
+			<index name="pk_nse_cache" unique="PRIMARY_KEY" >
+				<column name="url" />
+			</index>
+		</table>
 		<table name="nse_industry_classifications" prior="nse_industry_classification" >
 			<column name="isin" type="TEXT" mandatory="y" />
-			<column name="name" type="TEXT" mandatory="y" />
 			<column name="symbol" type="TEXT" mandatory="y" />
+			<column name="name" type="TEXT" mandatory="y" />
 			<column name="macro" type="TEXT" mandatory="y" />
 			<column name="sector" type="TEXT" mandatory="y" />
 			<column name="industry" type="TEXT" mandatory="y" />
 			<column name="basic_industry" type="TEXT" mandatory="y" />
+			<column name="primary_index" type="TEXT" >
+				<defo><![CDATA[NULL]]></defo>
+			</column>
+			<column name="all_index" type="TEXT" >
+				<defo><![CDATA[NULL]]></defo>
+			</column>
 			<index name="pk_nse_industry_classification" unique="PRIMARY_KEY" >
 				<column name="isin" />
 			</index>
@@ -56,7 +73,8 @@
 			<entity schema="Default" name="amfi_marketcap_classifications" color="C1D8EE" x="57" y="152" />
 			<entity schema="Default" name="groww_mutual_funds" color="C1D8EE" x="532" y="152" />
 			<entity schema="Default" name="groww_stocks" color="C1D8EE" x="722" y="152" />
-			<entity schema="Default" name="nse_industry_classifications" color="C1D8EE" x="323" y="152" />
+			<entity schema="Default" name="nse_cache" color="C1D8EE" x="57" y="342" />
+			<entity schema="Default" name="nse_industry_classifications" color="C1D8EE" x="190" y="342" />
 			<callout x="76" y="57" pointer="Round" >
 				<comment><![CDATA[- Right-click the diagram to create new tables. 
 - Double-click table headers to edit. 
