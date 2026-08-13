@@ -66,11 +66,11 @@
 
 					return {
 						...element,
-						macro: secInfo.macro || '-',
-						sector: secInfo.sector || '-',
-						industry: secInfo.industryInfo || '-',
-						basic_industry: secInfo.basicIndustry || '-',
-						primary_index: secInfo.index || '-',
+						macro: secInfo.macro,
+						sector: secInfo.sector,
+						industry: secInfo.industryInfo,
+						basic_industry: secInfo.basicIndustry,
+						primary_index: secInfo.index ?? null,
 						all_index: secInfo.indexList.join(', ')
 					};
 				} catch (err) {
