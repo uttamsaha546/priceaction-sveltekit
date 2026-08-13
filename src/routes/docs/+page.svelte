@@ -1,5 +1,6 @@
 <script>
 	import AmfiStockClassification from './components/AmfiStockClassification.svelte';
+	import GrowwMutualFund from './components/GrowwMutualFund.svelte';
 	import NseIndustryClassification from './components/NseIndustryClassification.svelte';
 	import HowToDefineStockUniverse from './HowToDefineStockUniverse.svelte';
 </script>
@@ -53,14 +54,16 @@
 	<article>
 		<h1>Step 3: Pull all Mutual funds holdings except debt from Groww</h1>
 		<p>
-			Get all Equity (except International) & Hybrid mutual fund from groww mutual fund screener.
-			Cache the response in cache table in temp.db, expiry 1month. This will give mutual fund id.
-			Fetch each mutual fund id to get mf holdings, cache the response in groww_mf_holdings in
-			temp.db, expiry next month 15th day. MF holdings will provide stock id, weight. Fetch each
-			stock id to get symbol, store it permanently in groww_stockid_symbol_map table under app.db.
+			Get all Equity & Hybrid mutual funds from groww mutual fund screener. Cache the response in
+			url_response_cache table under temp.db, expiry 1month. This will give mutual fund id. Fetch
+			each mutual fund id (except index, etf, hybrid long short, arbitrage) to get mf holdings,
+			cache the response in groww_mf_holdings in temp.db, expiry next month 15th day, api
+			https://groww.in/v1/api/data/mf/web/v6/scheme/search/bandhan-small-cap-fund-direct-growth . MF
+			holdings will provide stock id, weight. Fetch each stock id to get symbol, store it
+			permanently in groww_stockid_symbol_map table under app.db.
 		</p>
 
-		<p></p>
+		<GrowwMutualFund />
 	</article>
 	<HowToDefineStockUniverse />
 </div>

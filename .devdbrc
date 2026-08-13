@@ -2,5 +2,9 @@
   {
     "type": "sqlite",
     "path": "c:\\Users\\Uttam Saha\\Desktop\\ALL PROJECTS\\priceaction-sveltekit\\database.db"
+  },
+  {
+    "type": "sqlite",
+    "path": "c:\\Users\\Uttam Saha\\Desktop\\ALL PROJECTS\\priceaction-sveltekit\\databases\\temp.db"
   }
 ]

@@ -54,8 +54,6 @@
 				}
 
 				try {
-					const formData = new FormData();
-					formData.append('symbol', symbol);
 					const response = await fetch(
 						`/docs/api/industry-classification-from-nse?symbol=${encodeURIComponent(symbol)}`
 					);
