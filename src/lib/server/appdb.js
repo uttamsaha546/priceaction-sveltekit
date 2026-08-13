@@ -38,3 +38,68 @@ appdb.exec(`
   ) WITHOUT ROWID;
 `);
 
+appdb.exec(`
+  CREATE TABLE IF NOT EXISTS groww_stock_id_symbol_map (
+    stock_search_id TEXT PRIMARY KEY,
+    isin TEXT NOT NULL,
+    symbol TEXT NOT NULL
+  ) WITHOUT ROWID;
+`);
+
+
+appdb.exec(`
+  DROP VIEW IF EXISTS stock_universe;
+
+	CREATE VIEW IF NOT EXISTS stock_universe AS
+
+	SELECT DISTINCT a.symbol
+	FROM amfi_marketcap_classifications a
+	INNER JOIN nse_industry_classifications n
+		ON n.symbol = a.symbol
+	WHERE COALESCE(TRIM(n.primary_index), '') <> '-'
+
+	UNION
+
+	SELECT DISTINCT a.symbol
+	FROM amfi_marketcap_classifications a
+	INNER JOIN groww_stock_id_symbol_map g
+		ON g.symbol = a.symbol;
+`);
+
+// DROP VIEW IF EXISTS stock_universe;
+
+// CREATE VIEW stock_universe AS
+// SELECT
+//     a.*,
+//     n.*,
+//     g.*
+// FROM amfi_marketcap_classifications a
+// LEFT JOIN nse_industry_classifications n
+//     ON n.symbol = a.symbol
+// LEFT JOIN groww_stock_id_symbol_map g
+//     ON g.symbol = a.symbol
+// WHERE
+//     (
+//         n.symbol IS NOT NULL
+//         AND COALESCE(TRIM(n.primary_index), '') <> '-'
+//     )
+//     OR g.symbol IS NOT NULL;
+
+// DROP VIEW IF EXISTS stock_universe;
+
+// CREATE VIEW stock_universe AS
+// SELECT
+//     a.*,
+//     n.*,
+//     g.*
+// FROM amfi_marketcap_classifications a
+// LEFT JOIN nse_industry_classifications n
+//     ON n.symbol = a.symbol
+// LEFT JOIN groww_stock_id_symbol_map g
+//     ON g.symbol = a.symbol
+// WHERE
+//     (
+//         n.symbol IS NOT NULL
+//         AND COALESCE(TRIM(n.primary_index), '') <> '-'
+//     )
+//     OR g.symbol IS NOT NULL;

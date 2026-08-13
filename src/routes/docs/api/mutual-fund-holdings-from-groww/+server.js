@@ -46,13 +46,13 @@ function setCache(url, response) {
 }
 
 export async function GET({ url, fetch }) {
-	const id = url.searchParams.get('id');
+	const fund_id = url.searchParams.get('fund_id');
 
-	if (!id) {
-		return json({ error: 'Missing required query parameter: id' }, { status: 400 });
+	if (!fund_id) {
+		return json({ error: 'Missing required query parameter: fund_id' }, { status: 400 });
 	}
 
-	const targetUrl = `https://groww.in/v1/api/data/mf/web/v6/scheme/search/${encodeURIComponent(id)}`;
+	const targetUrl = `https://groww.in/v1/api/data/mf/web/v6/scheme/search/${encodeURIComponent(fund_id)}`;
 	try {
 		const cached = getCache(targetUrl);
 		if (cached !== null) {
@@ -73,7 +73,7 @@ export async function GET({ url, fetch }) {
 			data
 		});
 	} catch (error) {
-		console.error(`Execution fault for target symbol [${symbol}]:`, error.message);
+		console.error(`Execution fault for target fund_id [${fund_id}]:`, error.message);
 		return json({ error: error.message || 'Internal Server Error' }, { status: 500 });
 	}
 }

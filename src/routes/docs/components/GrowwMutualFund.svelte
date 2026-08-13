@@ -4,6 +4,7 @@
 	let parsedData = $state([]);
 	let errorMessage = $state('');
 	let processingStatus = $state({ active: false, current: 0, total: 0 });
+	// let savingStatus = $state({ active: false, current: 0, total: 0 });
 	let isHoldingFetched = $state(false);
 
 	let tableHeaders = $derived(
@@ -19,7 +20,17 @@
 			result.data.data.content.forEach((row) => {
 				if (row.index === true) {
 					excludedRows.push(row);
-				} else if (row.id.includes('etf')) {
+				} else if (
+					row.id.includes('etf') ||
+					row.id.includes('fof') ||
+					row.id.includes('fund-of-funds') ||
+					row.id.includes('sbi-magnum-children') ||
+					row.id.includes('hdfc-multiple-yield-fund-plan-2005-direct-growth') ||
+					row.id.includes('bandhan-asset-allocation-moderate-direct-growth') ||
+					row.id.includes('hdfc-non-cyclical-consumer-fund-direct-growth') ||
+					row.id.includes('canara-robeco-force-fund-direct-growth') ||
+					row.id.includes('bandhan-asset-allocation-conservative-direct-growth')
+				) {
 					excludedRows.push(row);
 				} else if (
 					row.sub_category === 'Arbitrage' ||
@@ -33,7 +44,7 @@
 				}
 			});
 
-			console.log('ExcludedRows:', excludedRows);
+			// console.log('ExcludedRows:', excludedRows);
 
 			const processedData = includedRows.map((x) => ({
 				fund_name: x.fund_name,
@@ -59,7 +70,7 @@
 			total: parsedData.length
 		};
 
-		const CONCURRENCY_LIMIT = 10;
+		const CONCURRENCY_LIMIT = 100;
 		const dataCopy = [...parsedData];
 
 		for (let i = 0; i < dataCopy.length; i += CONCURRENCY_LIMIT) {
@@ -77,7 +88,7 @@
 
 					try {
 						const response = await fetch(
-							`/docs/api/mutual-fund-holdings-from-groww?id=${encodeURIComponent(id)}`
+							`/docs/api/mutual-fund-holdings-from-groww?fund_id=${encodeURIComponent(id)}`
 						);
 
 						if (!response.ok) {
@@ -115,6 +126,74 @@
 		processingStatus.active = false;
 		isHoldingFetched = true;
 	}
+
+	async function handleSaveSuccessfulHoldings() {
+		if (parsedData.length === 0) {
+			errorMessage = 'No active datasets loaded.';
+			return;
+		}
+
+		errorMessage = '';
+		processingStatus = {
+			active: true,
+			current: 0,
+			total: parsedData.length
+		};
+
+		const CONCURRENCY_LIMIT = 10;
+		const dataCopy = [...parsedData];
+
+		for (let i = 0; i < dataCopy.length; i += CONCURRENCY_LIMIT) {
+			const batch = dataCopy.slice(i, i + CONCURRENCY_LIMIT);
+
+			await Promise.all(
+				batch.map(async (element, batchIndex) => {
+					const originalIndex = i + batchIndex;
+					const id = element.id;
+					const count = element.count;
+
+					if (!id && !count) {
+						processingStatus.current += 1;
+						return;
+					}
+
+					try {
+						const response = await fetch(
+							`/docs/api/save-mutual-fund-holdings-stocks-info?fund_id=${encodeURIComponent(id)}`
+						);
+
+						if (!response.ok) {
+							throw new Error(`HTTP Error ${response.status}`);
+						}
+
+						const result = await response.json();
+						const status = result.status;
+
+						parsedData[originalIndex] = {
+							...parsedData[originalIndex],
+							status: status
+						};
+					} catch (err) {
+						console.warn(`Failed metadata query resolution for ${id}`, err);
+
+						parsedData[originalIndex] = {
+							...parsedData[originalIndex],
+							'Fetch Error': 'Failed resolution mapping'
+						};
+					} finally {
+						processingStatus.current += 1;
+					}
+				})
+			);
+
+			// Force a new array reference for Svelte reactivity
+			parsedData = [...parsedData];
+
+			await new Promise((resolve) => setTimeout(resolve, 150));
+		}
+
+		processingStatus.active = false;
+	}
 </script>
 
 <main class="max-w-7xl mx-auto p-6 space-y-6 antialiased font-sans">
@@ -135,25 +214,21 @@
 					disabled={processingStatus.active || parsedData.length === 0}
 					class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition duration-150 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
-					{processingStatus.active
+					{processingStatus.active && !isHoldingFetched
 						? `Processing ${processingStatus.current}/${processingStatus.total}...`
 						: 'Get ALL Mutual Funds Holdings'}
 				</button>
 
-				<form>
-					<input
-						type="hidden"
-						name="data"
-						value={parsedData.map((x) => (x.count > 0 ? x.id : null)).filter(Boolean)}
-					/>
-					<button
-						type="submit"
-						disabled={!isHoldingFetched || parsedData.length === 0}
-						class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition duration-150 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-					>
-						Save Succesful Holdings
-					</button>
-				</form>
+				<button
+					type="button"
+					onclick={handleSaveSuccessfulHoldings}
+					disabled={!isHoldingFetched || parsedData.length === 0}
+					class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition duration-150 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+				>
+					{processingStatus.active && isHoldingFetched
+						? `Saving ${processingStatus.current}/${processingStatus.total}...`
+						: `Save Successful Holdings`}
+				</button>
 			</div>
 		</div>
 

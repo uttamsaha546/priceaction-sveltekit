@@ -54,13 +54,16 @@
 	<article>
 		<h1>Step 3: Pull all Mutual funds holdings except debt from Groww</h1>
 		<p>
-			Get all Equity & Hybrid mutual funds from groww mutual fund screener. Cache the response in
-			url_response_cache table under temp.db, expiry 1month. This will give mutual fund id. Fetch
-			each mutual fund id (except index, etf, hybrid long short, arbitrage) to get mf holdings,
-			cache the response in groww_mf_holdings in temp.db, expiry next month 15th day, api
+			Get all Equity & Hybrid mutual funds from <a
+				href="https://groww.in/mutual-funds/filter"
+				target="_blank">groww mutual fund screener</a
+			>. Cache the response in url_response_cache table under temp.db, expiry 1month. This will give
+			mutual fund id. Fetch each mutual fund id (except index, etf, hybrid long short, arbitrage) to
+			get mf holdings, cache the response in url_response_cache in temp.db, expiry next month 15th
+			day, api
 			https://groww.in/v1/api/data/mf/web/v6/scheme/search/bandhan-small-cap-fund-direct-growth . MF
 			holdings will provide stock id, weight. Fetch each stock id to get symbol, store it
-			permanently in groww_stockid_symbol_map table under app.db.
+			permanently in groww_stock_id_symbol_map table under app.db.
 		</p>
 
 		<GrowwMutualFund />
