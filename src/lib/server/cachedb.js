@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 
-export const cachedb = new DatabaseSync('cache.db');
+export const cachedb = new DatabaseSync('databases/cache.db');
 
 //Allows parallel reading queries to execute while the set() or cleanup() methods of 
 // cache are writing to disk.
