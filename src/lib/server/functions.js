@@ -7,6 +7,14 @@ const setUrlResponseCacheStmt = tempdb.prepare(
 	`INSERT OR REPLACE INTO url_response_cache (url, response, response_type, expire_at) VALUES (:url, :response, :response_type, :expire_at)`
 );
 
+const getGrowwMutualFundsHoldingsStmt = appdb.prepare('SELECT * FROM groww_mutual_funds_holdings');
+
+const setTradingViewScreenerRsiStmt = appdb.prepare(
+	`INSERT OR REPLACE INTO tradingview_screener_rsi (isin, symbol, rsi_14W, rsi_14M) VALUES (:isin, :symbol, :rsi_14W, :rsi_14M)`
+);
+
+const getTradingViewScreenerRsiStmt = appdb.prepare(`SELECT * FROM tradingview_screener_rsi`);
+
 export async function getGrowwMfScreenerData() {
 	const url =
 		`https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?` +
@@ -56,7 +64,7 @@ export async function getGrowwMfScreenerData() {
 			}
 		});
 
-		return includedRows
+		return includedRows;
 	};
 
 	if (cache && cache.expire_at > Date.now()) {
@@ -89,6 +97,49 @@ export async function getGrowwMfScreenerData() {
 
 	const cleanData = excludeUnwantedRows(data);
 	return cleanData;
+}
+
+export function getFormattedMfHoldings() {
+	const formattedMfHoldings = getGrowwMutualFundsHoldingsStmt.all();
+	const rsiRows = getTradingViewScreenerRsiStmt.all();
+
+	const rsiBySymbol = new Map(rsiRows.map((row) => [row.symbol, row]));
+
+	return formattedMfHoldings.map((fund) => {
+		const holdings = JSON.parse(fund.holdings).map((holding) => ({
+			...holding,
+			...(rsiBySymbol.get(holding.symbol) ?? {})
+		}));
+
+		return {
+			...fund,
+			holdings,
+			equity_count: holdings.length,
+
+			equity_pct: parseInt(holdings.reduce((acc, currentValue) => acc + currentValue.corpus_per, 0)),
+
+			top10_weight: parseInt(holdings.map(x=>x.corpus_per).sort((a,b)=>b-a).slice(0,10).reduce((acc,x)=>acc+x, 0)),
+
+			rsi_14M_gt55: parseInt(holdings.reduce(
+				(acc, currentValue) => acc + (currentValue.rsi_14M >= 60 ? currentValue.corpus_per : 0),
+				0
+			)),
+
+			rsi_14M_lt55: parseInt(holdings.reduce(
+				(acc, currentValue) => acc + (currentValue.rsi_14M < 55 ? currentValue.corpus_per : 0),
+				0
+			)),
+			rsi_14W_gt55: parseInt(holdings.reduce(
+				(acc, currentValue) => acc + (currentValue.rsi_14W >= 60 ? currentValue.corpus_per : 0),
+				0
+			)),
+
+			rsi_14W_lt55: parseInt(holdings.reduce(
+				(acc, currentValue) => acc + (currentValue.rsi_14W < 55 ? currentValue.corpus_per : 0),
+				0
+			))
+		};
+	});
 }
 
 export async function getMfHoldingsDataFromGroww(fund_id) {
@@ -132,4 +183,161 @@ export async function getMfHoldingsDataFromGroww(fund_id) {
 		console.error(`Execution fault for target fund_id [${fund_id}]:`, error.message);
 		return null;
 	}
+}
+
+export async function saveTradingViewScreenerData() {
+	const url = `https://scanner.tradingview.com/india/scan?label-product=screener-stock`;
+	const payload = {
+		columns: ['ticker-view', 'isin-displayed', 'RSI|1W', 'RSI|1M'],
+		filter: [
+			{
+				left: 'market_cap_basic',
+				operation: 'egreater',
+				right: 4000000000
+			},
+			{
+				left: 'is_primary',
+				operation: 'equal',
+				right: true
+			}
+		],
+		ignore_unknown_fields: false,
+		options: {
+			lang: 'en'
+		},
+		range: [0, 3000],
+		sort: {
+			sortBy: 'market_cap_basic',
+			sortOrder: 'desc'
+		},
+		markets: ['india'],
+		filter2: {
+			operator: 'and',
+			operands: [
+				{
+					operation: {
+						operator: 'or',
+						operands: [
+							{
+								operation: {
+									operator: 'and',
+									operands: [
+										{
+											expression: {
+												left: 'type',
+												operation: 'equal',
+												right: 'stock'
+											}
+										},
+										{
+											expression: {
+												left: 'typespecs',
+												operation: 'has',
+												right: ['common']
+											}
+										}
+									]
+								}
+							},
+							{
+								operation: {
+									operator: 'and',
+									operands: [
+										{
+											expression: {
+												left: 'type',
+												operation: 'equal',
+												right: 'stock'
+											}
+										},
+										{
+											expression: {
+												left: 'typespecs',
+												operation: 'has',
+												right: ['preferred']
+											}
+										}
+									]
+								}
+							},
+							{
+								operation: {
+									operator: 'and',
+									operands: [
+										{
+											expression: {
+												left: 'type',
+												operation: 'equal',
+												right: 'dr'
+											}
+										}
+									]
+								}
+							},
+							{
+								operation: {
+									operator: 'and',
+									operands: [
+										{
+											expression: {
+												left: 'type',
+												operation: 'equal',
+												right: 'fund'
+											}
+										},
+										{
+											expression: {
+												left: 'typespecs',
+												operation: 'has_none_of',
+												right: ['etf', 'mutual']
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				},
+				{
+					expression: {
+						left: 'typespecs',
+						operation: 'has_none_of',
+						right: ['pre-ipo']
+					}
+				}
+			]
+		}
+	};
+
+	const res = await fetch(url, {
+		method: 'POST',
+		body: JSON.stringify(payload),
+		headers: { 'content-type': 'application/json' }
+	});
+
+	const data = await res.json();
+
+	// appdb.exec(`DELETE FROM tradingview_screener_rsi`);
+	data.data.forEach((x) => {
+		const parseRsi = (value) => {
+			const parsed = parseInt(value, 10);
+			return Number.isNaN(parsed) ? null : parsed;
+		};
+
+		const formatSymbol = (symbol) => {
+			if (symbol.includes('_')) {
+				return symbol.replaceAll('_', '-');
+			}
+			return symbol;
+		};
+
+		setTradingViewScreenerRsiStmt.run({
+			symbol: formatSymbol(x.d[0].name),
+			isin: x.d[1],
+			rsi_14W: parseRsi(x.d[2]),
+			rsi_14M: parseRsi(x.d[3])
+		});
+	});
+
+	return true;
 }

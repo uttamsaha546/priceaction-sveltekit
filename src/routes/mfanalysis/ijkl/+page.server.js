@@ -1,22 +1,22 @@
 import {
-    getGrowwMfScreenerData,
-    getMfHoldingsDataFromGroww
-} from "$lib/server/functions";
+	getGrowwMfScreenerData,
+	getMfHoldingsDataFromGroww,
+	getFormattedMfHoldings
+} from '$lib/server/functions';
 
 export async function load(params) {
-    const growwMfScreenerData = await getGrowwMfScreenerData();
+	const growwMfScreenerData = await getGrowwMfScreenerData();
 
-    // const mergedData = await Promise.all(
-    //     growwMfScreenerData.map(async (x) => {
-    //         const mfHoldingsDataFromGroww =
-    //             await getMfHoldingsDataFromGroww(x.search_id);
+	const formattedMfHolding = getFormattedMfHoldings();
 
-    //         return {
-    //             ...x,
-    //             ...mfHoldingsDataFromGroww
-    //         };
-    //     })
-    // );
+	const formattedMfHoldingMap = new Map(formattedMfHolding.map((x) => [x.search_id, x]));
 
-    return {growwMfScreenerData};
+	const mergedData = growwMfScreenerData.map((x) => {
+		return {
+			...x,
+			...formattedMfHoldingMap.get(x.search_id)
+		};
+	});
+
+	return {data:mergedData};
 }

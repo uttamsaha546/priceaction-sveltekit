@@ -1,50 +1,66 @@
 <script>
 	const categories = ['Large Cap', 'Mid Cap', 'Small Cap', 'Sectoral', 'Thematic'];
 
-	let selectedCategory = $state('');
+	let selectedCategory = $state('Mid Cap');
+	let sortKey = $state('');
+	let sortDirection = $state('asc');
 
 	let { data: growwMfScreenerData } = $props();
 
-	$inspect(growwMfScreenerData);
-
-	// Safely derive unique tracking keys out of full active data array
-	let tableHeaders = ['fund_name', 'sub_category'];
+	let tableHeaders = [
+		'fund_name',
+		'sub_category',
+		'equity_count',
+		'equity_pct',
+		'rsi_14W_gt55',
+		'return6m',
+		'rsi_14M_gt55',
+		'return1y',
+		'top10_weight'
+	];
 
 	let filteredData = $derived.by(() => {
-		// if (!selectedCategory) return growwMfScreenerData.growwMfScreenerData;
-		// const filtered = growwMfScreenerData.growwMfScreenerData.filter(
-		// 	(x) => x.sub_category === selectedCategory
-		// );
-		return [];
+		if (!selectedCategory) return growwMfScreenerData.data;
+
+		return growwMfScreenerData.data.filter((x) => x.sub_category === selectedCategory);
 	});
 
-	$inspect(filteredData);
+	let sortedData = $derived.by(() => {
+		const data = [...filteredData];
 
-	/**
-	 * Preview endpoint call to check holding updated dates before fetching full data
-	 */
-	async function previewHoldingsDate() {
-		errorMessage = '';
+		if (!sortKey) return data;
 
-		try {
-			const response = await fetch('/mfanalysis/ijkl/api/previewHoldingsDate');
+		return data.sort((a, b) => {
+			const aValue = a[sortKey];
+			const bValue = b[sortKey];
 
-			if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+			// Empty / null values go to the bottom
+			if (aValue == null || aValue === '' || aValue === 'N/A') return 1;
+			if (bValue == null || bValue === '' || bValue === 'N/A') return -1;
 
-			const result = await response.json();
-			const portfolio_date = result.portfolio_date
-				? new Date(result.portfolio_date).toLocaleDateString('en-IN', {
-						day: '2-digit',
-						month: 'short',
-						year: 'numeric'
-					})
-				: 'N/A';
+			// Numeric sorting
+			const aNumber = Number(aValue);
+			const bNumber = Number(bValue);
 
-			alert('Portfolio Date: ' + portfolio_date);
-		} catch (err) {
-			errorMessage = `Failed to fetch preview dates: ${err.message}`;
-		} finally {
-			processingStatus.active = false;
+			if (!Number.isNaN(aNumber) && !Number.isNaN(bNumber)) {
+				return sortDirection === 'asc' ? aNumber - bNumber : bNumber - aNumber;
+			}
+
+			// String sorting
+			const comparison = String(aValue).localeCompare(String(bValue), undefined, {
+				sensitivity: 'base'
+			});
+
+			return sortDirection === 'asc' ? comparison : -comparison;
+		});
+	});
+
+	function sortBy(header) {
+		if (sortKey === header) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortKey = header;
+			sortDirection = 'asc';
 		}
 	}
 </script>
@@ -73,7 +89,6 @@
 						type="radio"
 						name="category"
 						value=""
-						defaultChecked
 						bind:group={selectedCategory}
 						class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
 					/>
@@ -97,7 +112,7 @@
 
 			<!-- Holdings Data Table View -->
 			<div class="flex flex-wrap items-center gap-3">
-				{#if filteredData.length > 0}
+				{#if sortedData.length > 0}
 					<div
 						class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden md:col-span-3"
 					>
@@ -108,16 +123,30 @@
 								>
 									<tr>
 										{#each tableHeaders as header}
-											<th
-												class="p-3.5 border-r border-slate-200/60 last:border-0 tracking-wide text-slate-600 bg-slate-50"
-											>
-												{header}
+											<th class="p-0 border-r border-slate-200/60 last:border-0 bg-slate-50">
+												<button
+													type="button"
+													class="w-full h-full p-3.5 flex items-center justify-between gap-3
+						hover:bg-slate-100 transition-colors text-left
+						tracking-wide text-slate-600"
+													onclick={() => sortBy(header)}
+												>
+													<span>{header}</span>
+
+													{#if sortKey === header}
+														<span class="text-indigo-600 text-sm">
+															{sortDirection === 'asc' ? '▲' : '▼'}
+														</span>
+													{:else}
+														<span class="text-slate-300 text-sm">↕</span>
+													{/if}
+												</button>
 											</th>
 										{/each}
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-slate-200/80 text-slate-600">
-									{#each filteredData as row}
+									{#each sortedData as row}
 										<tr
 											class="hover:bg-slate-50/80 transition-colors odd:bg-white even:bg-slate-50/30"
 										>
@@ -146,15 +175,5 @@
 				{/if}
 			</div>
 		</div>
-
-		<!-- Error Banner -->
-		<!-- {#if errorMessage}
-			<div
-				class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2 md:col-span-3"
-			>
-				<span>❌</span>
-				{errorMessage}
-			</div>
-		{/if} -->
 	</section>
 </main>

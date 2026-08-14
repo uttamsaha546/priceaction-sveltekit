@@ -54,6 +54,15 @@ appdb.exec(`
   ) WITHOUT ROWID;
 `);
 
+appdb.exec(`
+  CREATE TABLE IF NOT EXISTS tradingview_screener_rsi (
+    isin TEXT PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    rsi_14W INTEGER,
+    rsi_14M INTEGER
+  ) WITHOUT ROWID;
+`);
+
 
 appdb.exec(`
   DROP VIEW IF EXISTS stock_universe;
