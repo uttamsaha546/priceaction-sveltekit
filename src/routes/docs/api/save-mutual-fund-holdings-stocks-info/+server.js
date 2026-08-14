@@ -19,9 +19,12 @@ const setCacheStmt = tempdb.prepare(`
 	VALUES (:url, :response, :response_type, :expire_at)
 `);
 
-const getStockInfoStmt = appdb.prepare(`SELECT * FROM groww_stock_id_symbol_map WHERE stock_search_id=?`);
-const setStockInfoStmt = appdb.prepare(`INSERT OR REPLACE INTO groww_stock_id_symbol_map (stock_search_id, isin, symbol) VALUES (:stock_search_id, :isin, :symbol)`);
-
+const getStockInfoStmt = appdb.prepare(
+	`SELECT * FROM groww_stock_id_symbol_map WHERE stock_search_id=?`
+);
+const setStockInfoStmt = appdb.prepare(
+	`INSERT OR REPLACE INTO groww_stock_id_symbol_map (stock_search_id, isin, symbol) VALUES (:stock_search_id, :isin, :symbol)`
+);
 
 function getCache(url) {
 	const cache = hotCache.get(url);
@@ -110,19 +113,30 @@ export async function GET({ url }) {
 	for (let i = 0; i < equityHoldings.length; i += CONCURRENCY_LIMIT) {
 		const batch = equityHoldings.slice(i, i + CONCURRENCY_LIMIT);
 
-		const batchInfos = await Promise.allSettled(batch.map((item) => getStockInfo(item.stock_search_id)));
+		const batchInfos = await Promise.allSettled(
+			batch.map(async (item) => {
+				return await getStockInfo(item.stock_search_id);
+			})
+		);
 
 		batchInfos.forEach((info, index) => {
 			infos[i + index] = info.value;
 		});
 	}
 
+	const formattedHoldings = equityHoldings.map((item, index) => {
+		return {
+			...infos[index],
+			corpus_per: item.corpus_per
+		};
+	});
+
+	const stmt = appdb.prepare(`INSERT OR REPLACE INTO groww_mutual_funds_holdings (search_id, holdings, portfolio_date) VALUES (:search_id, :holdings, :portfolio_date)`);
+	stmt.run({search_id: fund_id, holdings:JSON.stringify(formattedHoldings), portfolio_date: new Date(equityHoldings[0]?.portfolio_date ?? '').toLocaleDateString('en-CA') });
+
 	return json({
 		status: 'OK',
-		data: equityHoldings.map((item, index) => ({
-			...item,
-			...infos[index]
-		}))
+		data: formattedHoldings
 	});
 }
 
@@ -152,10 +166,14 @@ async function getHoldings(url) {
 	}
 }
 
+/**
+ * @param {string} stock_search_id
+ * @returns {{ isin: string, symbol: string, stock_search_id: string }}
+ */
 async function getStockInfo(stock_search_id) {
 	//IF Exists in database, return the record.
 	let stockInfo = getStockInfoStmt.get(stock_search_id);
-	if(stockInfo!==undefined){
+	if (stockInfo !== undefined) {
 		return stockInfo;
 	}
 
@@ -185,15 +203,15 @@ async function getStockInfo(stock_search_id) {
 	try {
 		// Parse the raw text string into a usable JavaScript object
 		const nextData = JSON.parse(jsonString);
-		const header =  nextData.props.pageProps.stockData.header;
+		const header = nextData.props.pageProps.stockData.header;
 
 		const data = {
 			isin: header.isin,
 			symbol: header.nseScriptCode || header.bseTradingSymbol || null,
 			stock_search_id: header.searchId
-		}
+		};
 
-		setStockInfoStmt.run({...data});
+		setStockInfoStmt.run({ ...data });
 
 		return data;
 	} catch (error) {

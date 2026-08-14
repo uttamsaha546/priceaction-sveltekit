@@ -46,6 +46,14 @@ appdb.exec(`
   ) WITHOUT ROWID;
 `);
 
+appdb.exec(`
+  CREATE TABLE IF NOT EXISTS groww_mutual_funds_holdings (
+    search_id TEXT PRIMARY KEY,
+    holdings TEXT NOT NULL,
+    portfolio_date TEXT NOT NULL
+  ) WITHOUT ROWID;
+`);
+
 
 appdb.exec(`
   DROP VIEW IF EXISTS stock_universe;
@@ -69,41 +77,3 @@ appdb.exec(`
 	INNER JOIN groww_stock_id_symbol_map g
 		ON g.symbol = a.symbol;
 `);
-
-// DROP VIEW IF EXISTS stock_universe;
-
-// CREATE VIEW stock_universe AS
-// SELECT
-//     a.*,
-//     n.*,
-//     g.*
-// FROM amfi_marketcap_classifications a
-// LEFT JOIN nse_industry_classifications n
-//     ON n.symbol = a.symbol
-// LEFT JOIN groww_stock_id_symbol_map g
-//     ON g.symbol = a.symbol
-// WHERE
-//     (
-//         n.symbol IS NOT NULL
-//         AND COALESCE(TRIM(n.primary_index), '') <> '-'
-//     )
-//     OR g.symbol IS NOT NULL;
-
-// DROP VIEW IF EXISTS stock_universe;
-
-// CREATE VIEW stock_universe AS
-// SELECT
-//     a.*,
-//     n.*,
-//     g.*
-// FROM amfi_marketcap_classifications a
-// LEFT JOIN nse_industry_classifications n
-//     ON n.symbol = a.symbol
-// LEFT JOIN groww_stock_id_symbol_map g
-//     ON g.symbol = a.symbol
-// WHERE
-//     (
-//         n.symbol IS NOT NULL
-//         AND COALESCE(TRIM(n.primary_index), '') <> '-'
-//     )
-//     OR g.symbol IS NOT NULL;

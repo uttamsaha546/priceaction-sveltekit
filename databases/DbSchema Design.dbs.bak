@@ -13,6 +13,14 @@
 				<column name="isin" />
 			</index>
 		</table>
+		<table name="appdb.groww_stock_id_symbol_map" prior="groww_stocks" >
+			<column name="stock_search_id" prior="search_id" type="TEXT" mandatory="y" />
+			<column name="isin" type="TEXT" mandatory="y" />
+			<column name="symbol" type="TEXT" mandatory="y" />
+			<index name="pk_groww_stocks" unique="PRIMARY_KEY" >
+				<column name="stock_search_id" />
+			</index>
+		</table>
 		<table name="appdb.nse_cache" prior="nse_cache" >
 			<column name="url" type="TEXT" mandatory="y" />
 			<column name="response" type="BLOB" mandatory="y" />
@@ -55,17 +63,6 @@
 				<column name="scheme_code" />
 			</index>
 		</table>
-		<table name="groww_stocks" prior="groww_stoc" >
-			<column name="isin" type="TEXT" mandatory="y" />
-			<column name="name" type="TEXT" mandatory="y" />
-			<column name="symbol" type="TEXT" />
-			<column name="search_id" type="TEXT" mandatory="y" />
-			<column name="nse_code" type="TEXT" />
-			<column name="bse_code" type="INT" />
-			<index name="pk_groww_stocks" unique="PRIMARY_KEY" >
-				<column name="isin" />
-			</index>
-		</table>
 		<table name="ns" prior="n" />
 		<table name="tempdb.url_response_cache" prior="url_response_cache" >
 			<column name="url" type="TEXT" mandatory="y" />
@@ -82,10 +79,10 @@
 	<diagram_group name="Default" id="6f81b1db-f466-4d60-b221-799bdc87c8f3" >
 		<diagram name="Default Diagram" id="bad81dec-6230-47f2-9100-0fd735579ba3" show_relation="columns" >
 			<entity schema="Default" name="appdb.amfi_marketcap_classifications" color="C1D8EE" x="76" y="152" />
+			<entity schema="Default" name="appdb.groww_stock_id_symbol_map" color="C1D8EE" x="893" y="152" />
 			<entity schema="Default" name="appdb.nse_cache" color="C1D8EE" x="361" y="152" />
 			<entity schema="Default" name="appdb.nse_industry_classifications" color="C1D8EE" x="589" y="152" />
 			<entity schema="Default" name="groww_mutual_funds" color="C1D8EE" x="722" y="418" />
-			<entity schema="Default" name="groww_stocks" color="C1D8EE" x="589" y="418" />
 			<entity schema="Default" name="tempdb.url_response_cache" color="C1D8EE" x="57" y="494" />
 			<callout x="95" y="57" pointer="Round" >
 				<comment><![CDATA[- Right-click the diagram to create new tables. 

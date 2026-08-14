@@ -1,6 +1,7 @@
 import { appdb } from '$lib/server/appdb';
 import { tempdb } from '$lib/server/tempdb';
 import zlib from 'node:zlib';
+import { getGrowwMfScreenerData } from '$lib/server/functions';
 
 const insertStmt_AmfiMarketcapClassification = appdb.prepare(`
     INSERT INTO amfi_marketcap_classifications (
@@ -169,61 +170,8 @@ export const actions = {
 		}
 	},
 
-	getMutualFundsFromGroww: async ({ fetch }) => {
-		const url =
-			`https://groww.in/v1/api/search/v3/query/filter_derived_data/st_filter?` +
-			`available_for_investment=true` +
-			`&cat=Equity,Hybrid` +
-			`&doc_type=scheme` +
-			`&index=false` +
-			`&page=0` +
-			`&plan_type=Direct` +
-			`&scheme_type=Growth` +
-			`&size=5000` +
-			`&sort_by=3` +
-			`&sub_cat=null,null` +
-			`&sub_sub_cat=null,null` +
-			`&tags=null,null`;
-
-		const getStmt = tempdb.prepare(`SELECT * FROM url_response_cache WHERE url=?`);
-		const cache = getStmt.get(url);
-
-		if (cache && cache.expire_at > Date.now()) {
-			const decompressed = zlib.zstdDecompressSync(cache.response);
-			const data = JSON.parse(decompressed.toString('utf8'));
-			return {
-				success: true,
-				data
-			};
-		}
-
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			throw new Error(`Groww API request failed: ${response.status}`);
-		}
-
-		const data = await response.json();
-
-		const compressed = zlib.zstdCompressSync(Buffer.from(JSON.stringify(data), 'utf8'));
-
-		const setStmt = tempdb.prepare(
-			`INSERT OR REPLACE INTO url_response_cache (url, response, response_type, expire_at) VALUES (:url, :response, :response_type, :expire_at)`
-		);
-
-		const expireAt = new Date();
-		expireAt.setMonth(expireAt.getMonth() + 1);
-
-		setStmt.run({
-			url,
-			response: compressed,
-			response_type: 'json',
-			expire_at: expireAt.getTime()
-		});
-
-		return {
-			success: true,
-			data
-		};
+	getMutualFundsFromGroww: async () => {
+		const growwMfScreenerData = await getGrowwMfScreenerData();
+		return growwMfScreenerData;
 	}
 };

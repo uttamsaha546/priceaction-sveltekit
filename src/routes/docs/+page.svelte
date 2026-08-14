@@ -63,7 +63,8 @@
 			day, api
 			https://groww.in/v1/api/data/mf/web/v6/scheme/search/bandhan-small-cap-fund-direct-growth . MF
 			holdings will provide stock id, weight. Fetch each stock id to get symbol, store it
-			permanently in groww_stock_id_symbol_map table under app.db.
+			permanently in groww_stock_id_symbol_map table under app.db. Save search_id, holdings,
+			portfolio_date in groww_mf_holdings table under app.db.
 		</p>
 
 		<GrowwMutualFund />

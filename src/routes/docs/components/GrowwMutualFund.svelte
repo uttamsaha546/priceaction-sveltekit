@@ -14,39 +14,8 @@
 	function handleGetMutualFunds() {
 		return async ({ result }) => {
 			console.log(result);
-			const excludedRows = [];
-			const includedRows = [];
 
-			result.data.data.content.forEach((row) => {
-				if (row.index === true) {
-					excludedRows.push(row);
-				} else if (
-					row.id.includes('etf') ||
-					row.id.includes('fof') ||
-					row.id.includes('fund-of-funds') ||
-					row.id.includes('sbi-magnum-children') ||
-					row.id.includes('hdfc-multiple-yield-fund-plan-2005-direct-growth') ||
-					row.id.includes('bandhan-asset-allocation-moderate-direct-growth') ||
-					row.id.includes('hdfc-non-cyclical-consumer-fund-direct-growth') ||
-					row.id.includes('canara-robeco-force-fund-direct-growth') ||
-					row.id.includes('bandhan-asset-allocation-conservative-direct-growth')
-				) {
-					excludedRows.push(row);
-				} else if (
-					row.sub_category === 'Arbitrage' ||
-					row.sub_category === 'International' ||
-					row.sub_category === 'Hybrid Long-Short Fund' ||
-					!row.sub_category
-				) {
-					excludedRows.push(row);
-				} else {
-					includedRows.push(row);
-				}
-			});
-
-			// console.log('ExcludedRows:', excludedRows);
-
-			const processedData = includedRows.map((x) => ({
+			const processedData = result.data.map((x) => ({
 				fund_name: x.fund_name,
 				id: x.id,
 				sub_category: x.sub_category
