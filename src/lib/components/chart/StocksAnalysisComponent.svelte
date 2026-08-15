@@ -9,7 +9,20 @@
 	let industry = $state('');
 	let rsi = $state('up');
 
-	let sectorList = $derived(Array.from(new Set((data.data ?? []).map((row) => row.sector))));
+	let sectorList = $derived.by(()=>{
+	const count = {};
+	(data.data ?? []).forEach(row=>{
+	    if(!count[row.sector]){
+	      count[row.sector] = 0;
+	    }
+	    count[row.sector] += 1;
+	  });
+	  
+	const sortedKeys = Object.keys(count).sort((a, b) => count[b] - count[a]);
+  return sortedKeys;
+	});
+	
+	
 	let industryList = $derived(
 		Array.from(
 			new Set((data.data ?? []).filter((row) => row.sector === sector).map((row) => row.industry))
@@ -31,7 +44,7 @@
 					(rsi === 'x' && row.rsi14_monthly <= 55 && row.rsi14_monthly > 50) ||
 					(rsi === 'y' && row.rsi14_monthly <= 50 && row.rsi14_monthly > 45) ||
 					(rsi === 'z' && row.rsi14_monthly <= 45))
-		)
+		).sort((a,b)=>b.marketcap-a.marketcap)
 	);
 
 	onMount(async () => {
@@ -110,7 +123,7 @@
 		data={filteredStockList.map((x) => ({
 			symbol: x.symbol,
 			name: x.name,
-			value: `${Math.round(x.marketcap / 10000000).toLocaleString('en-IN')} Cr`
+			value: `${Math.round(x.marketcap).toLocaleString('en-IN')} Cr`
 		}))}
 		{selectedStockId}
 	/>

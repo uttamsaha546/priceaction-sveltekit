@@ -102,14 +102,29 @@ export async function getGrowwMfScreenerData() {
 export function getFormattedMfHoldings() {
 	const formattedMfHoldings = getGrowwMutualFundsHoldingsStmt.all();
 	const rsiRows = getTradingViewScreenerRsiStmt.all();
+	
+	const industryClassificationRows = appdb.prepare('SELECT * FROM nse_industry_classifications').all();
+	
+	const industryClassificationBySymbol = new Map(industryClassificationRows.map(row=>[row.symbol, row]));
 
 	const rsiBySymbol = new Map(rsiRows.map((row) => [row.symbol, row]));
 
 	return formattedMfHoldings.map((fund) => {
 		const holdings = JSON.parse(fund.holdings).map((holding) => ({
 			...holding,
-			...(rsiBySymbol.get(holding.symbol) ?? {})
+			...(rsiBySymbol.get(holding.symbol) ?? {}),
+			...(industryClassificationBySymbol.get(holding.symbol) ?? {})
 		}));
+		
+		const sector_weight = {};
+		
+		holdings.forEach(holding=>{
+		  if(!sector_weight[holding.sector]){
+		    sector_weight[holding.sector] = holding.corpus_per
+		  }
+		  
+		  sector_weight[holding.sector] += holding.corpus_per;
+		})
 
 		return {
 			...fund,
@@ -137,7 +152,9 @@ export function getFormattedMfHoldings() {
 			rsi_14W_lt55: parseInt(holdings.reduce(
 				(acc, currentValue) => acc + (currentValue.rsi_14W < 55 ? currentValue.corpus_per : 0),
 				0
-			))
+			)),
+			
+			sector_weight
 		};
 	});
 }
