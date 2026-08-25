@@ -1,7 +1,9 @@
 
 export const ChartState = (() => {
     let lineData = $state([]); //Array of [timestamp in miliseconds or seconds, value]
+    let volumeLineData = $state([]);
     let isMonthly = $state(false);
+    let interval = $state("W");
     let scaleFactor = $state('');
     let activeModal = $state(null);
     let flags = $state(null);
@@ -12,18 +14,27 @@ export const ChartState = (() => {
     let EarningsData = $state([]);
     let scaleW = $state();
     let scaleM = $state();
+    let scaleF = $state();
 
-    let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
+    let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, interval), interval));
     let histogramData = $derived(fillWhitespaceGaps(EarningsDataToHistogramData(EarningsData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
+    
+    let volumeBarData = $derived(fillWhitespaceGaps(volumeLineDataToVolumeBarData(volumeLineData, interval), interval));
 
     return {
         get lineData() { return lineData; },
         set lineData(val) { lineData = val; },
 
         get barData() { return barData; },
-
+        
+        set volumeLineData(val){volumeLineData=val},
+        get volumeBarData(){return volumeBarData},
+        
         get isMonthly() { return isMonthly; },
         set isMonthly(val) { isMonthly = val; },
+        
+        get interval(){return interval},
+        set interval(val){interval=val},
 
         get flags() { return flags },
         set flags(val) { flags = val },
@@ -56,6 +67,9 @@ export const ChartState = (() => {
 
         get scaleM() { return scaleM },
         set scaleM(val) { scaleM = val },
+        
+        get scaleF() { return scaleF },
+        set scaleF(val) { scaleF = val },
     };
 })();
 
@@ -71,7 +85,7 @@ export const ChartState = (() => {
  */
 function LineDataToBarData(lineData, interval) {
 
-    if (interval !== 'W' && interval !== 'M') {
+    if (interval !== 'W' && interval !== 'M' && interval!=="F") {
         throw new Error(`Unsupported interval: ${interval}`);
     }
 
@@ -99,7 +113,7 @@ function LineDataToBarData(lineData, interval) {
         const intervalStartKey =
             interval === 'W'
                 ? getWeekStartUTC(timestamp)
-                : getMonthStartUTC(timestamp);
+                : interval==="F"? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
 
         if (!intervalStartMap.has(intervalStartKey)) {
             intervalStartMap.set(intervalStartKey, {
@@ -115,6 +129,52 @@ function LineDataToBarData(lineData, interval) {
             candle.high = Math.max(candle.high, value);
             candle.low = Math.min(candle.low, value);
             candle.close = value;
+        }
+    }
+
+    return [...intervalStartMap.values()];
+}
+
+function volumeLineDataToVolumeBarData(volumeLineData, interval){
+  if (interval !== 'W' && interval !== 'M' && interval!=="F") {
+        throw new Error(`Unsupported interval: ${interval}`);
+    }
+
+    const intervalStartMap = new Map();
+
+    const sorted = [...volumeLineData].sort((a, b) => a[0] - b[0]);
+
+    for (let [timestamp, value] of sorted) {
+        const length = String(timestamp).length;
+
+        if (length === 9 || length === 10) {
+            timestamp *= 1000; //convert to miliseconds if in seconds, 9 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        } else if (length == 12 || length === 13) {
+            //keep timestamp as it is in milisecond, 12 = 1973 – March 2001, 10 = Current Era (Until Year 2286)
+        }
+        else {
+            console.warn(`Unexpected timestamp length: ${length}. Timestamp: ${timestamp}`);
+            continue;
+        }
+
+        if (value == null) continue;
+
+        const date = new Date(timestamp);
+
+        const intervalStartKey =
+            interval === 'W'
+                ? getWeekStartUTC(timestamp)
+                : interval==="F"?getFortnightStartUTC(timestamp): getMonthStartUTC(timestamp);
+
+        if (!intervalStartMap.has(intervalStartKey)) {
+            intervalStartMap.set(intervalStartKey, {
+                time: Math.floor(intervalStartKey / 1000),
+                value: value,
+            });
+        } else {
+            const bar = intervalStartMap.get(intervalStartKey);
+
+            bar.value += value;
         }
     }
 
@@ -292,7 +352,13 @@ function fillWhitespaceGaps(data, interval) {
                 nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
                 // Ensure it snaps correctly back to the 1st day of the month
                 currentMs = Date.UTC(nextDate.getUTCFullYear(), nextDate.getUTCMonth(), 1);
-            } else {
+            } else if (interval === 'F') {
+               const d = nextDate.getUTCDate();
+               d<16?nextDate.setUTCDate(d + 15) : nextDate.setUTCMonth(nextDate.getUTCMonth()+1);
+                
+                currentMs = nextDate.getTime()
+            }
+            else {
                 // Advance exactly 1 week (7 days)
                 nextDate.setUTCDate(nextDate.getUTCDate() + 7);
                 currentMs = nextDate.getTime();

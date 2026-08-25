@@ -37,6 +37,7 @@
 		const res = await p.json();
 		const data = res.candles.map((row) => [row[0], row[4]]);
 		ChartState.lineData = data;
+		ChartState.volumeLineData = res.candles.map(row=>[row[0], row[5]]);
 		ChartState.isLoading = false;
 	}
 

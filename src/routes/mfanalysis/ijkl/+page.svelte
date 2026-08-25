@@ -7,10 +7,11 @@
 	let sortDirection = $state('asc');
 
 	let { data: growwMfScreenerData } = $props();
-$inspect(growwMfScreenerData)
+//$inspect(growwMfScreenerData)
 	let tableHeaders = [
 		'fund_name',
 		'sub_category',
+		'sub_sub_category',
 		'equity_count',
 		'equity_pct',
 		'rsi_14W_gt55',

@@ -26,6 +26,12 @@
 		<div class="Current Scrip Name">{ChartState.currentScrip}</div>
 	</div>
 
+<button
+					class:bg-gray-400={ChartState.interval ==="F"}
+					class="border border-gray-400 rounded px-2 box-border"
+					onclick={() => (ChartState.interval === "F"? ChartState.interval= "W" : ChartState.interval="F")}>F</button
+				>
+
 	<div class="Settings w-11 flex flex-row justify-center">
 		<button
 			class="hover:bg-gray-200 rounded p-0.5"

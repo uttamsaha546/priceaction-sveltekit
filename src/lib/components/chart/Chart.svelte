@@ -20,13 +20,15 @@
 	import { SafeEntryZonePrimitive } from './Tools/SafeEntryZonePrimitive';
 	import dayjs from 'dayjs';
 
-	let chart, container, mainSeries, histogramSeries, histLineSeries;
+	let chart, container, mainSeries, histogramSeries, histLineSeries, volumeSeries;
 	let { data, scalingMultiplier = 1 } = $props();
 
 	const TempSerieses = [];
 
 	let secondPane = false;
-
+	
+	let volume = true;
+	
 	onMount(() => {
 		chart = createChart(container, {
 			width: container.clientWidth,
@@ -63,6 +65,22 @@
 			mainSeries.getPane().setStretchFactor(0.75);
 			histogramSeries.getPane().setStretchFactor(0.25);
 		}
+		
+		if(volume){
+		volumeSeries = chart.addSeries(HistogramSeries, {
+		priceFormat: {
+        type: 'volume',
+    },
+    priceScaleId: '',
+		});
+volumeSeries.priceScale().applyOptions({
+scaleMargins: {
+        top: 0.7,
+        bottom: 0,
+    },
+});
+		}
+		
 		window.mainSeries = mainSeries;
 
 		const smaSeries = new SmaSeriesPrimitive();
@@ -394,6 +412,8 @@
 		const priceScale = mainSeries.priceScale();
 		priceScale.setAutoScale(true);
 		mainSeries.setData(data);
+  
+  volumeSeries.setData(ChartState.volumeBarData);
 
 		// keep zoom locked. make the price double every 100 pixel
 		const scalingFactor = mainSeries.getPane().getHeight() / scalingMultiplier;

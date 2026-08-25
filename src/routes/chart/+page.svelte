@@ -60,8 +60,9 @@
 	});
 
 	let scalingMultiplier = $derived.by(() => {
-		if (ChartState.isMonthly) return ChartState.scaleM;
-		return ChartState.scaleW;
+		if (ChartState.interval==="M") return ChartState.scaleM;
+else if (ChartState.interval==="F") return ChartState.scaleF;
+		else return ChartState.scaleW;
 	});
 </script>
 
@@ -77,9 +78,9 @@
 				class="Timeframe absolute bottom-0 right-0 z-20 h-7 w-16 flex items-center justify-center"
 			>
 				<button
-					class:bg-gray-400={ChartState.isMonthly}
+					class:bg-gray-400={ChartState.interval==="M"}
 					class="border border-gray-400 rounded px-2 box-border"
-					onclick={() => (ChartState.isMonthly = !ChartState.isMonthly)}>M</button
+					onclick={() => (ChartState.interval === "M"? ChartState.interval="W" : ChartState.interval="M")}>M</button
 				>
 			</div>
 

@@ -4,6 +4,7 @@
 
 	let squeezeW = $state();
 	let squeezeM = $state();
+	let squeezeF = $state();
 
 	onMount(() => {
 		let settings = localStorage.getItem('settings');
@@ -11,35 +12,41 @@
 			settings = JSON.parse(settings);
 			squeezeW = settings?.squeezeW || 30;
 			squeezeM = settings?.squeezeM || 0.2;
+squeezeF = settings?.squeezeF || 0.2;
 		} else {
 			squeezeW = 30;
 			squeezeM = 0.2;
+			squeezeF = 0.2;
 		}
 	});
 
 	$effect(() => {
 		ChartState.scaleW = squeezeW;
 		ChartState.scaleM = squeezeM;
+ChartState.scaleF = squeezeF;
 
 		localStorage.setItem(
 			'settings',
 			JSON.stringify({
 				squeezeW,
-				squeezeM
+				squeezeM,
+				squeezeF
 			})
 		);
 	});
 
-	$inspect(ChartState.scaleW);
+	//$inspect(ChartState.scaleW);
 
 	function revertToDefault() {
 		squeezeW = 30;
 		squeezeM = 0.2;
+		squeezeF = 0.2;
 		localStorage.setItem(
 			'settings',
 			JSON.stringify({
 				squeezeW,
-				squeezeM
+				squeezeM,
+				squeezeF
 			})
 		);
 	}
@@ -58,6 +65,12 @@
 		Squeeze price scale in Monthly timeframe by
 		<input type="range" min="0.01" max="100" step="0.01" bind:value={squeezeM} />
 		<input min="0.1" max="100" bind:value={squeezeM} />
+	</label>
+
+<label>
+		Squeeze price scale in Fortnightly timeframe by
+		<input type="range" min="0.01" max="100" step="0.01" bind:value={squeezeF} />
+		<input min="0.1" max="100" bind:value={squeezeF} />
 	</label>
 
 	<div>

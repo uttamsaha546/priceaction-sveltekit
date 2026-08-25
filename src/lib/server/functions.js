@@ -120,7 +120,7 @@ export function getFormattedMfHoldings() {
 		
 		holdings.forEach(holding=>{
 		  if(!sector_weight[holding.sector]){
-		    sector_weight[holding.sector] = holding.corpus_per
+		    sector_weight[holding.sector] = 0;
 		  }
 		  
 		  sector_weight[holding.sector] += holding.corpus_per;
