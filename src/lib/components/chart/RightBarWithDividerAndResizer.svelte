@@ -7,6 +7,7 @@
 	import WatchlistIcon from './Icons/WatchlistIcon.svelte';
 	import MutualFundComponent from './MutualFundComponent.svelte';
 	import PortfolioComponent from './PortfolioComponent.svelte';
+	import SMF from './SMF.svelte';
 
 	let width = $state(0);
 	let lastExpandedWidth = $state(190);
@@ -94,6 +95,9 @@
 			<div class:hidden={activeTool !== 5} class="h-full flex flex-col">
 				<PortfolioComponent />
 			</div>
+			<div class:hidden={activeTool !== 6} class="h-full flex flex-col">
+				<SMF />
+			</div>
 		</div>
 
 		<!-- RightBar Tools Icon Here -->
@@ -139,6 +143,14 @@
 					onclick={() => toggleTool(5)}
 				>
 					<div>PF</div>
+				</button>
+
+				<!-- SMF Icon  -->
+				<button
+					class={`${activeTool === 6 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
+					onclick={() => toggleTool(6)}
+				>
+					<div>SMF</div>
 				</button>
 			</div>
 		</div>

@@ -8,10 +8,10 @@
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
 	 */
 
-	let { data, selectedStockId } = $props();
+	let { data, selectedStockId = 0 } = $props();
 	let contextMenu = $state({ visible: false, x: 0, y: 0, stock: null });
 	let stockColors = $derived(ChartState.flags);
-
+	// $inspect(data);
 	const colorMap = {
 		red: 'rgb(255,82,82)',
 		blue: 'rgb(41,121,255)',
@@ -37,7 +37,7 @@
 		const res = await p.json();
 		const data = res.candles.map((row) => [row[0], row[4]]);
 		ChartState.lineData = data;
-		ChartState.volumeLineData = res.candles.map(row=>[row[0], row[5]]);
+		ChartState.volumeLineData = res.candles.map((row) => [row[0], row[5]]);
 		ChartState.isLoading = false;
 	}
 

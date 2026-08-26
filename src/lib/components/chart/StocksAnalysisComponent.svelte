@@ -51,6 +51,7 @@
 	onMount(async () => {
 		const p = await fetch('/api/stock-universe');
 		data = await p.json();
+		window.StockUniverse = data;
 	});
 
 	async function UpdateRSIFromTradingview() {
