@@ -2,7 +2,7 @@
 	import AmfiStockClassification from './components/AmfiStockClassification.svelte';
 	import GrowwMutualFund from './components/GrowwMutualFund.svelte';
 	import NseIndustryClassification from './components/NseIndustryClassification.svelte';
-	import HowToDefineStockUniverse from './HowToDefineStockUniverse.svelte';
+	import HowToDefineStockUniverse from './components/HowToDefineStockUniverse.svelte';
 </script>
 
 <div class="prose max-w-5xl mx-auto p-4">
@@ -58,13 +58,15 @@
 				href="https://groww.in/mutual-funds/filter"
 				target="_blank">groww mutual fund screener</a
 			>. Cache the response in url_response_cache table under temp.db, expiry 1month. This will give
-			mutual fund id. Fetch each mutual fund id (except index, etf, hybrid long short, arbitrage) to
-			get mf holdings, cache the response in url_response_cache in temp.db, expiry next month 15th
-			day, api
-			https://groww.in/v1/api/data/mf/web/v6/scheme/search/bandhan-small-cap-fund-direct-growth . MF
-			holdings will provide stock id, weight. Fetch each stock id to get symbol, store it
-			permanently in groww_stock_id_symbol_map table under app.db. Save search_id, holdings,
-			portfolio_date in groww_mf_holdings table under app.db.
+			mutual fund id. Fetch each mutual fund id (except etf, hybrid long short, arbitrage) to get mf
+			holdings, cache the response in url_response_cache in temp.db, expiry next month 15th day, api
+			https://groww.in/v1/api/data/mf/web/v6/scheme/search/bandhan-small-cap-fund-direct-growth .
+			First check if mutual fund id has been renamed by calling https://groww.in/mutual-funds/id. If
+			status code is 301, get the new id from response location, cache the response in
+			url_response_cache in temp.db, expiry 1 month. MF holdings will provide stock id, weight.
+			Fetch each stock id to get symbol, store it permanently in groww_stock_id_symbol_map table
+			under app.db. Save search_id, holdings, portfolio_date in groww_mf_holdings table under
+			app.db.
 		</p>
 
 		<GrowwMutualFund />

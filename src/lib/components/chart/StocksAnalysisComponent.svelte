@@ -9,20 +9,19 @@
 	let industry = $state('');
 	let rsi = $state('up');
 
-	let sectorList = $derived.by(()=>{
-	const count = {};
-	(data.data ?? []).forEach(row=>{
-	    if(!count[row.sector]){
-	      count[row.sector] = 0;
-	    }
-	    count[row.sector] += 1;
-	  });
-	  
-	const sortedKeys = Object.keys(count).sort((a, b) => count[b] - count[a]);
-  return sortedKeys;
+	let sectorList = $derived.by(() => {
+		const count = {};
+		(data.data ?? []).forEach((row) => {
+			if (!count[row.sector]) {
+				count[row.sector] = 0;
+			}
+			count[row.sector] += 1;
+		});
+
+		const sortedKeys = Object.keys(count).sort((a, b) => count[b] - count[a]);
+		return sortedKeys;
 	});
-	
-	
+
 	let industryList = $derived(
 		Array.from(
 			new Set((data.data ?? []).filter((row) => row.sector === sector).map((row) => row.industry))
@@ -30,21 +29,23 @@
 	);
 
 	let filteredStockList = $derived(
-		(data.data ?? []).filter(
-			(row) =>
-				(!sector || row.sector === sector) &&
-				(!industry || row.industry === industry) &&
-				(!rsi ||
-					(rsi === 'up' && row.rsi14_monthly > 60) ||
-					(rsi === 'down' && row.rsi14_monthly < 55) ||
-					(rsi === 'c' && row.rsi14_monthly > 70) ||
-					(rsi === 'b' && row.rsi14_monthly <= 70 && row.rsi14_monthly > 65) ||
-					(rsi === 'a' && row.rsi14_monthly <= 65 && row.rsi14_monthly > 60) ||
-					(rsi === 'a-' && row.rsi14_monthly <= 60 && row.rsi14_monthly > 55) ||
-					(rsi === 'x' && row.rsi14_monthly <= 55 && row.rsi14_monthly > 50) ||
-					(rsi === 'y' && row.rsi14_monthly <= 50 && row.rsi14_monthly > 45) ||
-					(rsi === 'z' && row.rsi14_monthly <= 45))
-		).sort((a,b)=>b.marketcap-a.marketcap)
+		(data.data ?? [])
+			.filter(
+				(row) =>
+					(!sector || row.sector === sector) &&
+					(!industry || row.industry === industry) &&
+					(!rsi ||
+						(rsi === 'up' && row.rsi14_monthly > 60) ||
+						(rsi === 'down' && row.rsi14_monthly < 55) ||
+						(rsi === 'c' && row.rsi14_monthly > 70) ||
+						(rsi === 'b' && row.rsi14_monthly <= 70 && row.rsi14_monthly > 65) ||
+						(rsi === 'a' && row.rsi14_monthly <= 65 && row.rsi14_monthly > 60) ||
+						(rsi === 'a-' && row.rsi14_monthly <= 60 && row.rsi14_monthly > 55) ||
+						(rsi === 'x' && row.rsi14_monthly <= 55 && row.rsi14_monthly > 50) ||
+						(rsi === 'y' && row.rsi14_monthly <= 50 && row.rsi14_monthly > 45) ||
+						(rsi === 'z' && row.rsi14_monthly <= 45))
+			)
+			.sort((a, b) => b.marketcap - a.marketcap)
 	);
 
 	onMount(async () => {
@@ -52,19 +53,19 @@
 		data = await p.json();
 	});
 
-	async function RefreshStockUniverse() {
-		const p = await fetch('/api/stock-universe/update', { method: 'POST' });
-		data = await p.json();
+	async function UpdateRSIFromTradingview() {
+		// const p = await fetch('/api/stock-universe/update', { method: 'POST' });
+		// data = await p.json();
 	}
 </script>
 
 <div class="p-1 w-full overflow-hidden">
 	<h1>StocksAnalysisComponent</h1>
 	<button
-		onclick={() => RefreshStockUniverse()}
+		onclick={() => UpdateRSIFromTradingview()}
 		class="border border-gray-200 rounded px-2 active:bg-gray-200 hover:bg-gray-100"
 	>
-		Update
+		Update RSI
 	</button>
 	<span>{dayjs(data.meta?.updatedAt).format('DD-MMM-YYYY')}</span>
 	<span>{filteredStockList.length}</span>

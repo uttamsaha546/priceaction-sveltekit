@@ -38,9 +38,10 @@ export async function getGrowwMfScreenerData() {
 		const includedRows = [];
 
 		data.content.forEach((row) => {
-			if (row.index === true) {
-				excludedRows.push(row);
-			} else if (
+			// if (row.index === true) {
+			// 	excludedRows.push(row);
+			// } else
+			if (
 				row.id.includes('etf') ||
 				row.id.includes('fof') ||
 				row.id.includes('fund-of-funds') ||
@@ -102,10 +103,10 @@ export async function getGrowwMfScreenerData() {
 export function getFormattedMfHoldings() {
 	const formattedMfHoldings = getGrowwMutualFundsHoldingsStmt.all();
 	const rsiRows = getTradingViewScreenerRsiStmt.all();
-	
+
 	const industryClassificationRows = appdb.prepare('SELECT * FROM nse_industry_classifications').all();
-	
-	const industryClassificationBySymbol = new Map(industryClassificationRows.map(row=>[row.symbol, row]));
+
+	const industryClassificationBySymbol = new Map(industryClassificationRows.map(row => [row.symbol, row]));
 
 	const rsiBySymbol = new Map(rsiRows.map((row) => [row.symbol, row]));
 
@@ -115,15 +116,15 @@ export function getFormattedMfHoldings() {
 			...(rsiBySymbol.get(holding.symbol) ?? {}),
 			...(industryClassificationBySymbol.get(holding.symbol) ?? {})
 		}));
-		
+
 		const sector_weight = {};
-		
-		holdings.forEach(holding=>{
-		  if(!sector_weight[holding.sector]){
-		    sector_weight[holding.sector] = 0;
-		  }
-		  
-		  sector_weight[holding.sector] += holding.corpus_per;
+
+		holdings.forEach(holding => {
+			if (!sector_weight[holding.sector]) {
+				sector_weight[holding.sector] = 0;
+			}
+
+			sector_weight[holding.sector] += holding.corpus_per;
 		})
 
 		return {
@@ -133,7 +134,7 @@ export function getFormattedMfHoldings() {
 
 			equity_pct: parseInt(holdings.reduce((acc, currentValue) => acc + currentValue.corpus_per, 0)),
 
-			top10_weight: parseInt(holdings.map(x=>x.corpus_per).sort((a,b)=>b-a).slice(0,10).reduce((acc,x)=>acc+x, 0)),
+			top10_weight: parseInt(holdings.map(x => x.corpus_per).sort((a, b) => b - a).slice(0, 10).reduce((acc, x) => acc + x, 0)),
 
 			rsi_14M_gt55: parseInt(holdings.reduce(
 				(acc, currentValue) => acc + (currentValue.rsi_14M >= 60 ? currentValue.corpus_per : 0),
@@ -153,7 +154,7 @@ export function getFormattedMfHoldings() {
 				(acc, currentValue) => acc + (currentValue.rsi_14W < 55 ? currentValue.corpus_per : 0),
 				0
 			)),
-			
+
 			sector_weight
 		};
 	});

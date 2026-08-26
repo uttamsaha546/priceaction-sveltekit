@@ -1,16 +1,19 @@
 <script>
 	import { invalidate } from '$app/navigation';
-	import Papa from 'papaparse';
+	import * as XLSX from 'xlsx';
+	import { parseWorkbook, flattenHoldings, parseZip } from './parser';
 
-	let { data: portfolio } = $props();
-	// $inspect(portfolio);
-	let fundList = $state();
-	let csvData = $state({});
+	let { data } = $props();
+	// $inspect(data.amcList);
+	const excludedAMCs = [91, 65, 89, 90];
+	let amcList = $derived(data.amcList.filter((x) => !excludedAMCs.includes(parseInt(x.mf_id))));
+
 	let parsing = $state({});
+	let error = $state({});
+	let success = $state({});
 	let saving = $state({});
-	let messages = $state({});
-	let portfolioMonth = $state('');
 
+	let portfolioMonth = $state('');
 	const portfolioMonths = $derived(
 		Array.from({ length: 12 }, (_, i) => {
 			const date = new Date();
@@ -27,194 +30,92 @@
 		})
 	);
 
-	const portfolioUrl = {
-		'HSBC Mutual Fund':
-			'https://www.assetmanagement.hsbc.co.in/en/mutual-funds/investor-resources/information-library#&accordion1446811090=2',
-		'ICICI Prudential Mutual Fund':
-			'https://www.icicipruamc.com/media-center/downloads?currentTabFilter=Disclosures&&subCatTabFilter=MonthlyPortfolioDisclosures',
-		'Helios Mutual Fund': 'https://www.heliosmf.in/portfolio-disclosure',
-		'WhiteOak Capital Mutual Fund':
-			'https://mf.whiteoakamc.com/regulatory-disclosures/scheme-portfolios',
-		'Mahindra Mutual Fund':
-			'https://www.mahindramanulife.com/downloads#disclosures-portfolio-disclosure-monthly-portfolio-disclosure',
-		'ITI Mutual Fund': 'https://www.itiamc.com/statuory-disclosure?type=Portfolio%20Disclosures',
-		'BNP Paribas Mutual Fund':
-			'https://www.barodabnpparibasmf.in/downloads/monthly-portfolio-scheme',
-		'Mirae Asset Mutual Fund': 'https://www.miraeassetmf.co.in/downloads/portfolio',
-		'Axis Mutual Fund': 'https://www.axismf.com/statutory-disclosures',
-		'Kotak Mahindra Mutual Fund': 'https://www.kotakmf.com/Information/forms-and-downloads',
-		'Union Mutual Fund': 'https://www.unionmf.com/about-us/downloads',
-		'JM Financial Mutual Fund': 'https://www.jmfinancialmf.com/downloads/Portfolio-Disclosure',
-		'Invesco Mutual Fund': 'https://www.invescomutualfund.com/literature-forms/monthly-holdings',
-		'IDFC Mutual Fund':
-			'https://bandhanmutual.com/statutory-disclosures/scheme-portfolios/monthly-half-yearly',
-		'Bandhan Mutual Fund':
-			'https://bandhanmutual.com/statutory-disclosures/scheme-portfolios/monthly-half-yearly',
-		'Sundaram Mutual Fund': 'https://www.sundarammutual.com/Monthly-Fortnightly-Adhoc-Portfolios',
-		'Nippon India Mutual Fund':
-			'https://mf.nipponindiaim.com/investor-service/downloads/factsheet-portfolio-and-other-disclosures',
-		'Edelweiss Mutual Fund': 'https://www.edelweissmf.com/statutory/portfolio-of-schemes',
-		'HDFC Mutual Fund': 'https://www.hdfcfund.com/statutory-disclosure/portfolio/monthly-portfolio',
-		'Tata Mutual Fund': 'https://www.tatamutualfund.com/schemes-related/portfolio',
-		'Motilal Oswal Mutual Fund':
-			'https://www.motilaloswalmf.com/downloads/scheme-portfolio-details',
-		'Aditya Birla Sun Life Mutual Fund':
-			'https://mutualfund.adityabirlacapital.com/forms-and-downloads/portfolio',
-		'SBI Mutual Fund': 'https://www.sbimf.com/portfolios',
-		'Navi Mutual Fund': 'https://navi.com/mutual-fund/downloads/portfolio',
-		'UTI Mutual Fund': 'https://www.utimf.com/downloads/consolidate-all-portfolio-disclosure',
-		'LIC Mutual Fund': 'https://www.licmf.com/downloads/monthly-portfolio',
-		'DSP Mutual Fund': 'https://www.dspim.com/mandatory-disclosures/portfolio-disclosures',
-		'Canara Robeco Mutual Fund':
-			'https://www.canararobeco.com/documents/statutory-disclosures/scheme-dashboard/scheme-monthly-portfolio/',
-		'Taurus Mutual Fund': 'https://taurusmutualfund.com/monthly-portfolio',
-		'Quant Mutual Fund': 'https://quantmutual.com/statutory-disclosures',
-		'Franklin Templeton Mutual Fund': 'https://www.franklintempletonindia.com/reports',
-		'PGIM India Mutual Fund':
-			'https://www.pgimindia.com/mutual-funds/disclosures/Portfolios/Monthly-Portfolio',
-		'JioBlackRock Mutual Fund':
-			'https://www.jioblackrockamc.com/statutory-disclosure/disclosures/monthly-portfolio-disclosure',
-		'Trust Mutual Fund': 'https://www.trustmf.com/disclosures?activeTab=portfolio-disclosures',
-		'Bank of India Mutual Fund': 'https://www.boimf.in/investor-corner',
-		'Groww Mutual Fund': 'https://growwmf.in/statutory-disclosure/portfolio',
-		'The Wealth Company Mutual Fund':
-			'https://www.wealthcompanyamc.in/literature-forms/portfolio-documents/monthly/',
-		'Zerodha Mutual Fund': 'https://www.zerodhafundhouse.com/resources/disclosures?source=footer',
-		'Samco Mutual Fund': 'https://www.samcomf.com/StatutoryDisclosure#PortfolioDisclosures',
-		'': '',
-		'': ''
-	};
+	let workbook = $state({});
+	let sheets = $state({});
+	let holdings = $state({});
+	let uniqueHoldings = $state({});
+	let selectedSheet = $state({});
 
-	$effect(() => {
-		fetch('/mfanalysis/puppeteer/api/getFundList?sub_category=Mid Cap')
-			.then((res) => res.json())
-			.then((res) => {
-				fundList = res.content.filter(
-					(fund) => fund.index === false && !fund.scheme_name?.toLowerCase().includes('etf')
-				);
-			});
-	});
+	let superUniqueHoldings = $state([]);
+	let superUniqueHoldingsObj = $state({});
 
-	function handleFileUpload(event, row) {
+	async function handleFileUpload(event, row) {
 		const file = event.target.files?.[0];
+		const key = row.mf_name;
 
 		if (!file) return;
 
-		parsing[row.fund_name] = true;
-		messages[row.fund_name] = null;
-
-		Papa.parse(file, {
-			header: true,
-			transformHeader: (header) => header.trim(),
-			skipEmptyLines: true,
-			dynamicTyping: true,
-
-			complete: (results) => {
-				parsing[row.fund_name] = false;
-
-				if (results.errors.length > 0) {
-					console.error('CSV parsing errors:', results.errors);
-
-					messages[row.fund_name] = {
-						type: 'error',
-						text: `CSV contains ${results.errors.length} parsing error(s).`
-					};
-
-					return;
-				}
-
-				results.data = results.data.map((x) => {
-					return {
-						name: x.name.trim(),
-						isin: x.isin.trim(),
-						qty: parseInt(String(x.qty).replaceAll(',', '')),
-						weight: parseFloat(String(x.weight).replaceAll('%', ''))
-					};
-				});
-
-				csvData[row.fund_name] = results.data;
-
-				messages[row.fund_name] = {
-					type: 'success',
-					text: `${results.data.length} rows parsed successfully.`
-				};
-
-				console.log('Parsed CSV:', results.data);
-			},
-
-			error: (error) => {
-				parsing[row.fund_name] = false;
-
-				messages[row.fund_name] = {
-					type: 'error',
-					text: error.message || 'Failed to parse CSV.'
-				};
-			}
-		});
-	}
-
-	async function saveToDatabase(row) {
-		const fundName = row.fund_name;
-		const rows = csvData[fundName];
-
-		if (!rows?.length) return;
-
-		if (!portfolioMonth) {
-			messages[fundName] = {
-				type: 'error',
-				text: 'Please select a portfolio month first.'
-			};
-
-			return;
-		}
-
-		saving[fundName] = true;
-		messages[fundName] = null;
+		parsing[key] = true;
+		error[key] = '';
+		success[key] = '';
 
 		try {
-			const response = await fetch('/mfanalysis/puppeteer/api/saveFundData', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					groww_id: row.search_id,
-					month: portfolioMonth,
-					portfolio: rows
-				})
-			});
+			const extension = file.name.split('.').pop()?.toLowerCase();
 
-			if (!response.ok) {
-				throw new Error(`Server returned ${response.status}`);
+			if (!['zip', 'xlsx', 'xls'].includes(extension ?? '')) {
+				throw new Error('Only ZIP, XLSX, or XLS files are supported.');
 			}
 
-			const result = await response.json();
+			let buffer;
 
-			messages[fundName] = {
-				type: 'success',
-				text: result.message || 'Data saved successfully.'
-			};
+			if (extension === 'zip') {
+				buffer = await parseZip(file);
+			} else {
+				buffer = await file.arrayBuffer();
+			}
 
-			await invalidate('app:portfolio');
-		} catch (error) {
-			console.error('Save error:', error);
+			workbook[key] = XLSX.read(buffer, {
+				type: 'array',
+				cellDates: true,
+				raw: true
+			});
 
-			messages[fundName] = {
-				type: 'error',
-				text: error.message || 'Failed to save data.'
-			};
+			sheets[key] = parseWorkbook(workbook[key]);
+
+			holdings[key] = sheets[key].flatMap((sheet) =>
+				(sheet.holdings ?? []).map((holding) => ({
+					...holding,
+					sheetName: sheet.sheetName,
+					fundName: sheet.fundName,
+					reportDate: sheet.reportDate,
+					securityType: 'equity'
+				}))
+			);
+
+			uniqueHoldings[key] = flattenHoldings(sheets[key]);
+
+			uniqueHoldings[key].forEach((element) => {
+				if (!superUniqueHoldingsObj[element.isin]) {
+					superUniqueHoldingsObj[element.isin] = element;
+				} else {
+					superUniqueHoldingsObj[element.isin].quantity += element.quantity;
+				}
+			});
+
+			superUniqueHoldings = Object.values(superUniqueHoldingsObj);
+		} catch (e) {
+			error[key] = e instanceof Error ? e.message : String(e);
 		} finally {
-			saving[fundName] = false;
+			parsing[key] = false;
 		}
 	}
+
+	function handleDownload() {
+		const worksheet = XLSX.utils.json_to_sheet(superUniqueHoldings);
+		const workbook = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock Universe');
+		XLSX.writeFile(workbook, 'DataExport.xlsx');
+	}
+
+	$inspect(sheets);
 </script>
 
 <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 	<div class="border-b border-gray-200 px-6 py-4">
-		<h2 class="text-lg font-semibold text-gray-900">Mid Cap Funds</h2>
+		<h2 class="text-lg font-semibold text-gray-900">Import Monthly Portfolio Disclosure</h2>
 
 		<p class="mt-1 text-sm text-gray-500">
-			Upload fund data and save it to the database. {fundList?.length} Funds
+			Upload fund data and save it to the database. {amcList?.length} AMCs
 		</p>
 
 		<div class="mt-4 flex items-center gap-3">
@@ -235,86 +136,70 @@
 					</option>
 				{/each}
 			</select>
+
+			<span class="sticky top-0">Unique Holdings: {superUniqueHoldings?.length}</span>
+			<button
+				onclick={handleDownload}
+				class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
+				>Download</button
+			>
 		</div>
 	</div>
 
 	<div class="overflow-x-auto">
-		<table class="w-full min-w-[900px] text-left text-sm">
+		<table class="w-full min-w-225 text-left text-sm">
 			<thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
 				<tr>
-					<th class="px-6 py-3 font-semibold"> Fund </th>
+					<th class="px-6 py-3 font-semibold"> AMC </th>
 
-					<th class="px-6 py-3 font-semibold"> Portfolio </th>
-
-					<th class="px-6 py-3 font-semibold"> 6M Return </th>
-
-					<th class="px-6 py-3 font-semibold"> 1Y Return </th>
-
-					<th class="px-6 py-3 font-semibold"> CSV </th>
+					<th class="px-6 py-3 font-semibold"> Messeges </th>
 
 					<th class="px-6 py-3 text-center font-semibold"> Action </th>
 				</tr>
 			</thead>
 
 			<tbody class="divide-y divide-gray-100">
-				{#each fundList ?? [] as row}
-					{@const fundName = row.fund_name}
-					{@const parsedRows = csvData[fundName]}
-					{@const this_portfolio = portfolio?.data.find((x) => x.groww_id === row.id)}
+				{#each amcList ?? [] as row}
+					{@const fundName = row.mf_name}
+					{@const key = row.mf_name}
+					{@const logo_url = `https://www.amfiindia.com${row?.icons[0]?.url ?? ''}`}
+					{@const click_url = row.amc_monthly_portfolio_disclosure}
 
 					<tr class="transition-colors hover:bg-gray-50">
-						<!-- Fund -->
+						<!-- AMCs -->
 						<td class="px-6 py-4">
 							<div class="flex items-center gap-3">
 								<img
-									src={row.logo_url}
+									src={logo_url}
 									alt={fundName}
-									width="40"
-									height="40"
-									class="h-10 w-10 rounded-full border border-gray-200 bg-white object-contain"
+									width="60"
+									height="60"
+									class="border border-gray-200 bg-white object-contain"
 								/>
 
 								<div>
 									<p class="font-medium text-gray-900">
-										<a href={portfolioUrl[row.fund_house]} target="_blank">{fundName}</a>
+										<a href={click_url} target="_blank">{fundName}</a>
 									</p>
-
-									<p class="text-xs text-gray-500">Mid Cap</p>
 								</div>
 							</div>
 						</td>
 
-						<!-- Portfolio -->
+						<!-- Messeges -->
 						<td class="px-6 py-4">
-							<span
-								class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-							>
-								{this_portfolio?.portfolio?.length ?? 0}
-							</span>
+							{#if holdings[key]}
+								<span
+									class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+								>
+									{holdings[key]?.length} Rows parsed
+								</span>
 
-							<span
-								class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-							>
-								{this_portfolio?.month ?? ''}
-							</span>
-						</td>
-
-						<!-- 6M -->
-						<td class="px-6 py-4">
-							<span
-								class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
-							>
-								{row.return6m}%
-							</span>
-						</td>
-
-						<!-- 1Y -->
-						<td class="px-6 py-4">
-							<span
-								class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
-							>
-								{row.return1y}%
-							</span>
+								<span
+									class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+								>
+									{uniqueHoldings[key]?.length} unique holding
+								</span>
+							{/if}
 						</td>
 
 						<!-- Upload -->
@@ -343,27 +228,27 @@
 
 									Parsing...
 								{:else}
-									Upload CSV
+									Upload Excel/Zip
 								{/if}
 
 								<input
 									type="file"
-									accept=".csv,text/csv"
+									accept=".xlsx, .xls, .zip"
 									class="hidden"
 									disabled={parsing[fundName]}
 									onchange={(event) => handleFileUpload(event, row)}
 								/>
 							</label>
 
-							{#if parsedRows?.length}
+							<!-- {#if parsedRows?.length}
 								<p class="mt-2 text-xs text-gray-500">
 									{parsedRows.length} rows loaded
 								</p>
-							{/if}
+							{/if} -->
 						</td>
 
 						<!-- Save -->
-						<td class="px-6 py-4 text-center">
+						<!-- <td class="px-6 py-4 text-center">
 							<button
 								type="button"
 								disabled={!parsedRows?.length || !portfolioMonth || saving[fundName]}
@@ -394,11 +279,11 @@
 									Save to Database
 								{/if}
 							</button>
-						</td>
+						</td> -->
 					</tr>
 
 					<!-- Status -->
-					{#if messages[fundName]}
+					<!-- {#if messages[fundName]}
 						<tr>
 							<td colspan="5" class="px-6 py-2">
 								<div
@@ -410,17 +295,17 @@
 								</div>
 							</td>
 						</tr>
-					{/if}
-				{:else}
-					<tr>
-						<td colspan="5" class="px-6 py-12 text-center">
-							<p class="text-sm font-medium text-gray-600">No funds found</p>
+					{:else}
+						<tr>
+							<td colspan="5" class="px-6 py-12 text-center">
+								<p class="text-sm font-medium text-gray-600">No funds found</p>
 
-							<p class="mt-1 text-xs text-gray-400">
-								There are currently no Mid Cap funds to display.
-							</p>
-						</td>
-					</tr>
+								<p class="mt-1 text-xs text-gray-400">
+									There are currently no Mid Cap funds to display.
+								</p>
+							</td>
+						</tr>
+					{/if} -->
 				{/each}
 			</tbody>
 		</table>

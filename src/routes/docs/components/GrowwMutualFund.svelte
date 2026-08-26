@@ -188,6 +188,14 @@
 						: 'Get ALL Mutual Funds Holdings'}
 				</button>
 
+				<form method="POST" action="?/deleteGrowwStockIdSymbolMap" use:enhance>
+					<button
+						type="submit"
+						class="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow transition duration-150 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+						>Delete Old Stocks</button
+					>
+				</form>
+
 				<button
 					type="button"
 					onclick={handleSaveSuccessfulHoldings}
@@ -232,6 +240,10 @@
 							class="bg-slate-50 sticky top-0 border-b border-slate-200 font-semibold text-slate-700 z-10"
 						>
 							<tr>
+								<th
+									class="p-3.5 border-r border-slate-200/60 last:border-0 tracking-wide text-slate-600 bg-slate-50"
+									>#</th
+								>
 								{#each tableHeaders as header}
 									<th
 										class="p-3.5 border-r border-slate-200/60 last:border-0 tracking-wide text-slate-600 bg-slate-50"
@@ -241,8 +253,11 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-200/80 text-slate-600">
-							{#each parsedData as row}
+							{#each parsedData as row, rowIndex}
 								<tr class="hover:bg-slate-50/80 transition-colors odd:bg-white even:bg-slate-50/30">
+									<td class="p-3 border-r border-slate-200/40 last:border-0 font-medium"
+										>{rowIndex}</td
+									>
 									{#each tableHeaders as header}
 										<td class="p-3 border-r border-slate-200/40 last:border-0 font-medium">
 											{#if !row[header]}

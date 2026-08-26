@@ -78,15 +78,3 @@ appdb.exec(`
 	INNER JOIN groww_stock_id_symbol_map g
 		ON g.symbol = a.symbol;
 `);
-
-
-/*SELECT DISTINCT a.*, n.macro, n.sector, n.industry, n.basic_industry, n.primary_index, g.stock_search_id
-	FROM amfi_marketcap_classifications a
-	LEFT JOIN groww_stock_id_symbol_map g 
-	ON g.symbol=a.symbol
-	INNER JOIN nse_industry_classifications n
-		ON n.symbol = a.symbol
-	WHERE COALESCE(TRIM(n.primary_index), '') <> '-'
-
-	UNION
-	*/

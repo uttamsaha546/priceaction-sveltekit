@@ -173,5 +173,10 @@ export const actions = {
 	getMutualFundsFromGroww: async () => {
 		const growwMfScreenerData = await getGrowwMfScreenerData();
 		return growwMfScreenerData;
+	},
+
+	deleteGrowwStockIdSymbolMap: async () => {
+		appdb.exec('DELETE FROM groww_stock_id_symbol_map');
+		return { status: 'success' }
 	}
 };

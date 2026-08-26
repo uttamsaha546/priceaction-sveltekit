@@ -91,10 +91,23 @@ function setCache(url, response, response_type = 'json') {
 }
 
 export async function GET({ url }) {
-	const fund_id = url.searchParams.get('fund_id');
+	let fund_id = url.searchParams.get('fund_id');
 
 	if (!fund_id) {
 		return json({ error: 'Missing required query parameter: fund_id' }, { status: 400 });
+	}
+
+	//Check if id returned 301
+	const res = await fetch(`https://groww.in/mutual-funds/${encodeURIComponent(fund_id)}`, { redirect: 'manual' });
+	if (res.status === 301) {
+		const movedTo = res.headers.get('location');
+		fund_id = movedTo.split('/')[2];
+		// return json({
+		// 	status: '301',
+		// 	data: [],
+		// 	movedTo: movedTo,
+		// 	new_fund_id: fund_id
+		// });
 	}
 
 	const holdingsUrl = `https://groww.in/v1/api/data/mf/web/v6/scheme/search/${encodeURIComponent(fund_id)}`;
@@ -132,7 +145,7 @@ export async function GET({ url }) {
 	});
 
 	const stmt = appdb.prepare(`INSERT OR REPLACE INTO groww_mutual_funds_holdings (search_id, holdings, portfolio_date) VALUES (:search_id, :holdings, :portfolio_date)`);
-	stmt.run({search_id: fund_id, holdings:JSON.stringify(formattedHoldings), portfolio_date: new Date(equityHoldings[0]?.portfolio_date ?? '').toLocaleDateString('en-CA') });
+	stmt.run({ search_id: fund_id, holdings: JSON.stringify(formattedHoldings), portfolio_date: new Date(equityHoldings[0]?.portfolio_date ?? '').toLocaleDateString('en-CA') });
 
 	return json({
 		status: 'OK',
