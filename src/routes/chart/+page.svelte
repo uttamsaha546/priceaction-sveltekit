@@ -33,24 +33,8 @@
 		}
 	}
 
-	async function loadGrowwTableData() {
-		try {
-			const res = await fetch('/api/groww');
-			const data = await res.json();
-			const keyValuePair = {};
-
-			data.forEach((item) => {
-				keyValuePair[item.searchId] = item;
-			});
-			ChartState.groww = keyValuePair;
-		} catch (err) {
-			console.error(err);
-		}
-	}
-
 	onMount(() => {
 		loadFlagsTableData();
-		loadGrowwTableData();
 		loadInitialData();
 
 		if (typeof window !== 'undefined') {
@@ -60,8 +44,8 @@
 	});
 
 	let scalingMultiplier = $derived.by(() => {
-		if (ChartState.interval==="M") return ChartState.scaleM;
-else if (ChartState.interval==="F") return ChartState.scaleF;
+		if (ChartState.interval === 'M') return ChartState.scaleM;
+		else if (ChartState.interval === 'F') return ChartState.scaleF;
 		else return ChartState.scaleW;
 	});
 </script>
@@ -78,9 +62,11 @@ else if (ChartState.interval==="F") return ChartState.scaleF;
 				class="Timeframe absolute bottom-0 right-0 z-20 h-7 w-16 flex items-center justify-center"
 			>
 				<button
-					class:bg-gray-400={ChartState.interval==="M"}
+					class:bg-gray-400={ChartState.interval === 'M'}
 					class="border border-gray-400 rounded px-2 box-border"
-					onclick={() => (ChartState.interval === "M"? ChartState.interval="W" : ChartState.interval="M")}>M</button
+					onclick={() =>
+						ChartState.interval === 'M' ? (ChartState.interval = 'W') : (ChartState.interval = 'M')}
+					>M</button
 				>
 			</div>
 

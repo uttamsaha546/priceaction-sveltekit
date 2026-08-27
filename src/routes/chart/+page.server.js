@@ -1,4 +1,5 @@
-import { db } from '$lib/server/database';
+import { appdb } from '$lib/server/appdb';
+import { userdb } from '$lib/server/userdb';
 import YahooFinance from 'yahoo-finance2';
 import ScreenerScraper from '$lib/scraper/ScreenerScraper';
 import MoneyControlScraper from '$lib/scraper/MoneyControlScraper';
@@ -7,14 +8,14 @@ const yahooFinance = new YahooFinance();
 const screenerScraper = new ScreenerScraper();
 const mcScraper = new MoneyControlScraper();
 
-const createWatchlistStmt = db.prepare(
+const createWatchlistStmt = userdb.prepare(
     `INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`
 );
-const getPortfolioHoldingStmt = db.prepare(
-	`SELECT holding FROM portfolio WHERE key=?`
+const getPortfolioHoldingStmt = userdb.prepare(
+    `SELECT holding FROM portfolio WHERE key=?`
 );
-const getStockUniverseStmt = db.prepare(
-	`SELECT * FROM stock_universe`
+const getStockUniverseStmt = appdb.prepare(
+    `SELECT * FROM stock_universe_with_rsi_industry`
 );
 
 export const actions = {
@@ -52,12 +53,12 @@ export const actions = {
         const [past, estimate] = await Promise.all([screenerScraper.scrape(symbol), mcScraper.scrape(symbol)]);
         return { past, estimate }
     },
-    
-    createWatchlist: async ({request})=>{
-      const formData = await request.formData();
+
+    createWatchlist: async ({ request }) => {
+        const formData = await request.formData();
         const name = formData.get('name');
-        const entries = formData.get('entries');        
-        createWatchlistStmt.run(name, entries);        
-        return {name, entries}
+        const entries = formData.get('entries');
+        createWatchlistStmt.run(name, entries);
+        return { name, entries }
     }
 };

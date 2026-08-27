@@ -1,19 +1,13 @@
 <script>
-	import Papa from 'papaparse';
-	import { enhance } from '$app/forms';
+	import { AppState } from '$lib/state/AppState.svelte';
 	import { onMount } from 'svelte';
 
-	let message = $state(null);
 	let tableHeaders = $derived(Object.keys(tradingViewStockUniverse?.data?.[0]));
 	let updating = $state(false);
 	let tradingViewStockUniverse = $state({});
 
 	function handleUpdate() {
 		updating = true;
-		message = {
-			type: 'info',
-			text: 'Saving...'
-		};
 
 		fetch('/docs/api/set-tradingview-stock-universe')
 			.then((res) => res.json())
@@ -26,13 +20,17 @@
 	onMount(() => {
 		fetch('/docs/api/get-tradingview-stock-universe')
 			.then((res) => res.json())
-			.then((data) => (tradingViewStockUniverse = data));
+			.then((data) => {
+				tradingViewStockUniverse = data;
+				AppState.TradingViewStockUniverse = data;
+			});
 	});
 </script>
 
 <main class="max-w-7xl mx-auto p-6 space-y-6 antialiased font-sans">
 	<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
 		<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm md:col-span-3">
+			<div class="text-2xl font-bold">TradingView Stock Universe</div>
 			<!-- Controls & Actions Section Layout Grid -->
 			<div class="flex flex-row justify-between items-center">
 				<p class="font-semibold text-slate-800 text-base mt-4">
@@ -98,17 +96,3 @@
 		</div>
 	</section>
 </main>
-
-<style>
-	.success {
-		color: #047857;
-	}
-
-	.error {
-		color: #dc2626;
-	}
-
-	.info {
-		color: #2563eb;
-	}
-</style>

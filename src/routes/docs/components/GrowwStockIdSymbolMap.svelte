@@ -1,89 +1,98 @@
 <script>
-	import { AppState } from '$lib/state/AppState.svelte';
 	import { onMount } from 'svelte';
 
-	let parsedData = $derived.by(() => {
-		return AppState.TradingViewStockUniverse?.data ?? [];
-	});
+	let parsedData = $state([]);
 	let errorMessage = $state('');
 	let processingStatus = $state({ active: false, current: 0, total: 0 });
 
-	let tableData = $state([]);
-	let tableHeaders = $state([]);
+	let tableHeaders = $derived(
+		parsedData.length > 0 ? Array.from(new Set(parsedData.flatMap((obj) => Object.keys(obj)))) : []
+	);
 
-	function addRow(row) {
-		if (tableData.length === 0) {
-			tableHeaders = Object.keys(row);
-		}
+	onMount(async () => {
+		const stock_id_symbol_map = await fetch('/docs/api/get-groww-stock-id-symbol-map')
+			.then((x) => x.json())
+			.then((data) => {
+				return new Map(data.map((x) => [x.stock_search_id, x.symbol]));
+			});
 
-		tableData.push(row);
-	}
+		fetch(
+			'/proxy?url=https://groww.in/v1/api/data/mf/web/v6/scheme/search/groww-nifty-total-market-index-fund-direct-growth'
+		)
+			.then((x) => x.json())
+			.then((x) => {
+				parsedData = x.holdings
+					.filter((x) => x.nature_name === 'EQUITY' && x.stock_search_id)
+					.map((x) => {
+						return {
+							stock_search_id: x.stock_search_id,
+							symbol: stock_id_symbol_map.get(x.stock_search_id)
+						};
+					});
+			});
+	});
 
-	// Chunks network calls sequentially to prevent API request drops
-	async function getIndustryClassificationFromNSE() {
+	async function handleMapButtonClick() {
 		if (parsedData.length === 0) {
-			errorMessage = 'No active datasets loaded. Please upload a standard AMFI CSV file template.';
+			errorMessage = 'No active datasets loaded.';
 			return;
 		}
 
 		errorMessage = '';
-		processingStatus = { active: true, current: 0, total: parsedData.length };
+		processingStatus = {
+			active: true,
+			current: 0,
+			total: parsedData.length
+		};
 
-		// Configurable sliding window execution limits
 		const CONCURRENCY_LIMIT = 10;
 		const dataCopy = [...parsedData];
 
 		for (let i = 0; i < dataCopy.length; i += CONCURRENCY_LIMIT) {
 			const batch = dataCopy.slice(i, i + CONCURRENCY_LIMIT);
 
-			const promises = batch.map(async (element) => {
-				const symbol = element.symbol;
+			await Promise.all(
+				batch.map(async (element, batchIndex) => {
+					const originalIndex = i + batchIndex;
+					const stock_search_id = element.stock_search_id;
 
-				try {
-					const response = await fetch(
-						`/docs/api/set-industry-classification-from-nse?symbol=${encodeURIComponent(symbol)}`
-					);
+					try {
+						const response = await fetch(
+							`/docs/api/set-groww-stock-id-symbol-map?stock_search_id=${encodeURIComponent(stock_search_id)}`
+						);
 
-					if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-					const result = await response.json();
+						if (!response.ok) {
+							throw new Error(`HTTP Error ${response.status}`);
+						}
 
-					addRow(result);
-				} catch (err) {
-					console.warn(`Failed metadata query resolution for ticket: ${symbol}`, err);
-				} finally {
-					processingStatus.current += 1;
-				}
-			});
+						const result = await response.json();
 
-			await Promise.all(promises);
+						parsedData[originalIndex] = {
+							...parsedData[originalIndex],
+							...result
+						};
+					} catch (err) {
+						console.warn(`Failed metadata query resolution for ${stock_search_id}`, err);
+					} finally {
+						processingStatus.current += 1;
+					}
+				})
+			);
 
-			// Optional tiny cool-off period between consecutive window operations
+			// Force a new array reference for Svelte reactivity
+			parsedData = [...parsedData];
+
 			await new Promise((resolve) => setTimeout(resolve, 150));
 		}
 
 		processingStatus.active = false;
 	}
-
-	onMount(async () => {
-		const symbol_industry_map = await fetch('/docs/api/get-nse-industry-classification')
-			.then((x) => x.json())
-			.then((data) => {
-				return new Map(data.map((x) => [x.symbol, x]));
-			});
-
-		tableData = parsedData.map((x) => ({
-			symbol: x.symbol,
-			...symbol_industry_map.get(x.symbol)
-		}));
-
-		tableHeaders = Object.keys(tableData[0]);
-	});
 </script>
 
 <main class="max-w-7xl mx-auto p-6 space-y-6 antialiased font-sans">
 	<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
 		<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm md:col-span-3">
-			<div class="text-2xl font-bold">NSE Industry Classification</div>
+			<div class="text-2xl font-bold">Stock ID &harr; Symbol Map</div>
 			<!-- Controls & Actions Section Layout Grid -->
 			<div class="flex flex-row justify-between items-center">
 				<p class="font-semibold text-slate-800 text-base mt-4">
@@ -91,7 +100,7 @@
 					<!-- {new Date(tradingViewStockUniverse?.meta?.updated_at) ?? 'Not Updated Yet'} -->
 				</p>
 				<button
-					onclick={getIndustryClassificationFromNSE}
+					onclick={handleMapButtonClick}
 					disabled={processingStatus.active}
 					class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition duration-150 ease-in-out disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
@@ -113,7 +122,7 @@
 						</svg>
 						Processing ({processingStatus.current}/{processingStatus.total})
 					{:else}
-						Update
+						Map
 					{/if}
 				</button>
 			</div>
@@ -130,7 +139,7 @@
 		{/if}
 
 		<!-- Dynamic Data Table Presentation View -->
-		{#if tableData.length > 0}
+		{#if parsedData.length > 0}
 			<div
 				class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden md:col-span-3"
 			>
@@ -163,7 +172,7 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-200/80 text-slate-600">
-							{#each tableData as row, rowIndex}
+							{#each parsedData as row, rowIndex}
 								<tr class="hover:bg-slate-50/80 transition-colors odd:bg-white even:bg-slate-50/30">
 									<td class="p-3 border-r border-slate-200/40 last:border-0 font-medium"
 										>{rowIndex}</td

@@ -23,7 +23,7 @@ const getStockInfoStmt = appdb.prepare(
 	`SELECT * FROM groww_stock_id_symbol_map WHERE stock_search_id=?`
 );
 const setStockInfoStmt = appdb.prepare(
-	`INSERT OR REPLACE INTO groww_stock_id_symbol_map (stock_search_id, isin, symbol) VALUES (:stock_search_id, :isin, :symbol)`
+	`INSERT OR REPLACE INTO groww_stock_id_symbol_map (stock_search_id, symbol) VALUES (:stock_search_id, :symbol)`
 );
 
 function getCache(url) {
@@ -91,92 +91,20 @@ function setCache(url, response, response_type = 'json') {
 }
 
 export async function GET({ url }) {
-	let fund_id = url.searchParams.get('fund_id');
+	let stock_search_id = url.searchParams.get('stock_search_id');
 
-	if (!fund_id) {
-		return json({ error: 'Missing required query parameter: fund_id' }, { status: 400 });
+	if (!stock_search_id) {
+		return json({ error: 'Missing required query parameter: stock_search_id' }, { status: 400 });
 	}
 
-	//Check if id returned 301
-	const res = await fetch(`https://groww.in/mutual-funds/${encodeURIComponent(fund_id)}`, { redirect: 'manual' });
-	if (res.status === 301) {
-		const movedTo = res.headers.get('location');
-		fund_id = movedTo.split('/')[2];
-		// return json({
-		// 	status: '301',
-		// 	data: [],
-		// 	movedTo: movedTo,
-		// 	new_fund_id: fund_id
-		// });
-	}
+	const stockInfo = await getStockInfo(stock_search_id);
 
-	const holdingsUrl = `https://groww.in/v1/api/data/mf/web/v6/scheme/search/${encodeURIComponent(fund_id)}`;
-
-	const holdings = await getHoldings(holdingsUrl);
-
-	if (!holdings) {
-		return json({ error: 'Unable to retrieve fund holdings' }, { status: 502 });
-	}
-
-	const equityHoldings = holdings.filter((x) => x.nature_name === 'EQUITY');
-
-	const CONCURRENCY_LIMIT = 10;
-	const infos = new Array(equityHoldings.length);
-
-	for (let i = 0; i < equityHoldings.length; i += CONCURRENCY_LIMIT) {
-		const batch = equityHoldings.slice(i, i + CONCURRENCY_LIMIT);
-
-		const batchInfos = await Promise.allSettled(
-			batch.map(async (item) => {
-				return await getStockInfo(item.stock_search_id);
-			})
-		);
-
-		batchInfos.forEach((info, index) => {
-			infos[i + index] = info.value;
-		});
-	}
-
-	const formattedHoldings = equityHoldings.map((item, index) => {
-		return {
-			...infos[index],
-			corpus_per: item.corpus_per
-		};
-	});
-
-	const stmt = appdb.prepare(`INSERT OR REPLACE INTO groww_mutual_funds_holdings (search_id, holdings, portfolio_date) VALUES (:search_id, :holdings, :portfolio_date)`);
-	stmt.run({ search_id: fund_id, holdings: JSON.stringify(formattedHoldings), portfolio_date: new Date(equityHoldings[0]?.portfolio_date ?? '').toLocaleDateString('en-CA') });
+	setStockInfoStmt.run(stockInfo);
 
 	return json({
-		status: 'OK',
-		data: formattedHoldings
+		stock_search_id,
+		...stockInfo
 	});
-}
-
-async function getHoldings(url) {
-	try {
-		const cached = getCache(url);
-
-		if (cached !== null) {
-			return cached.holdings;
-		}
-
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			throw new Error(`Groww Server returned HTTP Status ${response.status}`);
-		}
-
-		const data = await response.json();
-
-		setCache(url, data);
-
-		return data.holdings;
-	} catch (error) {
-		console.error(`Execution fault for target URL [${url}]:`, error.message);
-
-		return null;
-	}
 }
 
 /**
@@ -218,15 +146,12 @@ async function getStockInfo(stock_search_id) {
 		const nextData = JSON.parse(jsonString);
 		const header = nextData.props.pageProps.stockData.header;
 
-		const data = {
-			isin: header.isin,
-			symbol: header.nseScriptCode || header.bseTradingSymbol || null,
+		const result = {
+			symbol: header.nseScriptCode,
 			stock_search_id: header.searchId
 		};
 
-		setStockInfoStmt.run({ ...data });
-
-		return data;
+		return result;
 	} catch (error) {
 		console.error('Failed to parse JSON:', error.message);
 		return null;

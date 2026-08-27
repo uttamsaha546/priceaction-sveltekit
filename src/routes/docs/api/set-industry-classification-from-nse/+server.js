@@ -99,6 +99,11 @@ async function fetchWithNseSession(url, functionName) {
     return data;
 }
 
+const insertStmt = appdb.prepare(`INSERT OR REPLACE INTO nse_industry_classification 
+    (symbol, macro, sector, industry, basic_industry) VALUES 
+    (:symbol, :macro, :sector, :industry, :basic_industry)`
+);
+
 export async function GET({ url }) {
     const symbol = url.searchParams.get('symbol');
 
@@ -122,15 +127,19 @@ export async function GET({ url }) {
         const symbolDataUrl = `https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=${marketType}&series=${activeSeries}&symbol=${encodeURIComponent(symbol)}`;
         const symbolData = await fetchWithNseSession(symbolDataUrl, 'getSymbolData');
 
-        return json({
-            success: true,
-            data: {
-                nseData: {
-                    ...metaData,
-                    ...symbolData
-                }
-            }
-        });
+        const secInfo = symbolData.equityResponse[0].secInfo;
+
+        const result = {
+            symbol: metaData.symbol,
+            macro: secInfo.macro,
+            sector: secInfo.sector,
+            industry: secInfo.industryInfo,
+            basic_industry: secInfo.basicIndustry
+        };
+
+        insertStmt.run(result)
+
+        return json(result);
 
     } catch (error) {
         console.error(`Execution fault for target symbol [${symbol}]:`, error.message);
