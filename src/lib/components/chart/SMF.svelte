@@ -12,9 +12,9 @@
 	let rsiFilteredData = $derived.by(() => {
 		return holdingsData.filter((x) => {
 			if (selectedRSI === '>55') {
-				return x.rsi14_monthly > 55;
+				return x.rsi_14M > 55;
 			} else if (selectedRSI === '<55') {
-				return x.rsi14_monthly <= 55;
+				return x.rsi_14M <= 55;
 			} else return x;
 		});
 	});

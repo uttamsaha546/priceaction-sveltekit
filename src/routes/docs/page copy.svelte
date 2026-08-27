@@ -1,5 +1,4 @@
 <script>
-	import TradingViewStockUniverse from './components/TradingViewStockUniverse.svelte';
 	import AmfiStockClassification from './components/AmfiStockClassification.svelte';
 	import GrowwMutualFund from './components/GrowwMutualFund.svelte';
 	import NseIndustryClassification from './components/NseIndustryClassification.svelte';
@@ -8,32 +7,27 @@
 
 <div class="prose max-w-5xl mx-auto p-4">
 	<article>
-		<h1>STOCK UNIVERSE - Nifty Total Market Index</h1>
+		<h1>
+			Step 1: Pull Data from <a
+				href="https://www.amfiindia.com/otherdata/categorisation-of-stocks"
+				target="_blank">AMFI Marketcap classification</a
+			>
+		</h1>
 		<p>
-			Get the index constituents from <a
-				href="https://in.tradingview.com/screener/DU7IZb5C/"
-				target="_blank">Tradingview Screener</a
-			>. Update whenever you need to update RSI & ADX. You will get name, symbol, isin, marketcap,
-			rsi_14M, rsi_14W, adx_14M, adx_14W.
+			Save name, isin, symbol (nse||bse), marketcap, category in a database table
+			amfi_marketcap_classifications under app.db. Take upto 400Cr Marketcap.
 		</p>
-		<h4>appdb.tradingview_stock_universe Schema</h4>
-		CREATE TABLE IF NOT EXISTS tradingview_stock_universe ( isin TEXT PRIMARY KEY, symbol TEXT NOT NULL,
-		name TEXT NOT NULL, marketcap INTEGER, rsi_14M INTEGER, rsi_14W INTEGER, adx_14M INTEGER, adx_14W
-		INTEGER) WITHOUT ROWID;
+		<h4>amfi_marketcap_classifications Schema</h4>
+		CREATE TABLE IF NOT EXISTS amfi_marketcap_classifications ( isin TEXT PRIMARY KEY, symbol TEXT NOT
+		NULL, name TEXT NOT NULL, marketcap INTEGER NOT NULL, category ENUM('Large Cap', 'Mid Cap', 'Small
+		Cap') NOT NULL ) WITHOUT ROWID;
 
-		<h4>operation on every update</h4>
-		BEGIN TRANSACTION; DELETE FROM tradingview_stock_universe; INSERT OR REPLACE INTO tradingview_stock_universe
-		(isin, symbol, name, marketcap, rsi_14M, rsi_14W, adx_14M, adx_14W) VALUES (:isin, :symbol, :name,
-		:marketcap, :rsi_14M, :rsi_14W, :adx_14M, :adx_14W); INSERT OR REPLACE INTO table_meta (table_name,
-		updated_at) VALUES (tradingview_stock_universe, Date.now()); COMMIT;
-
-		<TradingViewStockUniverse />
+		<AmfiStockClassification />
 	</article>
-
 	<article>
 		<h1>Step 2: Pull Data for NSE Industry classification</h1>
 		<p>
-			For each symbols in tradingview_stock_universe, fetch
+			For each symbols in amfi_marketcap_classifications, fetch
 			https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series=EQ&symbol=VBL
 			to pull sectoral info. Fetch
 			https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getMetaData&symbol=VBL
@@ -55,7 +49,7 @@
 			NULL ) WITHOUT ROWID; Compress response in zstd
 		</p>
 
-		<!-- <NseIndustryClassification /> -->
+		<NseIndustryClassification />
 	</article>
 	<article>
 		<h1>Step 3: Pull all Mutual funds holdings except debt from Groww</h1>

@@ -35,21 +35,21 @@
 					(!sector || row.sector === sector) &&
 					(!industry || row.industry === industry) &&
 					(!rsi ||
-						(rsi === 'up' && row.rsi14_monthly > 60) ||
-						(rsi === 'down' && row.rsi14_monthly < 55) ||
-						(rsi === 'c' && row.rsi14_monthly > 70) ||
-						(rsi === 'b' && row.rsi14_monthly <= 70 && row.rsi14_monthly > 65) ||
-						(rsi === 'a' && row.rsi14_monthly <= 65 && row.rsi14_monthly > 60) ||
-						(rsi === 'a-' && row.rsi14_monthly <= 60 && row.rsi14_monthly > 55) ||
-						(rsi === 'x' && row.rsi14_monthly <= 55 && row.rsi14_monthly > 50) ||
-						(rsi === 'y' && row.rsi14_monthly <= 50 && row.rsi14_monthly > 45) ||
-						(rsi === 'z' && row.rsi14_monthly <= 45))
+						(rsi === 'up' && row.rsi_14M > 60) ||
+						(rsi === 'down' && row.rsi_14M < 55) ||
+						(rsi === 'c' && row.rsi_14M > 70) ||
+						(rsi === 'b' && row.rsi_14M <= 70 && row.rsi_14M > 65) ||
+						(rsi === 'a' && row.rsi_14M <= 65 && row.rsi_14M > 60) ||
+						(rsi === 'a-' && row.rsi_14M <= 60 && row.rsi_14M > 55) ||
+						(rsi === 'x' && row.rsi_14M <= 55 && row.rsi_14M > 50) ||
+						(rsi === 'y' && row.rsi_14M <= 50 && row.rsi_14M > 45) ||
+						(rsi === 'z' && row.rsi_14M <= 45))
 			)
 			.sort((a, b) => b.marketcap - a.marketcap)
 	);
 
 	onMount(async () => {
-		const p = await fetch('/api/stock-universe');
+		const p = await fetch('/api/stock-universe-with-rsi-industry');
 		data = await p.json();
 		window.StockUniverse = data;
 	});
@@ -68,7 +68,7 @@
 	>
 		Update RSI
 	</button>
-	<span>{dayjs(data.meta?.updatedAt).format('DD-MMM-YYYY')}</span>
+	<span>{dayjs(data.meta?.updated_at).format('DD-MMM-YYYY')}</span>
 	<span>{filteredStockList.length}</span>
 
 	<div class="FiltersContainer">
