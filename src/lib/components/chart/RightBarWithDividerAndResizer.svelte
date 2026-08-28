@@ -8,6 +8,7 @@
 	import MutualFundComponent from './MutualFundComponent.svelte';
 	import PortfolioComponent from './PortfolioComponent.svelte';
 	import SMF from './SMF.svelte';
+	import PriceactionComponent from './PriceactionComponent.svelte';
 
 	let width = $state(0);
 	let lastExpandedWidth = $state(190);
@@ -98,6 +99,9 @@
 			<div class:hidden={activeTool !== 6} class="h-full flex flex-col">
 				<SMF />
 			</div>
+			<div class:hidden={activeTool !== 7} class="h-full flex flex-col">
+				<PriceactionComponent />
+			</div>
 		</div>
 
 		<!-- RightBar Tools Icon Here -->
@@ -151,6 +155,14 @@
 					onclick={() => toggleTool(6)}
 				>
 					<div>SMF</div>
+				</button>
+
+				<!-- Priceaction Icon  -->
+				<button
+					class={`${activeTool === 7 ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1.5`}
+					onclick={() => toggleTool(7)}
+				>
+					<div>PA</div>
 				</button>
 			</div>
 		</div>

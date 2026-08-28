@@ -36,8 +36,20 @@
 
 		const res = await p.json();
 		const data = res.candles.map((row) => [row[0], row[4]]);
-		ChartState.lineData = data;
-		ChartState.volumeLineData = res.candles.map((row) => [row[0], row[5]]);
+
+		const latestData = await fetch(
+			`/proxy?url=https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`
+		)
+			.then((x) => x.json())
+			.then((data) => {
+				return data;
+			});
+
+		ChartState.lineData = [...data, [latestData.lastTradeTime, latestData.ltp]];
+		ChartState.volumeLineData = [
+			...res.candles.map((row) => [row[0], row[5]]),
+			[latestData.lastTradeTime, latestData.volume]
+		];
 		ChartState.isLoading = false;
 	}
 
@@ -106,7 +118,7 @@
 		const responseData = deserialize(await response.text());
 
 		ChartState.EarningsData = responseData.data;
-		// console.log(responseData);
+		console.log(responseData);
 		// console.log(ChartState.histogramData);
 	}
 

@@ -4,11 +4,12 @@
 	import SettingsModalContent from './SettingsModalContent.svelte';
 	import SymbolSearchModalContent from './SymbolSearchModalContent.svelte';
 	import SettingsIcon from './Icons/SettingsIcon.svelte';
+	import { goto } from '$app/navigation';
 </script>
 
 <div class="h-full flex flex-row gap-2 items-center">
 	<div class="ProfilePicture w-11 flex flex-row justify-center">
-		<button class="px-2 py-px rounded-full bg-gray-200">U</button>
+		<button onclick={() => goto('/')} class="px-2 py-px rounded-full bg-gray-200">U</button>
 	</div>
 
 	<div class="Tools flex-1 flex flex-row gap-2">
@@ -26,11 +27,13 @@
 		<div class="Current Scrip Name">{ChartState.currentScrip}</div>
 	</div>
 
-<button
-					class:bg-gray-400={ChartState.interval ==="F"}
-					class="border border-gray-400 rounded px-2 box-border"
-					onclick={() => (ChartState.interval === "F"? ChartState.interval= "W" : ChartState.interval="F")}>F</button
-				>
+	<button
+		class:bg-gray-400={ChartState.interval === 'F'}
+		class="border border-gray-400 rounded px-2 box-border"
+		onclick={() =>
+			ChartState.interval === 'F' ? (ChartState.interval = 'W') : (ChartState.interval = 'F')}
+		>F</button
+	>
 
 	<div class="Settings w-11 flex flex-row justify-center">
 		<button

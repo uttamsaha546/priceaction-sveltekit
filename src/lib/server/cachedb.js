@@ -13,6 +13,7 @@ export const cachedb = new DatabaseSync('databases/cache.db');
 
 
 // To store cache
+// cachedb.exec(`DELETE FROM cache`);
 cachedb.exec(`
         CREATE TABLE IF NOT EXISTS cache (
         key TEXT PRIMARY KEY NOT NULL,

@@ -62,3 +62,94 @@ appdb.exec(`
   LEFT JOIN nse_industry_classification USING (symbol)
   LEFT JOIN groww_stock_id_symbol_map USING (symbol);
 `);
+
+
+// appdb.exec('DROP TABLE IF EXISTS bhavcopy')
+appdb.exec(`
+  CREATE TABLE IF NOT EXISTS bhavcopy (
+    symbol TEXT,
+    date TEXT,
+    change REAL,
+    PRIMARY KEY (symbol, date)
+  ) WITHOUT ROWID;
+`);
+
+
+const insertBhavcopyStmt = appdb.prepare(`
+  INSERT OR REPLACE INTO bhavcopy (symbol, date, change)
+  VALUES (:symbol, :date, :change);
+`);
+
+const getBhavcopyGroupByDateStmt = appdb.prepare(`
+  SELECT date, COUNT(symbol) AS count FROM bhavcopy GROUP BY date ORDER BY date DESC;
+`);
+
+const deleteBhavcopyStmt = appdb.prepare(`
+  DELETE FROM bhavcopy WHERE date=:date;
+`);
+
+const getBhavcopyBetweenDatesStmt = appdb.prepare(`
+  SELECT * FROM bhavcopy WHERE date BETWEEN :from AND :to;
+`);
+
+const getTradingviewStockUniverseStmt = appdb.prepare(`
+  SELECT * FROM tradingview_stock_universe;
+`);
+
+const getStockUniverseWithRsiIndustryStmt = appdb.prepare(`
+  SELECT * FROM stock_universe_with_rsi_industry;
+`);
+
+export const APPDB = {
+  Bhavcopy: {
+    all() {
+      const rows = appdb.prepare('SELECT * FROM bhavcopy').all();
+      return rows;
+    },
+    Between({ from, to }) {
+      return getBhavcopyBetweenDatesStmt.all({ from, to });
+    },
+    delete(date) {
+      try {
+        const result = deleteBhavcopyStmt.run({ date });
+        return result.changes > 0;
+      } catch (error) {
+        return false;
+      }
+    },
+    insertBatch(records) {
+      appdb.exec('BEGIN TRANSACTION');
+
+      try {
+        for (const row of records) {
+          insertBhavcopyStmt.run({
+            symbol: row.symbol,
+            date: row.date,
+            change: row.change
+          });
+        }
+        appdb.exec('COMMIT');
+      } catch (error) {
+        appdb.exec('ROLLBACK');
+        throw error;
+      }
+    },
+    GroupByDate() {
+      return getBhavcopyGroupByDateStmt.all();
+    }
+  },
+
+  TradingViewStockUniverse: {
+    getAllSymbol() {
+      return getTradingviewStockUniverseStmt.all().map(x => x.symbol);
+    }
+  },
+
+  StockUniverseWithRsiIndustry: {
+    symbolMap() {
+      const data = getStockUniverseWithRsiIndustryStmt.all();
+
+      return new Map(data.map(x => [x.symbol, x]))
+    }
+  }
+}
