@@ -1,6 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import dayjs from 'dayjs';
 	import StockBlock from './componentblock/StockBlock.svelte';
 	import { goto } from '$app/navigation';
 	import { deserialize } from '$app/forms';
@@ -11,10 +10,7 @@
 
 	let filteredStockList = $derived(
 		(data ?? []).filter(
-			(row) =>
-				!rsi ||
-				(rsi === 'up' && row.rsi14_monthly > 55) ||
-				(rsi === 'down' && row.rsi14_monthly <= 55)
+			(row) => !rsi || (rsi === 'up' && row.rsi_14M > 55) || (rsi === 'down' && row.rsi_14M <= 55)
 		)
 	);
 

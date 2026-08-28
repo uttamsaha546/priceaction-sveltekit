@@ -13,20 +13,29 @@ export const userdb = new DatabaseSync('databases/user.db');
 
 userdb.exec(`
     CREATE TABLE IF NOT EXISTS flags (
-    symbol TEXT PRIMARY KEY NOT NULL,
-    color TEXT
+        symbol TEXT PRIMARY KEY NOT NULL,
+        color TEXT
     ) WITHOUT ROWID;
-`)
+`);
 
 userdb.exec(`
     CREATE TABLE IF NOT EXISTS watchlists (
         name TEXT PRIMARY KEY,
         entries TEXT
-        ) WITHOUT ROWID;
-    `);
+    ) WITHOUT ROWID;
+`);
+
+userdb.exec(`
+    CREATE TABLE IF NOT EXISTS portfolio (
+        key TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        unit REAL DEFAULT 1,
+        unit_date TEXT,
+        holding TEXT,
+        holding_date TEXT
+    ) WITHOUT ROWID;
+`);
 
 const defaultEntries = 'VBL';
-
-// Note: The exact method name depends on your library (e.g., db.prepare or db.run)
-// const stmt = userdb.prepare(`INSERT INTO watchlists (name, entries) VALUES (?, ?)`);
-//  stmt.run('Default Watchlist', defaultEntries);
+const stmt = userdb.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`);
+ stmt.run('Default Watchlist', defaultEntries);

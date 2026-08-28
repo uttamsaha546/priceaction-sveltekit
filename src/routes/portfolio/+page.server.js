@@ -1,19 +1,8 @@
 import { error, fail } from '@sveltejs/kit';
-import { db } from '$lib/server/database';
-import dayjs from 'dayjs';
+import { userdb } from '$lib/server/userdb';
 import { cache } from '../proxy/cache';
 
-db.exec(`CREATE TABLE IF NOT EXISTS portfolio (
-    key TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    unit REAL DEFAULT 1,
-    unit_date TEXT,
-    holding TEXT,
-    holding_date TEXT
-    ) WITHOUT ROWID;
-`)
-
-db.exec(`
+userdb.exec(`
     INSERT OR IGNORE INTO portfolio (key, name) VALUES
     ('nps', 'ICICI Scheme-E'),
     ('midcap', 'Edelweiss Mid Cap'),
@@ -24,9 +13,9 @@ db.exec(`
     `)
 
 // Pre-compile SQL statements once at the module level for blazing-fast DB queries
-const getPortfolioStmt = db.prepare('SELECT * FROM portfolio');
-const updateUnitStmt = db.prepare('UPDATE portfolio SET unit=? WHERE key=?');
-const updateHoldingStmt = db.prepare('UPDATE portfolio SET holding=?, holding_date=? WHERE key=?');    
+const getPortfolioStmt = userdb.prepare('SELECT * FROM portfolio');
+const updateUnitStmt = userdb.prepare('UPDATE portfolio SET unit=? WHERE key=?');
+const updateHoldingStmt = userdb.prepare('UPDATE portfolio SET holding=?, holding_date=? WHERE key=?');    
 
 export const load = async ({ fetch }) => {
     try {
