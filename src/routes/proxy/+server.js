@@ -80,7 +80,7 @@ export async function GET(request) {
             }
 
             return await readResponse(upstream);
-        }, 3600 * 24); // 1-hour expiration time
+        }, 3600); // 1-hour expiration time
 
         return buildResponse(cachedResponseData);
     } catch (err) {
@@ -128,7 +128,7 @@ export async function POST({ url, request }) {
             }
 
             return await readResponse(upstream);
-        }, 3600 * 24);
+        }, 3600);
 
         return buildResponse(cachedResponseData);
     } catch (err) {
