@@ -23,9 +23,9 @@ export class SmaSeriesPrimitive {
     }
 
     _updateData = () => {
-        // console.log('renered')
+        console.log('renered')
         const mainSeriesData = this._mainSeries.data();
-        const smaValues = calculateSMA(mainSeriesData, ChartState.interval==="M" ? 12 : ChartState.interval==="F" ? 24: 52);
+        const smaValues = calculateSMA(mainSeriesData, ChartState.interval === "M" ? 12 : ChartState.interval === "F" ? 24 : 52);
         this._smaSeries.setData(smaValues);
     }
 

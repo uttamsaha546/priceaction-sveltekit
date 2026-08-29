@@ -26,9 +26,9 @@
 	const TempSerieses = [];
 
 	let secondPane = false;
-	
+
 	let volume = true;
-	
+
 	onMount(() => {
 		chart = createChart(container, {
 			width: container.clientWidth,
@@ -65,22 +65,22 @@
 			mainSeries.getPane().setStretchFactor(0.75);
 			histogramSeries.getPane().setStretchFactor(0.25);
 		}
-		
-		if(volume){
-		volumeSeries = chart.addSeries(HistogramSeries, {
-		priceFormat: {
-        type: 'volume',
-    },
-    priceScaleId: '',
-		});
-volumeSeries.priceScale().applyOptions({
-scaleMargins: {
-        top: 0.7,
-        bottom: 0,
-    },
-});
+
+		if (volume) {
+			volumeSeries = chart.addSeries(HistogramSeries, {
+				priceFormat: {
+					type: 'volume'
+				},
+				priceScaleId: ''
+			});
+			volumeSeries.priceScale().applyOptions({
+				scaleMargins: {
+					top: 0.7,
+					bottom: 0
+				}
+			});
 		}
-		
+
 		window.mainSeries = mainSeries;
 
 		const smaSeries = new SmaSeriesPrimitive();
@@ -280,6 +280,7 @@ scaleMargins: {
 
 			// 1. Monitor the mouse cursor tracking
 			chart.subscribeCrosshairMove((param) => {
+				if (ToolState.activeTool === 'cross') return;
 				if (!param.time || !param.point) {
 					currentMouseData = { time: null, price: null };
 					return;
@@ -412,8 +413,8 @@ scaleMargins: {
 		const priceScale = mainSeries.priceScale();
 		priceScale.setAutoScale(true);
 		mainSeries.setData(data);
-  
-  volumeSeries.setData(ChartState.volumeBarData);
+
+		volumeSeries.setData(ChartState.volumeBarData);
 
 		// keep zoom locked. make the price double every 100 pixel
 		const scalingFactor = mainSeries.getPane().getHeight() / scalingMultiplier;
