@@ -46,7 +46,7 @@ export async function GET() {
         if (!transformedData[element.symbol]) {
             transformedData[element.symbol] = {
                 symbol: element.symbol,
-                name: stockUniverseWithRsiIndustry.get(element.symbol).name,
+                ...stockUniverseWithRsiIndustry.get(element.symbol),
                 data: {},
                 count: 0
             };

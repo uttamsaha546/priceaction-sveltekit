@@ -92,7 +92,7 @@
 		selectedSubCategory = '';
 	});
 
-	$inspect(subCategorySet);
+	// $inspect(subCategorySet);
 
 	$effect(async () => {
 		if (!clickedFund) return;
@@ -134,8 +134,8 @@
 				<option value={subCategory}>{subCategory}</option>
 			{/each}
 		</select>
-		<select bind:value = {selectedCategory}>
-		  <option value="Equity">Equity</option>
+		<select bind:value={selectedCategory}>
+			<option value="Equity">Equity</option>
 		</select>
 		<input type="checkbox" bind:checked={isLocked} />
 	</div>

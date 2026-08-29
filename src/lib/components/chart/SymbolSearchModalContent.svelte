@@ -3,6 +3,8 @@
 	import CloseIconFilled from './Icons/CloseIconFilled.svelte';
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import dayjs from 'dayjs';
+	import { npsSchemeList } from '$lib/files/npsSchemeList';
+
 	const Type = {
 		Stock: 1,
 		MF: 2,
@@ -19,10 +21,20 @@
 	};
 
 	let searchInput = $state('');
-	let filteredResult = $state([]);
 	let type = $state(Type.Stock);
 	let source = $state(Source.Dhan);
 	let searchResult = $state([]);
+
+	let inputElement;
+
+	function clearSearch() {
+		searchInput = '';
+		searchResult = [];
+
+		requestAnimationFrame(() => {
+			inputElement?.focus();
+		});
+	}
 
 	let controller;
 	$effect(() => {
@@ -47,7 +59,7 @@
 	async function search(debouncedQuery, signal) {
 		try {
 			if (source === Source.Dhan) {
-				const a = await fetch(
+				const res = await fetch(
 					'https://openweb-search.dhan.co/Search/category',
 					{
 						method: 'POST',
@@ -68,31 +80,42 @@
 					},
 					signal
 				);
+				const data = (await res.json()).data;
 
-				searchResult = (await a.json()).data;
-			}
-			// else if (source === Source.NpsTrust) {
-			// 	const filteredData = npsSchemeList.filter((obj) =>
-			// 		new RegExp(debouncedQuery, 'i').test(obj.schemename)
-			// 	);
-			// 	setSearchResult(filteredData);
-			// }
-			else if (source === Source.YahooFinance) {
-				const a = await fetch(
+				if (type === Type.Stock) {
+					const seen = new Set();
+					searchResult = data.filter((row) => {
+						if (row.Series_s !== 'EQ') return false;
+						if (seen.has(row.CompName_t)) return false;
+
+						seen.add(row.CompName_t);
+						return true;
+					});
+				} else {
+					searchResult = data;
+				}
+			} else if (source === Source.NpsTrust) {
+				const filteredData = npsSchemeList.filter((obj) =>
+					new RegExp(debouncedQuery, 'i').test(obj.schemename)
+				);
+				searchResult = filteredData;
+			} else if (source === Source.YahooFinance) {
+				const res = await fetch(
 					'/proxy?url=' +
 						encodeURIComponent(
 							'https://query1.finance.yahoo.com/v1/finance/search?q=' + debouncedQuery
 						)
 				);
-				searchResult = (await a.json()).quotes;
+				searchResult = (await res.json()).quotes;
 			}
 		} catch (err) {
 			if (err.name === 'AbortError') return; // expected
-			console.error(err);
+			console.error('Error at SymbolSearchModalContent.svelte', err);
 		}
 	}
 
 	async function fetchLineData(params) {
+		ChartState.isLoading = true;
 		if (
 			source === Source.Dhan &&
 			(type === Type.Stock || type === Type.ETF || type === Type.Index)
@@ -124,6 +147,7 @@
 			let { t: timestamp, c: close } = DataH.data;
 
 			ChartState.lineData = timestamp.map((_, i) => [timestamp[i], close[i]]);
+			ChartState.currentScrip = params.CompName_t;
 		} else if (source === Source.Dhan && type === Type.MF) {
 			const a = await fetch('/proxy?url=https://mf-openweb-search.dhan.co/chart', {
 				method: 'POST',
@@ -143,196 +167,131 @@
 			});
 			let { d: date, n: nav } = (await a.json()).data[0];
 			ChartState.lineData = date.map((_, i) => [new Date(date[i]).getTime(), nav[i]]);
-		}
-		// else if (source === Source.NpsTrust && type === Type.Nps) {
+			ChartState.currentScrip = params.dmfm_custom_scheme_name;
+		} else if (source === Source.NpsTrust && type === Type.Nps) {
+			fetch(
+				`/proxy?url=${encodeURIComponent(`https://npstrust.org.in/nav-graphs-details?lnavdata=${params.pfmcode}&yearval=all&subcat=${params.schemecode}&vaname=${params.pfmname}`)}`
+			)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error('Network response was not ok ' + response.statusText);
+					}
+					return response.json();
+				})
+				.then((json) => {
+					ChartState.lineData = json.data.map((x) => [x[0], x[1]]);
+					ChartState.currentScrip = params.schemename;
+				})
+				.catch((error) => {
+					console.error('Fetch error at NPS section at SymbolSearchModalContent.svelte', error);
+				});
+		} else if (source === Source.NseIndia && type === Type.Index) {
+			const splitDateRange = (from, to, maxDays = 100) => {
+				const ranges = [];
+				let start = dayjs(from, 'DD-MM-YYYY');
+				const end = dayjs(to, 'DD-MM-YYYY');
 
-		// 	fetch('/api/proxy?nav-graphs-details', {
-		// 		method: 'POST',
-		// 		body: JSON.stringify({
-		// 			method: 'GET',
-		// 			url: 'https://npstrust.org.in/nav-graphs-details',
-		// 			payload: {
-		// 				lnavdata: activeData.data.pfmcode,
-		// 				yearval: 'all',
-		// 				subcat: activeData.data.schemecode,
-		// 				vaname: activeData.data.pfmname
-		// 			},
-		// 			headers: {
-		// 				'Content-Type': 'application/json'
-		// 			}
-		// 		})
-		// 	})
-		// 		.then((response) => {
-		// 			if (!response.ok) {
-		// 				throw new Error('Network response was not ok ' + response.statusText);
-		// 			}
-		// 			return response.json();
-		// 		})
-		// 		.then((json) => {
-		// 			const chartData =
-		// 				timeframe === 'W' ? getWeeklyOHLC(json.data) : getMonthlyOHLC(json.data);
-		// 			setChartData(chartData);
-		// 			setLoading(false);
-		// 		})
-		// 		.catch((error) => {
-		// 			console.error('Fetch error:', error);
-		// 		});
-		// }
-		// else if (activeData.source === Source.NseIndia && activeData.type === Type.Index) {
-		// 	const splitDateRange = (from, to, maxDays = 100) => {
-		// 		const ranges = [];
-		// 		let start = dayjs(from, 'DD-MM-YYYY');
-		// 		const end = dayjs(to, 'DD-MM-YYYY');
+				while (start.isBefore(end)) {
+					let chunkEnd = start.add(maxDays, 'day');
+					if (chunkEnd.isAfter(end)) {
+						chunkEnd = end;
+					}
 
-		// 		while (start.isBefore(end)) {
-		// 			let chunkEnd = start.add(maxDays, 'day');
-		// 			if (chunkEnd.isAfter(end)) {
-		// 				chunkEnd = end;
-		// 			}
+					ranges.push({
+						from: start.format('DD-MM-YYYY'),
+						to: chunkEnd.format('DD-MM-YYYY')
+					});
 
-		// 			ranges.push({
-		// 				from: start.format('DD-MM-YYYY'),
-		// 				to: chunkEnd.format('DD-MM-YYYY')
-		// 			});
+					start = chunkEnd.add(1, 'day');
+				}
 
-		// 			start = chunkEnd.add(1, 'day');
-		// 		}
+				return ranges;
+			};
 
-		// 		return ranges;
-		// 	};
+			const fetchChunk = async (range) => {
+				const response = await fetch(
+					`/proxy?url=${encodeURIComponent(`https://www.nseindia.com/api/historicalOR/indicesHistory?indexType=${params.indexType}&from=${range.from}&to=${range.to}`)}`,
+					{
+						headers: {
+							Accept: 'application/json, text/javascript, */*; q=0.01',
+							Referer: 'https://www.niftyindices.com/reports/historical-data',
+							'X-Requested-With': 'XMLHttpRequest',
+							'User-Agent': 'Mozilla/5.0'
+						}
+					}
+				);
 
-		// 	const fetchChunk = async (range) => {
-		// 		const response = await fetch('/api/proxy', {
-		// 			method: 'POST',
-		// 			body: JSON.stringify({
-		// 				method: 'GET',
-		// 				url: 'https://www.nseindia.com/api/historicalOR/indicesHistory',
-		// 				payload: {
-		// 					indexType: activeData.indexType,
-		// 					from: range.from,
-		// 					to: range.to
-		// 				},
-		// 				headers: {
-		// 					'Content-Type': 'application/json; charset=utf-8',
-		// 					Accept: 'application/json, text/javascript, */*; q=0.01',
-		// 					Referer: 'https://www.niftyindices.com/reports/historical-data',
-		// 					'X-Requested-With': 'XMLHttpRequest',
-		// 					'User-Agent': 'Mozilla/5.0'
-		// 				}
-		// 			})
-		// 		});
+				if (!response.ok) {
+					throw new Error('Network response was not ok ' + response.statusText);
+				}
 
-		// 		if (!response.ok) {
-		// 			throw new Error('Network response was not ok ' + response.statusText);
-		// 		}
+				const json = await response.json();
+				return json.data || [];
+			};
 
-		// 		const json = await response.json();
-		// 		return json.data || [];
-		// 	};
+			const fetchHistoricalData = async () => {
+				try {
+					let mergedData;
+					const to = dayjs().endOf('day');
+					const from = to.subtract(5, 'year');
+					const ranges = splitDateRange(from, to);
+					// Parallel requests
+					const results = await Promise.all(ranges.map((range) => fetchChunk(range)));
 
-		// 	const fetchHistoricalData = async () => {
-		// 		try {
-		// 			setLoading(true);
+					mergedData = results.flat();
 
-		// 			const key = activeData.name.toLowerCase().replaceAll(' ', '-');
-		// 			const cache = await getCache(key);
+					if (!mergedData?.length) return;
 
-		// 			let mergedData;
+					mergedData = mergedData.sort(
+						(a, b) => dayjs(a.EOD_TIMESTAMP).valueOf() - dayjs(b.EOD_TIMESTAMP).valueOf()
+					);
 
-		// 			if (cache) {
-		// 				const lastFetched = dayjs(cache.data.at(-1).EOD_TIMESTAMP).format('DD-MM-YYYY');
+					ChartState.lineData = mergedData.map((item) => [
+						dayjs(item.EOD_TIMESTAMP).valueOf(),
+						item.EOD_CLOSE_INDEX_VAL
+					]);
+				} catch (error) {
+					console.error('Fetch error at NseIndex at SymbolSearchModalContent.svelte:', error);
+				}
+			};
 
-		// 				const ranges = splitDateRange(lastFetched, dayjs().format('DD-MM-YYYY'));
-		// 				console.log(ranges);
-
-		// 				if (ranges.length) {
-		// 					const results = await Promise.all(ranges.map((range) => fetchChunk(range)));
-
-		// 					const newData = results.flat();
-		// 					mergedData = [...cache.data, ...newData];
-		// 				} else {
-		// 					mergedData = cache.data;
-		// 				}
-		// 			} else {
-		// 				const ranges = splitDateRange(activeData.from, activeData.to);
-		// 				// Parallel requests
-		// 				const results = await Promise.all(ranges.map((range) => fetchChunk(range)));
-
-		// 				mergedData = results.flat();
-		// 			}
-
-		// 			if (!mergedData?.length) return;
-
-		// 			mergedData = mergedData.sort(
-		// 				(a, b) => dayjs(a.EOD_TIMESTAMP).valueOf() - dayjs(b.EOD_TIMESTAMP).valueOf()
-		// 			);
-
-		// 			setCache(key, mergedData);
-
-		// 			const chartData =
-		// 				timeframe === 'W'
-		// 					? getWeeklyOHLC(
-		// 							mergedData.map((item) => [
-		// 								dayjs(item.EOD_TIMESTAMP).valueOf(),
-		// 								item.EOD_CLOSE_INDEX_VAL
-		// 							])
-		// 						)
-		// 					: getMonthlyOHLC(
-		// 							mergedData.map((item) => [
-		// 								dayjs(item.EOD_TIMESTAMP).valueOf(),
-		// 								item.EOD_CLOSE_INDEX_VAL
-		// 							])
-		// 						);
-
-		// 			setChartData(chartData);
-		// 		} catch (error) {
-		// 			console.error('Fetch error:', error);
-		// 		} finally {
-		// 			setLoading(false);
-		// 		}
-		// 	};
-
-		// 	fetchHistoricalData();
-		// } else if (activeData.source === Source.NiftyIndices && activeData.type === Type.Index) {
-		// 	setLoading(true);
-		// 	const now = new Date();
-		// 	fetch('/api/proxy', {
-		// 		method: 'POST',
-		// 		body: JSON.stringify({
-		// 			method: 'POST',
-		// 			url: 'https://www.niftyindices.com/Backpage.aspx/getHistoricaldatatabletoString',
-		// 			payload: {
-		// 				cinfo:
-		// 					"{'name':'NIFTY CHEMICALS','startDate':'01-Apr-2025','endDate':'16-Feb-2026','indexName':'NIFTY CHEMICALS'}"
-		// 			},
-		// 			headers: {
-		// 				'Content-Type': 'application/json; charset=utf-8',
-		// 				Accept: 'application/json, text/javascript, */*; q=0.01'
-		// 				// 'Referer': 'https://www.niftyindices.com/reports/historical-data',
-		// 				// 'X-Requested-With': 'XMLHttpRequest',
-		// 				// "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-		// 			}
-		// 		})
-		// 	})
-		// 		.then((response) => {
-		// 			if (!response.ok) {
-		// 				throw new Error('Network response was not ok ' + response.statusText);
-		// 			}
-		// 			return response.json();
-		// 		})
-		// 		.then((json) => {
-		// 			json = JSON.parse(json.d);
-		// 			console.log(json);
-		// 			const chartData = getWeeklyOHLC(json.map((item, _) => [item.timestamp, item.close]));
-		// 			console.log(chartData);
-		// 			setChartData(chartData);
-		// 			setLoading(false);
-		// 		})
-		// 		.catch((error) => {
-		// 			console.error('Fetch error:', error);
-		// 		});
-		// }
-		else if (source === Source.YahooFinance && type === Type.Global) {
+			fetchHistoricalData();
+		} else if (source === Source.NiftyIndices && type === Type.Index) {
+			const now = new Date();
+			fetch(
+				'/proxy?url=https://www.niftyindices.com/Backpage.aspx/getHistoricaldatatabletoString',
+				{
+					method: 'POST',
+					body: JSON.stringify({
+						cinfo:
+							"{'name':'NIFTY CHEMICALS','startDate':'01-Apr-2025','endDate':'16-Feb-2026','indexName':'NIFTY CHEMICALS'}"
+					}),
+					headers: {
+						'Content-Type': 'application/json; charset=utf-8',
+						Accept: 'application/json, text/javascript, */*; q=0.01',
+						Referer: 'https://www.niftyindices.com/reports/historical-data',
+						'X-Requested-With': 'XMLHttpRequest',
+						'User-Agent':
+							'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36'
+					}
+				}
+			)
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error('Network response was not ok ' + response.statusText);
+					}
+					return response.json();
+				})
+				.then((json) => {
+					json = JSON.parse(json.d);
+					// console.log(json);
+					ChartState.lineData = json.map((item, _) => [item.timestamp, item.close]);
+					// console.log(chartData);
+				})
+				.catch((error) => {
+					console.error('Fetch error at NiftyIndices:', error);
+				});
+		} else if (source === Source.YahooFinance && type === Type.Global) {
 			const dayEnd = dayjs().endOf('day').unix();
 			const getDayOHLC = await fetch(
 				`/proxy?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${params.symbol}?period1=1356978600&period2=${dayEnd}&interval=1d`)}`
@@ -341,25 +300,23 @@
 			const { timestamp, meta, indicators } = res.chart.result[0];
 			let { close } = indicators.quote[0];
 			ChartState.lineData = timestamp.map((_, i) => [timestamp[i], close[i]]);
+			ChartState.currentScrip = params.longname;
 		}
+
+		ChartState.isLoading = false;
 	}
 </script>
 
 <div class="inputContainer border border-gray-200 rounded p-1 flex flex-row items-center">
-	<span><SearchIcon /></span>
+	<span class="shrink-0"><SearchIcon /></span>
 	<input
+		bind:this={inputElement}
 		bind:value={searchInput}
 		class="W-Flex-1 flex-1 focus:outline-0 px-1"
 		placeholder="Symbol"
 	/>
 	{#if searchInput}
-		<button
-			class="hover:bg-gray-200 rounded p-1"
-			onclick={() => {
-				searchInput = '';
-				filteredResult = [];
-			}}><CloseIconFilled /></button
-		>
+		<button class="hover:bg-gray-200 rounded p-1" onclick={clearSearch}><CloseIconFilled /></button>
 	{/if}
 </div>
 
@@ -422,7 +379,7 @@
 	<div>
 		{#each searchResult as row, index}
 			<div
-				class="flex flex-row border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
+				class="flex flex-row gap-4 border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
 				onclick={() => {
 					ChartState.activeModal = null;
 					fetchLineData(row);
@@ -466,10 +423,9 @@
 					</div>
 				{:else if type === Type.Global}
 					<div class="symbol flex-1">{row.symbol}</div>
-					<div class="name flex-2">{row.longname}</div>
-					<div class="exchange flex-1 flex flex-row items-center justify-end gap-1">
-						<span>{row.exchDisp}</span>
-					</div>
+					<div class="name flex-2 truncate">{row.longname ?? row.shortname}</div>
+					<div class="type w-16">{row.typeDisp}</div>
+					<div class="type flex-1 truncate text-right">{row.exchDisp}</div>
 				{/if}
 			</div>
 		{/each}

@@ -45,7 +45,7 @@ export async function GET({ url }) {
             const date = (new Date(row.TradDt)).toLocaleDateString('en-CA');
             const change = Math.round((Number(row.ClsPric) / Number(row.PrvsClsgPric) - 1) * 100 * 100) / 100;
             return { symbol, series, date, change };
-        }).filter(row => row.change > 4 && (row.series === 'EQ' || row.series === 'BE') && stockUniverseSymbols.includes(row.symbol));
+        }).filter(row => row.change > 3 && (row.series === 'EQ' || row.series === 'BE') && stockUniverseSymbols.includes(row.symbol));
 
         APPDB.Bhavcopy.insertBatch(records);
 

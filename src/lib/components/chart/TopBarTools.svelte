@@ -20,7 +20,7 @@
 					ChartState.activeModal = 'search';
 				}}
 			>
-				A</button
+				Search</button
 			>
 		</div>
 		<div class="ScaleFactor">{ChartState.scaleFactor}</div>

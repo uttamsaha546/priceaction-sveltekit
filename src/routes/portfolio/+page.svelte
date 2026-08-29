@@ -5,9 +5,12 @@
 	import * as XLSX from 'xlsx';
 	import Pie from './Pie.svelte';
 	import dayjs from 'dayjs';
-	import { autofocus } from './temp';
 	// 1. Accept server reactive bounds safely
 	let { data } = $props();
+
+	function autofocus(node) {
+		node.focus();
+	}
 
 	const initialView = browser ? localStorage.getItem('lastview') : null;
 	let view = $state(initialView || 'holding');
@@ -487,7 +490,7 @@
 	<h1>Direct Stocks</h1>
 	<textarea
 		class="editing-input w-full border-amber-500 border outline-amber-500 rounded p-2"
-		rows="5"
+		rows="8"
 		bind:value={textareaString}
 		bind:this={textareaElement}
 		onfocus={() => {

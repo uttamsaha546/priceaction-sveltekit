@@ -30,14 +30,15 @@
 		// let startTime = dayjs(endTime).subtract(10, 'Year').valueOf();
 		let startTime = 820434600000; //01-01-1996
 		ChartState.isLoading = true;
-		const p = await fetch(
+		const pastRes = fetch(
 			`/proxy?url=${encodeURIComponent(`https://groww.in/v1/api/charting_service/v2/chart/delayed/exchange/NSE/segment/CASH/${symbol}?endTimeInMillis=${endTime}&intervalInMinutes=1440&startTimeInMillis=${startTime}`)}`
-		);
+		)
+			.then((res) => res.json())
+			.then((res) => {
+				return res.candles;
+			});
 
-		const res = await p.json();
-		const data = res.candles.map((row) => [row[0], row[4]]);
-
-		const latestData = await fetch(
+		const latestRes = fetch(
 			`/proxy?url=https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`
 		)
 			.then((x) => x.json())
@@ -45,11 +46,13 @@
 				return data;
 			});
 
-		ChartState.lineData = [...data, [latestData.lastTradeTime, latestData.ltp]];
-		ChartState.volumeLineData = [
-			...res.candles.map((row) => [row[0], row[5]]),
-			[latestData.lastTradeTime, latestData.volume]
-		];
+		const [pastData, latestData] = await Promise.all([pastRes, latestRes]);
+
+		const pastLineData = pastData.map((row) => [row[0], row[4]]);
+		const pastVolumeData = pastData.map((row) => [row[0], row[5]]);
+
+		ChartState.lineData = [...pastLineData, [latestData.lastTradeTime, latestData.ltp]];
+		ChartState.volumeLineData = [...pastVolumeData, [latestData.lastTradeTime, latestData.volume]];
 		ChartState.isLoading = false;
 	}
 
@@ -177,7 +180,7 @@
 				ChartState.currentScrip = stock.name;
 
 				// getEarningsTrend(`${stock.symbol}.NS`);
-				getFinancialResults(stock.symbol);
+				// getFinancialResults(stock.symbol);
 			}}
 			role
 		>

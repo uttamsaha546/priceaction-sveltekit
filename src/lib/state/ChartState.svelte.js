@@ -18,7 +18,7 @@ export const ChartState = (() => {
 
     let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, interval), interval));
     let histogramData = $derived(fillWhitespaceGaps(EarningsDataToHistogramData(EarningsData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
-    
+
     let volumeBarData = $derived(fillWhitespaceGaps(volumeLineDataToVolumeBarData(volumeLineData, interval), interval));
 
     return {
@@ -26,15 +26,15 @@ export const ChartState = (() => {
         set lineData(val) { lineData = val; },
 
         get barData() { return barData; },
-        
-        set volumeLineData(val){volumeLineData=val},
-        get volumeBarData(){return volumeBarData},
-        
+
+        set volumeLineData(val) { volumeLineData = val },
+        get volumeBarData() { return volumeBarData },
+
         get isMonthly() { return isMonthly; },
         set isMonthly(val) { isMonthly = val; },
-        
-        get interval(){return interval},
-        set interval(val){interval=val},
+
+        get interval() { return interval },
+        set interval(val) { interval = val },
 
         get flags() { return flags },
         set flags(val) { flags = val },
@@ -67,7 +67,7 @@ export const ChartState = (() => {
 
         get scaleM() { return scaleM },
         set scaleM(val) { scaleM = val },
-        
+
         get scaleF() { return scaleF },
         set scaleF(val) { scaleF = val },
     };
@@ -85,7 +85,7 @@ export const ChartState = (() => {
  */
 function LineDataToBarData(lineData, interval) {
 
-    if (interval !== 'W' && interval !== 'M' && interval!=="F") {
+    if (interval !== 'W' && interval !== 'M' && interval !== "F") {
         throw new Error(`Unsupported interval: ${interval}`);
     }
 
@@ -113,7 +113,7 @@ function LineDataToBarData(lineData, interval) {
         const intervalStartKey =
             interval === 'W'
                 ? getWeekStartUTC(timestamp)
-                : interval==="F"? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
+                : interval === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
 
         if (!intervalStartMap.has(intervalStartKey)) {
             intervalStartMap.set(intervalStartKey, {
@@ -135,8 +135,8 @@ function LineDataToBarData(lineData, interval) {
     return [...intervalStartMap.values()];
 }
 
-function volumeLineDataToVolumeBarData(volumeLineData, interval){
-  if (interval !== 'W' && interval !== 'M' && interval!=="F") {
+function volumeLineDataToVolumeBarData(volumeLineData, interval) {
+    if (interval !== 'W' && interval !== 'M' && interval !== "F") {
         throw new Error(`Unsupported interval: ${interval}`);
     }
 
@@ -164,7 +164,7 @@ function volumeLineDataToVolumeBarData(volumeLineData, interval){
         const intervalStartKey =
             interval === 'W'
                 ? getWeekStartUTC(timestamp)
-                : interval==="F"?getFortnightStartUTC(timestamp): getMonthStartUTC(timestamp);
+                : interval === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
 
         if (!intervalStartMap.has(intervalStartKey)) {
             intervalStartMap.set(intervalStartKey, {
@@ -334,8 +334,13 @@ function fillWhitespaceGaps(data, interval) {
         const current = sortedData[i];
         result.push(current);
 
-        // If this is the last item, we're done generating gaps
-        if (i === sortedData.length - 1) break;
+        // If this is the last item, we're done generating gaps. Post fill whitespace
+        if (i === sortedData.length - 1) {
+            const span = interval === 'W' ? 604800 : interval === 'F' ? 604800 * 2 : 604800 * 4
+            const postWhiteSpace = postWhiteSpaceData(current.time, span);
+            result.push(...postWhiteSpace);
+            break;
+        }
 
         const next = sortedData[i + 1];
 
@@ -353,9 +358,9 @@ function fillWhitespaceGaps(data, interval) {
                 // Ensure it snaps correctly back to the 1st day of the month
                 currentMs = Date.UTC(nextDate.getUTCFullYear(), nextDate.getUTCMonth(), 1);
             } else if (interval === 'F') {
-               const d = nextDate.getUTCDate();
-               d<16?nextDate.setUTCDate(d + 15) : nextDate.setUTCMonth(nextDate.getUTCMonth()+1);
-                
+                const d = nextDate.getUTCDate();
+                d < 16 ? nextDate.setUTCDate(d + 15) : nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
+
                 currentMs = nextDate.getTime()
             }
             else {
@@ -377,4 +382,17 @@ function fillWhitespaceGaps(data, interval) {
     }
 
     return result;
+}
+
+/**
+ * Fills in post data points with whitespace objects
+ * so drawings can be drawn beyond last bars.
+ * 
+ * @param {timestamp} timestamp - Last bar timestamp in second
+ * @param {span} span - 604800 second for weekly data, 604800*2 seconds for fortnighly data, 604800* 4 seconds for monthly data
+ */
+function postWhiteSpaceData(timestamp, span) {
+    return new Array(100).fill(null).map((_, i) => ({
+        time: timestamp + (i + 1) * span
+    }));
 }
