@@ -11,6 +11,7 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { SmaSeriesPrimitive } from '$lib/utils/SmaSeriesPrimitive';
 	import { SmaSeriesPrimitive as _21WeekSmaSeriesPrimitive } from '$lib/utils/21WeekSmaSeriesPrimitive';
+	import { SmaSeriesPrimitive as _21WeekSmaSeriesPrimitive10pct } from '$lib/utils/21WeekSmaSeriesPrimitive10pct';
 	import { CustomShapePrimitive } from '$lib/utils/CustomShapePrimitive';
 	import { DonchianHighPrimitive } from '$lib/utils/DonchianHighPrimitive';
 	import { _52WeekHighPrimitive } from '$lib/utils/52WeekHighPrimitive';
@@ -96,6 +97,9 @@
 
 		const _21WeekSmaSeries = new _21WeekSmaSeriesPrimitive();
 		candlestickSeries.attachPrimitive(_21WeekSmaSeries);
+
+const _21WeekSmaSeries10pct = new _21WeekSmaSeriesPrimitive10pct();
+		candlestickSeries.attachPrimitive(_21WeekSmaSeries10pct);
 
 		const rsiSeries = new CustomShapePrimitive();
 		candlestickSeries.attachPrimitive(rsiSeries);
