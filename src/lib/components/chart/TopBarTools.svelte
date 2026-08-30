@@ -24,14 +24,18 @@
 			>
 		</div>
 		<div class="ScaleFactor">{ChartState.scaleFactor}</div>
-		<div class="Current Scrip Name">{ChartState.currentScrip}</div>
+		<div class="Current Scrip Name">
+			{typeof ChartState.currentScrip === 'object'
+				? ChartState.currentScrip.name
+				: ChartState.currentScrip}
+		</div>
 	</div>
 
 	<button
-		class:bg-gray-400={ChartState.interval === 'F'}
+		class:bg-gray-400={ChartState.timeframe === 'F'}
 		class="border border-gray-400 rounded px-2 box-border"
 		onclick={() =>
-			ChartState.interval === 'F' ? (ChartState.interval = 'W') : (ChartState.interval = 'F')}
+			ChartState.timeframe === 'F' ? (ChartState.timeframe = 'W') : (ChartState.timeframe = 'F')}
 		>F</button
 	>
 
