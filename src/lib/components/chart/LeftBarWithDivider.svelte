@@ -5,6 +5,7 @@
 	import CrosshairIcon from './Icons/CrosshairIcon.svelte';
 	import TrendLineIcon from './Icons/TrendLineIcon.svelte';
 	import BroomIcon from './Icons/BroomIcon.svelte';
+	import RangeBoxIcon from './Icons/RangeBoxIcon.svelte';
 </script>
 
 <div class="LeftBarWithDivider h-full w-12 flex flex-row">
@@ -54,6 +55,14 @@
 				onclick={() => (ToolState.activeTool = 'trendLine')}
 			>
 				<TrendLineIcon />
+			</button>
+
+			<!-- RangeBox Tool  -->
+			<button
+				class={`${ToolState.activeTool === 'range-box' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
+				onclick={() => (ToolState.activeTool = 'range-box')}
+			>
+				<RangeBoxIcon />
 			</button>
 
 			<!-- Clear Drawing Tool  -->

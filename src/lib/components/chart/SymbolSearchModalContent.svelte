@@ -114,8 +114,15 @@
 		}
 	}
 
+	// $inspect(searchResult);
+
 	async function fetchLineData(params) {
 		ChartState.isLoading = true;
+
+		if (source === Source.Dhan && type === Type.Stock) {
+			await loadDrawings(params.Sym_t);
+		}
+
 		if (
 			source === Source.Dhan &&
 			(type === Type.Stock || type === Type.ETF || type === Type.Index)
@@ -304,6 +311,16 @@
 		}
 
 		ChartState.isLoading = false;
+	}
+
+	async function loadDrawings(symbol) {
+		ChartState.drawingManager.setSymbol(symbol);
+
+		// 2. Fetch Saved Drawings from SQLite Database
+		const dbResponse = await fetch(`/api/get-drawings?symbol=${symbol}`).then((res) => res.json());
+		if (dbResponse && dbResponse.drawings) {
+			ChartState.drawingManager.loadDrawings(dbResponse.drawings);
+		}
 	}
 </script>
 

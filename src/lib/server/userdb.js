@@ -36,6 +36,38 @@ userdb.exec(`
     ) WITHOUT ROWID;
 `);
 
+// userdb.exec('DELETE FROM drawings')
+userdb.exec(`
+    CREATE TABLE IF NOT EXISTS drawings (
+        symbol TEXT PRIMARY KEY,
+        drawings TEXT NOT NULL -- JSON serialized string of drawings
+    ) WITHOUT ROWID;
+`);
+
 const defaultEntries = 'VBL';
 const stmt = userdb.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`);
- stmt.run('Default Watchlist', defaultEntries);
+stmt.run('Default Watchlist', defaultEntries);
+
+
+const saveDrawingsStmt = userdb.prepare(`INSERT OR REPLACE INTO drawings (symbol, drawings) VALUES (:symbol, :drawings)`);
+const getDrawingsStmt = userdb.prepare(`SELECT * FROM drawings WHERE symbol=?`);
+
+export const USERDB = {
+    Drawings: {
+        save(symbol, drawings) {
+            // Convert object/array to JSON string for SQLite
+            const serializedDrawings = typeof drawings === 'string' ? drawings : JSON.stringify(drawings);
+            return saveDrawingsStmt.run({ symbol, drawings: serializedDrawings });
+        },
+        get(symbol) {
+            const row = getDrawingsStmt.get(symbol);
+            if (!row) return null;
+
+            // Automatically parse JSON string back into an object/array
+            return {
+                ...row,
+                drawings: typeof row.drawings === 'string' ? JSON.parse(row.drawings) : row.drawings
+            };
+        }
+    }
+}

@@ -3,7 +3,7 @@ export const ChartState = (() => {
     let lineData = $state([]); //Array of [timestamp in miliseconds or seconds, value]
     let volumeLineData = $state([]);
     let isMonthly = $state(false);
-    let interval = $state("W");
+    let timeframe = $state("W");
     let scaleFactor = $state('');
     let activeModal = $state(null);
     let flags = $state(null);
@@ -16,10 +16,12 @@ export const ChartState = (() => {
     let scaleM = $state();
     let scaleF = $state();
 
-    let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, interval), interval));
+    let drawingManager = $state(null);
+
+    let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, timeframe), timeframe));
     let histogramData = $derived(fillWhitespaceGaps(EarningsDataToHistogramData(EarningsData, isMonthly ? "M" : "W"), isMonthly ? "M" : "W"));
 
-    let volumeBarData = $derived(fillWhitespaceGaps(volumeLineDataToVolumeBarData(volumeLineData, interval), interval));
+    let volumeBarData = $derived(fillWhitespaceGaps(volumeLineDataToVolumeBarData(volumeLineData, timeframe), timeframe));
 
     return {
         get lineData() { return lineData; },
@@ -33,8 +35,8 @@ export const ChartState = (() => {
         get isMonthly() { return isMonthly; },
         set isMonthly(val) { isMonthly = val; },
 
-        get interval() { return interval },
-        set interval(val) { interval = val },
+        get timeframe() { return timeframe },
+        set timeframe(val) { timeframe = val },
 
         get flags() { return flags },
         set flags(val) { flags = val },
@@ -70,6 +72,9 @@ export const ChartState = (() => {
 
         get scaleF() { return scaleF },
         set scaleF(val) { scaleF = val },
+
+        get drawingManager() { return drawingManager },
+        set drawingManager(val) { drawingManager = val },
     };
 })();
 
@@ -80,16 +85,16 @@ export const ChartState = (() => {
  * Convert line data into weekly or monthly OHLC candles.
  *
  * @param {Array<[timestamp:number, value:number]>} lineData
- * @param {"W"|"M"} interval
+ * @param {"W"|"M"} timeframe
  * @returns {Array<{time:number, open:number, high:number, low:number, close:number}>}
  */
-function LineDataToBarData(lineData, interval) {
+function LineDataToBarData(lineData, timeframe) {
 
-    if (interval !== 'W' && interval !== 'M' && interval !== "F") {
-        throw new Error(`Unsupported interval: ${interval}`);
+    if (timeframe !== 'W' && timeframe !== 'M' && timeframe !== "F") {
+        throw new Error(`Unsupported timeframe: ${timeframe}`);
     }
 
-    const intervalStartMap = new Map();
+    const timeframeStartMap = new Map();
 
     const sorted = [...lineData].sort((a, b) => a[0] - b[0]);
 
@@ -110,21 +115,21 @@ function LineDataToBarData(lineData, interval) {
 
         const date = new Date(timestamp);
 
-        const intervalStartKey =
-            interval === 'W'
+        const timeframeStartKey =
+            timeframe === 'W'
                 ? getWeekStartUTC(timestamp)
-                : interval === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
+                : timeframe === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
 
-        if (!intervalStartMap.has(intervalStartKey)) {
-            intervalStartMap.set(intervalStartKey, {
-                time: Math.floor(intervalStartKey / 1000),
+        if (!timeframeStartMap.has(timeframeStartKey)) {
+            timeframeStartMap.set(timeframeStartKey, {
+                time: Math.floor(timeframeStartKey / 1000),
                 open: value,
                 high: value,
                 low: value,
                 close: value
             });
         } else {
-            const candle = intervalStartMap.get(intervalStartKey);
+            const candle = timeframeStartMap.get(timeframeStartKey);
 
             candle.high = Math.max(candle.high, value);
             candle.low = Math.min(candle.low, value);
@@ -132,15 +137,15 @@ function LineDataToBarData(lineData, interval) {
         }
     }
 
-    return [...intervalStartMap.values()];
+    return [...timeframeStartMap.values()];
 }
 
-function volumeLineDataToVolumeBarData(volumeLineData, interval) {
-    if (interval !== 'W' && interval !== 'M' && interval !== "F") {
-        throw new Error(`Unsupported interval: ${interval}`);
+function volumeLineDataToVolumeBarData(volumeLineData, timeframe) {
+    if (timeframe !== 'W' && timeframe !== 'M' && timeframe !== "F") {
+        throw new Error(`Unsupported timeframe: ${timeframe}`);
     }
 
-    const intervalStartMap = new Map();
+    const timeframeStartMap = new Map();
 
     const sorted = [...volumeLineData].sort((a, b) => a[0] - b[0]);
 
@@ -161,27 +166,27 @@ function volumeLineDataToVolumeBarData(volumeLineData, interval) {
 
         const date = new Date(timestamp);
 
-        const intervalStartKey =
-            interval === 'W'
+        const timeframeStartKey =
+            timeframe === 'W'
                 ? getWeekStartUTC(timestamp)
-                : interval === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
+                : timeframe === "F" ? getFortnightStartUTC(timestamp) : getMonthStartUTC(timestamp);
 
-        if (!intervalStartMap.has(intervalStartKey)) {
-            intervalStartMap.set(intervalStartKey, {
-                time: Math.floor(intervalStartKey / 1000),
+        if (!timeframeStartMap.has(timeframeStartKey)) {
+            timeframeStartMap.set(timeframeStartKey, {
+                time: Math.floor(timeframeStartKey / 1000),
                 value: value,
             });
         } else {
-            const bar = intervalStartMap.get(intervalStartKey);
+            const bar = timeframeStartMap.get(timeframeStartKey);
 
             bar.value += value;
         }
     }
 
-    return [...intervalStartMap.values()];
+    return [...timeframeStartMap.values()];
 }
 
-function EarningsDataToHistogramData(EarningsData, interval) {
+function EarningsDataToHistogramData(EarningsData, timeframe) {
     // console.log(EarningsData)
     if (!EarningsData || !EarningsData.past || !EarningsData.past.revenue) {
         return [];
@@ -189,11 +194,11 @@ function EarningsDataToHistogramData(EarningsData, interval) {
 
     const { past, estimate } = EarningsData;
 
-    if (interval !== 'W' && interval !== 'M') {
-        throw new Error(`Unsupported interval: ${interval}`);
+    if (timeframe !== 'W' && timeframe !== 'M') {
+        throw new Error(`Unsupported timeframe: ${timeframe}`);
     }
 
-    const intervalStartMap = new Map();
+    const timeframeStartMap = new Map();
 
     for (let [date, value] of past.revenue) {
 
@@ -218,18 +223,18 @@ function EarningsDataToHistogramData(EarningsData, interval) {
             continue;
         }
 
-        const intervalStartKey =
-            interval === 'W'
+        const timeframeStartKey =
+            timeframe === 'W'
                 ? getWeekStartUTC(timestamp)
                 : getMonthStartUTC(timestamp);
 
-        if (!intervalStartMap.has(intervalStartKey)) {
-            intervalStartMap.set(intervalStartKey, {
-                time: Math.floor(intervalStartKey / 1000),
+        if (!timeframeStartMap.has(timeframeStartKey)) {
+            timeframeStartMap.set(timeframeStartKey, {
+                time: Math.floor(timeframeStartKey / 1000),
                 value: value
             });
         } else {
-            const candle = intervalStartMap.get(intervalStartKey);
+            const candle = timeframeStartMap.get(timeframeStartKey);
 
             candle.value = value;
         }
@@ -258,25 +263,25 @@ function EarningsDataToHistogramData(EarningsData, interval) {
             continue;
         }
 
-        const intervalStartKey =
-            interval === 'W'
+        const timeframeStartKey =
+            timeframe === 'W'
                 ? getWeekStartUTC(timestamp)
                 : getMonthStartUTC(timestamp);
 
-        if (!intervalStartMap.has(intervalStartKey)) {
-            intervalStartMap.set(intervalStartKey, {
-                time: Math.floor(intervalStartKey / 1000),
+        if (!timeframeStartMap.has(timeframeStartKey)) {
+            timeframeStartMap.set(timeframeStartKey, {
+                time: Math.floor(timeframeStartKey / 1000),
                 value: value,
                 color: 'purple',
             });
         } else {
-            const candle = intervalStartMap.get(intervalStartKey);
+            const candle = timeframeStartMap.get(timeframeStartKey);
 
             candle.value = value;
         }
     }
 
-    return [...intervalStartMap.values()];
+    return [...timeframeStartMap.values()];
 }
 
 function getWeekStartUTC(timestamp) {
@@ -317,13 +322,13 @@ function getFortnightStartUTC(timestamp) {
 
 
 /**
- * Fills in the missing intervals between sparse data points with whitespace objects
+ * Fills in the missing timeframes between sparse data points with whitespace objects
  * so Lightweight Charts preserves real calendar spacing.
  * 
  * @param {Array<{time: number, value: number}>} data - Your sorted histogram data
- * @param {"W"|"M"} interval - 'W' for weekly data, 'M' for monthly data
+ * @param {"W"|"M"} timeframe - 'W' for weekly data, 'M' for monthly data
  */
-function fillWhitespaceGaps(data, interval) {
+function fillWhitespaceGaps(data, timeframe) {
     if (!data || data.length < 2) return data;
 
     // Ensure the incoming data is strictly sorted by time
@@ -336,7 +341,7 @@ function fillWhitespaceGaps(data, interval) {
 
         // If this is the last item, we're done generating gaps. Post fill whitespace
         if (i === sortedData.length - 1) {
-            const span = interval === 'W' ? 604800 : interval === 'F' ? 604800 * 2 : 604800 * 4
+            const span = timeframe === 'W' ? 604800 : timeframe === 'F' ? 604800 * 2 : 604800 * 4
             const postWhiteSpace = postWhiteSpaceData(current.time, span);
             result.push(...postWhiteSpace);
             break;
@@ -344,20 +349,20 @@ function fillWhitespaceGaps(data, interval) {
 
         const next = sortedData[i + 1];
 
-        // Convert timestamps back to milliseconds to calculate intervals safely
+        // Convert timestamps back to milliseconds to calculate timeframes safely
         let currentMs = current.time * 1000;
         const nextMs = next.time * 1000;
 
-        // Step through time forward based on the selected interval configuration
+        // Step through time forward based on the selected timeframe configuration
         while (true) {
             let nextDate = new Date(currentMs);
 
-            if (interval === 'M') {
+            if (timeframe === 'M') {
                 // Advance exactly 1 month
                 nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
                 // Ensure it snaps correctly back to the 1st day of the month
                 currentMs = Date.UTC(nextDate.getUTCFullYear(), nextDate.getUTCMonth(), 1);
-            } else if (interval === 'F') {
+            } else if (timeframe === 'F') {
                 const d = nextDate.getUTCDate();
                 d < 16 ? nextDate.setUTCDate(d + 15) : nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
 

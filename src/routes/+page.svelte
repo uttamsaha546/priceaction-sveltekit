@@ -63,41 +63,46 @@
 				</span>
 			</a>
 
-			<!-- MF Analysis -->
+			<!-- Price Action -->
 			<a
-				href="/mfanalysis"
+				href="/priceaction"
 				class="group relative overflow-hidden rounded-2xl border border-slate-800
                        bg-slate-900/70 p-6 transition-all duration-300
                        hover:-translate-y-1 hover:border-emerald-500/50
                        hover:bg-slate-900 hover:shadow-xl hover:shadow-emerald-500/10"
 			>
-				<div
-					class="mb-5 flex h-11 w-11 items-center justify-center rounded-xl
-                           bg-emerald-500/10 text-emerald-400
-                           transition group-hover:bg-emerald-500 group-hover:text-white"
-				>
-					<svg
-						class="h-5 w-5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
+				<div class="flex items-center gap-5">
+					<div
+						class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                               bg-rose-500/10 text-rose-400
+                               transition group-hover:bg-rose-500 group-hover:text-white"
 					>
-						<path d="M4 19V5" />
-						<path d="M4 19h16" />
-						<path d="m7 15 3-4 3 2 5-7" />
-					</svg>
+						<svg
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M4 17 9 12l4 4 7-9" />
+							<path d="M20 7v5h-5" />
+						</svg>
+					</div>
+
+					<div>
+						<h2 class="text-lg font-semibold">Price Action</h2>
+						<p class="mt-1 text-sm text-slate-400">
+							Identify trends, momentum, breakouts, and price action setups.
+						</p>
+					</div>
+
+					<span
+						class="ml-auto text-xl text-slate-600 transition
+                               group-hover:translate-x-1 group-hover:text-rose-400"
+					>
+						→
+					</span>
 				</div>
-
-				<h2 class="text-lg font-semibold">MF Analysis</h2>
-				<p class="mt-1 text-sm text-slate-400">Analyze mutual fund holdings and exposure.</p>
-
-				<span
-					class="absolute right-6 top-6 text-slate-600 transition
-                           group-hover:translate-x-1 group-hover:text-emerald-400"
-				>
-					→
-				</span>
 			</a>
 
 			<!-- Portfolio -->
@@ -176,49 +181,6 @@
 				>
 					→
 				</span>
-			</a>
-
-			<!-- Price Action -->
-			<a
-				href="/priceaction"
-				class="group relative overflow-hidden rounded-2xl border border-slate-800
-                       bg-slate-900/70 p-6 transition-all duration-300
-                       hover:-translate-y-1 hover:border-rose-500/50
-                       hover:bg-slate-900 hover:shadow-xl hover:shadow-rose-500/10
-                       sm:col-span-2"
-			>
-				<div class="flex items-center gap-5">
-					<div
-						class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
-                               bg-rose-500/10 text-rose-400
-                               transition group-hover:bg-rose-500 group-hover:text-white"
-					>
-						<svg
-							class="h-5 w-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M4 17 9 12l4 4 7-9" />
-							<path d="M20 7v5h-5" />
-						</svg>
-					</div>
-
-					<div>
-						<h2 class="text-lg font-semibold">Price Action</h2>
-						<p class="mt-1 text-sm text-slate-400">
-							Identify trends, momentum, breakouts, and price action setups.
-						</p>
-					</div>
-
-					<span
-						class="ml-auto text-xl text-slate-600 transition
-                               group-hover:translate-x-1 group-hover:text-rose-400"
-					>
-						→
-					</span>
-				</div>
 			</a>
 		</nav>
 
