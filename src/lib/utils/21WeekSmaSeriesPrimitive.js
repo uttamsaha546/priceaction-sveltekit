@@ -25,7 +25,7 @@ export class SmaSeriesPrimitive {
     _updateData = () => {
         // console.log('renered')
         const mainSeriesData = this._mainSeries.data();
-        const smaValues = calculateSMA(mainSeriesData, ChartState.interval==="M" ? 6 : ChartState.interval==="W"? 21: 11);
+        const smaValues = calculateSMA(mainSeriesData, ChartState.timeframe==="M" ? 6 : ChartState.timeframe==="W"? 21: 11);
         this._smaSeries.setData(smaValues);
     }
 

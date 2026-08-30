@@ -69,7 +69,7 @@ class CustomShapePaneView {
         }
 
         // 1. Calculate 52 week high inline from the current series data bars
-        const _52weekHigh = this._calculate52WeekHigh(seriesBars, 'close', ChartState.interval==="M" ? 12 : ChartState.interval==="F" ? 24: 52);
+        const _52weekHigh = this._calculate52WeekHigh(seriesBars, 'close', ChartState.timeframe==="M" ? 12 : ChartState.timeframe==="F" ? 24: 52);
         // 2. Map the generated indicators directly to coordinates in a single pass
         const mappedData = [];
 
