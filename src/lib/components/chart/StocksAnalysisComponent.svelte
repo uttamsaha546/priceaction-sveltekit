@@ -36,8 +36,9 @@
 					(!sector || row.sector === sector) &&
 					(!industry || row.industry === industry) &&
 					(!rsi ||
-						(rsi === 'up' && row.rsi_14M >= 55) ||
-						(rsi === 'down' && row.rsi_14M < 55) ||
+						(rsi === 'up' &&
+(row.rsi_14M != null ? row.rsi_14M >= 55 : row.rsi_14W >= 55))||
+						(rsi === 'down' && (row.rsi_14M != null ? row.rsi_14M < 55 : row.rsi_14W < 55)) ||
 						(rsi === 'c' && row.rsi_14M > 70) ||
 						(rsi === 'b' && row.rsi_14M <= 70 && row.rsi_14M > 65) ||
 						(rsi === 'a' && row.rsi_14M <= 65 && row.rsi_14M > 60) ||
