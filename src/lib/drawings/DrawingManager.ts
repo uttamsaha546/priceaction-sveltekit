@@ -100,23 +100,15 @@ export class DrawingManager {
 
     private _handleClick(param: MouseEventParams) {
         // 1. SELECT / DESELECT MODE (When no drawing tool is active)
-        // if (this._activeTool === 'none') {
-        //     if (param.hoveredInfo?.objectId) {
-        //         this._selectedDrawingId = param.hoveredInfo.objectId as string;
-        //         console.log('Selected drawing:', this._selectedDrawingId);
-        //     } else {
-        //         this._selectedDrawingId = null; // Deselect on clicking empty canvas
-        //     }
-        //     return;
-        // }
-
         if (this._activeTool === 'none') {
-            const hoveredId = param.hoveredObjectId as string | undefined;
+            const hoveredId = param.hoveredInfo?.objectId as string | undefined;
 
             if (hoveredId) {
-                // Extract base drawing ID (e.g. "box_123" from "box_123:p0")
-                const baseId = hoveredId.split(':')[0];
+                this._selectedDrawingId = hoveredId;
+                console.log('Selected drawing:', this._selectedDrawingId);
 
+                 // Extract base drawing ID if modify handle is clicked(e.g. "box_123" from "box_123:p0")
+                const baseId = hoveredId.split(':')[0];
                 // Handle Point Handle Drag Setup
                 if (hoveredId.includes(':p')) {
                     const pointIndex = parseInt(hoveredId.split(':p')[1], 10);
@@ -125,7 +117,6 @@ export class DrawingManager {
                         this._dragState = { drawing, pointIndex };
                     }
                 }
-
                 // Update selection
                 this._drawings.forEach(d => {
                     if (d instanceof RangeBoxPrimitive) {
@@ -133,6 +124,7 @@ export class DrawingManager {
                     }
                 });
             } else {
+                this._selectedDrawingId = null; // Deselect on clicking empty canvas
                 // Deselect all drawings on empty click
                 this._drawings.forEach(d => {
                     if (d instanceof RangeBoxPrimitive) d.setSelected(false);
@@ -141,8 +133,8 @@ export class DrawingManager {
             return;
         }
 
-
         // 2. DRAWING CREATION MODE
+        
         const price = this._series.coordinateToPrice(param.point!.y);
         if (price === null || !param.time) return;
 

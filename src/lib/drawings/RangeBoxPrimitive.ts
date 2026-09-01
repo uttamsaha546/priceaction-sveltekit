@@ -48,7 +48,7 @@ class RangeBoxPaneRenderer implements IPrimitivePaneRenderer {
             const midY = yMid * vRatio;
 
             const isHovered = this._data!.isHovered;
-            const isSelected = this._data.isSelected;
+            const isSelected = this._data!.isSelected;
 
             // Determine colors based on hover state
             const boxColor = isHovered
