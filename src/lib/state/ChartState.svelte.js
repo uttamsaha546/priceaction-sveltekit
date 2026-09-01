@@ -7,8 +7,8 @@ export const ChartState = (() => {
     let scaleFactor = $state('');
     let activeModal = $state(null);
     let flags = $state(null);
-    let currentScrip = $state('');
-    let groww = $state(null);
+    let currentScrip = $state({}); // {name: name, id: symbol}
+    let StockUniverse = $state([]);
     let isLoading = $state(false);
     let bottomRight = $state(null);
     let EarningsData = $state([]);
@@ -50,8 +50,8 @@ export const ChartState = (() => {
         get currentScrip() { return currentScrip },
         set currentScrip(val) { currentScrip = val },
 
-        get groww() { return groww },
-        set groww(val) { groww = val },
+        get StockUniverse() { return StockUniverse },
+        set StockUniverse(val) { StockUniverse = val },
 
         get isLoading() { return isLoading },
         set isLoading(val) { isLoading = val },

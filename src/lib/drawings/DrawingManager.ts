@@ -44,7 +44,7 @@ export class DrawingManager {
 
     // Load existing drawings retrieved from SQLite DB
     public loadDrawings(serializedDrawings: SerializedDrawing[]) {
-        console.log('first')
+        //console.log('first')
         this.clearAllDrawings(false); // Clear chart without triggering database save
 
         serializedDrawings.forEach((data) => {

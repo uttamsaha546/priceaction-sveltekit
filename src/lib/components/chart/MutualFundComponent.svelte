@@ -61,7 +61,7 @@
 			.filter((item) => item.nature_name === 'EQUITY')
 			.map((item) => ({
 				...item,
-				...ChartState.groww[item.stock_search_id]
+				...ChartState.StockUniverse.find(x=>x.stock_search_id ===item.stock_search_id)
 			}));
 	});
 

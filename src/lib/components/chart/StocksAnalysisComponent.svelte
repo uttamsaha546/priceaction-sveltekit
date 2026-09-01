@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
 	import StockBlock from './componentblock/StockBlock.svelte';
+	import {ChartState} from '$lib/state/ChartState.svelte';
 
 	let data = $state({});
 	let selectedStockId = $state('');
@@ -35,7 +36,7 @@
 					(!sector || row.sector === sector) &&
 					(!industry || row.industry === industry) &&
 					(!rsi ||
-						(rsi === 'up' && row.rsi_14M > 60) ||
+						(rsi === 'up' && row.rsi_14M >= 55) ||
 						(rsi === 'down' && row.rsi_14M < 55) ||
 						(rsi === 'c' && row.rsi_14M > 70) ||
 						(rsi === 'b' && row.rsi_14M <= 70 && row.rsi_14M > 65) ||
@@ -51,9 +52,9 @@
 	onMount(async () => {
 		const p = await fetch('/api/stock-universe-with-rsi-industry');
 		data = await p.json();
-		window.StockUniverse = data;
+		ChartState.StockUniverse = data.data;
 	});
-
+$inspect(ChartState.StockUniverse)
 	async function UpdateRSIFromTradingview() {
 		// const p = await fetch('/api/stock-universe/update', { method: 'POST' });
 		// data = await p.json();
@@ -107,7 +108,7 @@
 		<!-- RSI Filter -->
 		<select name="rsi" class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
 			<option value={''} class="w-48"> RSI(14M) </option>
-			<option value={'up'}>{'RSI >60'}</option>
+			<option value={'up'}>{'RSI >55'}</option>
 			<option value={'down'}>{'RSI <55'}</option>
 			<option value={'c'}>{'RSI 100-70) C'}</option>
 			<option value={'b'}>{'RSI (65-70] B'}</option>
