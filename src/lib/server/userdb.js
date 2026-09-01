@@ -18,6 +18,7 @@ userdb.exec(`
     ) WITHOUT ROWID;
 `);
 
+// userdb.exec('DELETE FROM watchlists')
 userdb.exec(`
     CREATE TABLE IF NOT EXISTS watchlists (
         name TEXT PRIMARY KEY,
@@ -52,6 +53,11 @@ stmt.run('Default Watchlist', defaultEntries);
 const saveDrawingsStmt = userdb.prepare(`INSERT OR REPLACE INTO drawings (symbol, drawings) VALUES (:symbol, :drawings)`);
 const getDrawingsStmt = userdb.prepare(`SELECT * FROM drawings WHERE symbol=?`);
 
+
+// Watchlists
+// const addToWatchlistStmt = userdb.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES(:name, :entries)`);
+// const removeFromWatchlistStmt = userdb.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES(:name, :entries)`);
+
 export const USERDB = {
     Drawings: {
         save(symbol, drawings) {
@@ -69,5 +75,20 @@ export const USERDB = {
                 drawings: typeof row.drawings === 'string' ? JSON.parse(row.drawings) : row.drawings
             };
         }
-    }
+    },
+    // Watchlists: {
+    //     addToWatchlist({ watchlist, symbol }) {
+
+    //     },
+    //     removeFromWatchlist({ watchlist, symbol }) {
+
+    //     },
+    //     getWatchlist({ watchlist }) {
+
+    //     },
+    //     getAll() {
+
+    //     }
+
+    // }
 }
