@@ -1,4 +1,4 @@
-import { cachedb as db} from "$lib/server/cachedb";
+import { cachedb as db } from '$lib/server/cachedb';
 
 // Initialize Schema
 db.exec(`
@@ -7,11 +7,11 @@ db.exec(`
         value TEXT NOT NULL,
         expires_at INTEGER NOT NULL
         ) WITHOUT ROWID;
-`)
+`);
 
 db.exec(`
     CREATE INDEX IF NOT EXISTS idx_cache_expiry ON cache(expires_at);    
-`)
+`);
 
 /** Artitechture
 Request -> Map -> SQLite -> External API
@@ -26,135 +26,144 @@ If a request is already fetching that specific key from the external API, subseq
 */
 
 class Cache {
-    constructor(db) {
-        this.db = db;
-        this.memory = new Map();
-        // Track active promises fetching from external APIs
-        this.inFlightRequests = new Map();
+	constructor(db) {
+		this.db = db;
+		this.memory = new Map();
+		// Track active promises fetching from external APIs
+		this.inFlightRequests = new Map();
 
-        // Pre-compile statements once for blazing-fast execution
-        this.statements = {
-            get: this.db.prepare('SELECT value, expires_at FROM cache WHERE key = ?'),
-            set: this.db.prepare('INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)'),
-            delete: this.db.prepare('DELETE FROM cache WHERE key = ?'),
-            cleanup: this.db.prepare('DELETE FROM cache WHERE expires_at < ?')
-        };
+		// Pre-compile statements once for blazing-fast execution
+		this.statements = {
+			get: this.db.prepare('SELECT value, expires_at FROM cache WHERE key = ?'),
+			set: this.db.prepare(
+				'INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)'
+			),
+			delete: this.db.prepare('DELETE FROM cache WHERE key = ?'),
+			cleanup: this.db.prepare('DELETE FROM cache WHERE expires_at < ?')
+		};
 
-        // Start background cleanup interval (bound to 'this')
-        this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
-        // Unref allows the Node process to exit even if the interval is running
-        if (this.cleanupInterval.unref) this.cleanupInterval.unref();
-    }
+		// Start background cleanup interval (bound to 'this')
+		this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+		// Unref allows the Node process to exit even if the interval is running
+		if (this.cleanupInterval.unref) this.cleanupInterval.unref();
+	}
 
-    /**
-     *  Get cache from memory | db and automatically remove expired entries
-     * @param {string} key
-     * @returns {any} 
-     */
-    get(key) {
-        // 1. Check Memory Cache
-        if (this.memory.has(key)) {
-            const entry = this.memory.get(key);
-            if (entry.expires_at < Date.now()) {
-                this.memory.delete(key);
+	/**
+	 *  Get cache from memory | db and automatically remove expired entries
+	 * @param {string} key
+	 * @returns {any}
+	 */
+	get(key) {
+		// 1. Check Memory Cache
+		if (this.memory.has(key)) {
+			const entry = this.memory.get(key);
+			if (entry.expires_at < Date.now()) {
+				this.memory.delete(key);
 
-                // OPTIMIZATION: Since memory and DB are set together, 
-                // if it expired in memory, it's expired in the DB too.
-                // We can lazily let the background cleanup handle SQLite later 
-                // to avoid blocking this read request with a slow disk delete.
-                return null;
-            } else {
-                return entry.value;
-            }
-        }
-        // 2. Check SQLite Cache
-        const row = this.statements.get.get(key);
-        if (!row) return null;
+				// OPTIMIZATION: Since memory and DB are set together,
+				// if it expired in memory, it's expired in the DB too.
+				// We can lazily let the background cleanup handle SQLite later
+				// to avoid blocking this read request with a slow disk delete.
+				return null;
+			} else {
+				return entry.value;
+			}
+		}
+		// 2. Check SQLite Cache
+		const row = this.statements.get.get(key);
+		if (!row) return null;
 
-        if (row.expires_at < Date.now()) {
-            this.statements.delete.run(key);
-            return null;
-        }
+		if (row.expires_at < Date.now()) {
+			this.statements.delete.run(key);
+			return null;
+		}
 
-        const value = JSON.parse(row.value);
+		const value = JSON.parse(row.value);
 
-        this.memory.set(key, { value, expires_at: row.expires_at });
+		this.memory.set(key, { value, expires_at: row.expires_at });
 
-        return value;
-    }
+		return value;
+	}
 
-    /**
-     * Set cache to db with expiry
-     * @param {string} key - key to be used
-     * @param {any} value - value to be cached
-     * @param {number} ttlSeconds - Time to live in seconds. Default 1 hr
-     */
-    set(key, value, ttlSeconds = 3600) {
-        const expires_at = Date.now() + ttlSeconds * 1000;
+	/**
+	 * Set cache to db with expiry
+	 * @param {string} key - key to be used
+	 * @param {any} value - value to be cached
+	 * @param {number} ttlSeconds - Time to live in seconds. Default 1 hr
+	 */
+	set(key, value, ttlSeconds = 3600) {
+		const expires_at = Date.now() + ttlSeconds * 1000;
 
-        this.memory.set(key, { value, expires_at });
+		this.memory.set(key, { value, expires_at });
 
-        try {
-            const serialized = JSON.stringify(value);
-            this.statements.set.run(key, serialized, expires_at);
-        } catch (err) {
-            console.error(`Cache serialization failed for key "${key}":`, err);
-        }
-    }
+		try {
+			const serialized = JSON.stringify(value);
+			this.statements.set.run(key, serialized, expires_at);
+		} catch (err) {
+			console.error(`Cache serialization failed for key "${key}":`, err);
+		}
+	}
 
-    /**
-     * Delete all expired entries from DB and Memory
-     */
-    cleanup() {
-        // Cleanup SQLite
-        this.statements.cleanup.run(Date.now());
+	/**
+	 * Delete all expired entries from DB and Memory
+	 */
+	cleanup() {
+		// Cleanup SQLite
+		this.statements.cleanup.run(Date.now());
 
-        // Cleanup Memory Map to avoid memory leaks
-        for (const [key, entry] of this.memory.entries()) {
-            if (entry.expires_at < Date.now()) {
-                this.memory.delete(key);
-            }
-        }
-    }
+		// Cleanup Memory Map to avoid memory leaks
+		for (const [key, entry] of this.memory.entries()) {
+			if (entry.expires_at < Date.now()) {
+				this.memory.delete(key);
+			}
+		}
+	}
 
-    /**
-     * Fetch data safely, protecting your external API from cache stampedes
-     * @param {string} key 
-     * @param {Function} fetchFn - Async function that calls the External API
-     * @param {number} ttlSeconds 
-     */
-    async fetch(key, fetchFn, ttlSeconds = 3600) {
-        // 1. Try to get from fast local caches (Memory or SQLite)
-        const cachedValue = this.get(key);
-        if (cachedValue !== null) return cachedValue;
+	/**
+	 * Fetch data safely, protecting your external API from cache stampedes
+	 * @param {string} key
+	 * @param {Function} fetchFn - Async function that calls the External API
+	 * @param {number} ttlSeconds
+	 */
+	async fetch(key, fetchFn, ttlSeconds = 0) {
+		// 1. Try to get from fast local caches (Memory or SQLite)
+		if (ttlSeconds > 0) {
+			const cachedValue = this.get(key);
+			if (cachedValue !== null) {
+				console.log('served from cache: ', key)
+				return cachedValue;
+			}
+		}
 
-        // 2. Check if another request is already fetching this exact key
-        if (this.inFlightRequests.has(key)) {
-            // Collapse the request: return the existing promise
-            return this.inFlightRequests.get(key);
-        }
+		// 2. Check if another request is already fetching this exact key
+		if (this.inFlightRequests.has(key)) {
+			// Collapse the request: return the existing promise
+			return this.inFlightRequests.get(key);
+		}
 
-        // 3. Cache Miss + No In-Flight Request: Create the fetch promise
-        const fetchPromise = (async () => {
-            try {
-                // Execute the external API call passed by the user
-                const freshData = await fetchFn();
+		// 3. Cache Miss + No In-Flight Request: Create the fetch promise
+		const fetchPromise = (async () => {
+			try {
+				// Execute the external API call passed by the user
+				const freshData = await fetchFn();
 
-                // Save to both SQLite and Memory layers
-                this.set(key, freshData, ttlSeconds);
+				// Save to both SQLite and Memory layers
+				if (ttlSeconds > 0) {
+					this.set(key, freshData, ttlSeconds)
+				};
 
-                return freshData;
-            } finally {
-                // ALWAYS clean up the in-flight map when done (success or failure)
-                this.inFlightRequests.delete(key);
-            }
-        })();
+				return freshData;
+			} finally {
+				// ALWAYS clean up the in-flight map when done (success or failure)
+				this.inFlightRequests.delete(key);
+			}
+		})();
 
-        // Register the active promise so concurrent requests can piggyback on it
-        this.inFlightRequests.set(key, fetchPromise);
+		// Register the active promise so concurrent requests can piggyback on it
+		this.inFlightRequests.set(key, fetchPromise);
 
-        return fetchPromise;
-    }
+		return fetchPromise;
+	}
 }
 
 export const cache = new Cache(db);

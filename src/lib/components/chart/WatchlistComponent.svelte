@@ -8,8 +8,6 @@
 	import BroomIcon from './Icons/BroomIcon.svelte';
 	import RemoveIcon from './Icons/RemoveIcon.svelte';
 
-	import Modal from './Modal.svelte';
-	import SymbolSearchModalContent from './SymbolSearchModalContent.svelte';
 	import StockBlock from './componentblock/StockBlock.svelte';
 	import CloseIcon from './Icons/CloseIcon.svelte';
 	import SearchIcon from './Icons/SearchIcon.svelte';
@@ -17,7 +15,7 @@
 
 	let watchlists = $state([]);
 	let currentWatchlist = $state(null);
-	$inspect(watchlists);
+
 	let isOpen = $state(false);
 
 	let dropdownEl;
@@ -57,6 +55,7 @@
 	// --------------------------------------------------
 
 	let symbolInput;
+	let symbolInputValue = $state('');
 
 	// --------------------------------------------------
 	// Load watchlists
@@ -315,8 +314,14 @@
 		const name = dialogWatchlist.name;
 
 		try {
-			const response = await fetch(`/api/watchlists/${encodeURIComponent(name)}/entries`, {
-				method: 'DELETE'
+			const response = await fetch(`/api/clear-watchlist`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					name
+				})
 			});
 
 			if (!response.ok) {
@@ -411,7 +416,7 @@
 		});
 	}
 
-	const searchResult = [
+	let searchResult = $state([
 		{
 			symbol: 'NAVINFLUOR',
 			name: 'Navin Flourine International'
@@ -420,7 +425,7 @@
 			symbol: 'VBL',
 			name: 'Varun Beverages'
 		}
-	];
+	]);
 
 	let currentWatchlistSymbols = $derived(
 		new Set(
@@ -461,7 +466,7 @@
 
 		currentWatchlist = watchlists.find((watchlist) => watchlist.name === currentWatchlist.name);
 	}
-	$inspect(watchlists);
+
 	async function removeFromWatchlist(symbol) {
 		if (!currentWatchlist || !symbol) return;
 
@@ -493,6 +498,66 @@
 
 		currentWatchlist = watchlists.find((watchlist) => watchlist.name === currentWatchlist.name);
 	}
+
+	let controller;
+	$effect(() => {
+		symbolInputValue;
+		if (!symbolInputValue.trim()) return;
+
+		const t = setTimeout(() => {
+			// cancel previous request (if still running)
+			controller?.abort();
+			controller = new AbortController();
+			// run search / fetch here directly
+			search(symbolInputValue, controller.signal);
+		}, 500);
+
+		return () => {
+			clearTimeout(t);
+			controller?.abort();
+		};
+	});
+
+	async function search(query, signal) {
+		searchResult = await fetch(
+			`/proxy?ttl=0&url=${encodeURIComponent(`https://groww.in/v1/api/search/v3/query/global/st_p_query?entity_type=stocks&is_us_stocks=1&page=0&query=${query}&size=6&web=true`)}`,
+			signal
+		)
+			.then((x) => x.json())
+			.then((x) =>
+				x.data.content.map((row) => ({
+					name: row.title,
+					symbol: row.nse_scrip_code ?? row.bse_scrip_code
+				}))
+			);
+	}
+
+	let priceLivePointsMap = $state({});
+	$effect(() => {
+		fetch(
+			`/proxy?ttl=0&url=https://groww.in/v1/api/stocks_data/v1/tr_live_delayed/segment/CASH/latest_aggregated`,
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					exchangeAggReqMap: {
+						NSE: {
+							priceSymbolList: Array.from(currentWatchlistSymbols),
+							indexSymbolList: []
+						},
+						BSE: {
+							priceSymbolList: [],
+							indexSymbolList: []
+						}
+					}
+				})
+			}
+		)
+			.then((x) => x.json())
+			.then((x) => {
+				priceLivePointsMap = x.exchangeAggRespMap.NSE.priceLivePointsMap;
+			});
+	});
 </script>
 
 <!-- ================================================= -->
@@ -596,7 +661,7 @@
 
 					<hr class="my-1.5 text-gray-200" />
 
-					{#each watchlists as watchlist}
+					{#each watchlists as watchlist (watchlist.name)}
 						{@const isCurrent = watchlist.name === currentWatchlist?.name}
 
 						<button
@@ -656,7 +721,22 @@
 <!-- ================================================= -->
 
 <div>
-	<StockBlock data={currentWatchlist?.entries} />
+	<StockBlock
+		data={currentWatchlist?.entries.map((row) => {
+			const dayChangePerc = priceLivePointsMap[row.symbol]?.dayChangePerc;
+			return {
+				name: row.name,
+				symbol: row.symbol,
+				value:
+					dayChangePerc != null
+						? dayChangePerc > 0
+							? `+${dayChangePerc.toFixed(2)}%`
+							: `${dayChangePerc.toFixed(2)}%`
+						: '',
+				valueStyle: dayChangePerc > 0 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'
+			};
+		})}
+	/>
 </div>
 
 <!-- ================================================= -->
@@ -870,6 +950,7 @@
 		w-7/8
 		max-w-200
 		h-11/12
+		max-h-150
 		rounded-lg
 		shadow-xl
 		border
@@ -890,6 +971,7 @@
 			<span><SearchIcon /></span>
 			<input
 				bind:this={symbolInput}
+				bind:value={symbolInputValue}
 				type="text"
 				class="pl-2 flex-1 outline-none"
 				placeholder="Search"
@@ -902,7 +984,7 @@
 
 		<!-- Search Result -->
 		<div class="grid grid-cols-[4fr_8fr_1fr]">
-			{#each searchResult as row}
+			{#each searchResult as row (row.symbol)}
 				<div
 					class="px-5 group col-span-3
 				grid grid-cols-subgrid

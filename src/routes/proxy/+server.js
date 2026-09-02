@@ -49,12 +49,13 @@ function makeKey(method, url, payload = {}) {
 }
 
 /* -------------------- GET -------------------- */
-export async function GET(request) {
+export async function GET({url, request}) {
     try {
-        const targetUrl = request.url.searchParams.get('url');
-        const referer = request.request.headers.get('x-forwarded-referer');
-        const userAgent = request.request.headers.get('user-agent');
-        const authorization = request.request.headers.get('authorization');
+        const targetUrl = url.searchParams.get('url');
+        const ttl = url.searchParams.get('ttl');
+        const referer = request.headers.get('x-forwarded-referer');
+        const userAgent = request.headers.get('user-agent');
+        const authorization = request.headers.get('authorization');
 
         if (!targetUrl) {
             return json({ error: 'Missing url parameter' }, { status: 400 });
@@ -80,7 +81,7 @@ export async function GET(request) {
             }
 
             return await readResponse(upstream);
-        }, 3600); // 1-hour expiration time
+        }, ttl? ttl: 3600); // 1-hour expiration time
 
         return buildResponse(cachedResponseData);
     } catch (err) {
@@ -101,6 +102,7 @@ export async function GET(request) {
 export async function POST({ url, request }) {
     try {
         const targetUrl = url.searchParams.get('url');
+        const ttl = url.searchParams.get('ttl');
 
         const body = await request.json();
 
@@ -128,7 +130,7 @@ export async function POST({ url, request }) {
             }
 
             return await readResponse(upstream);
-        }, 3600);
+        }, ttl? ttl: 3600);
 
         return buildResponse(cachedResponseData);
     } catch (err) {
@@ -143,59 +145,3 @@ export async function POST({ url, request }) {
         }
     }
 }
-
-// export async function POST({ request }) {
-//     try {
-//         const {
-//             method = 'POST',
-//             url: targetUrl,
-//             payload = {},
-//             headers: clientHeaders = {}
-//         } = await request.json();
-
-//         if (!targetUrl) {
-//             return json({ error: 'Missing url' }, { status: 400 });
-//         }
-
-//         const key = makeKey(method, targetUrl, payload);
-
-//         // Safely collapse incoming stampedes matching this exact method/payload signature
-//         const cachedResponseData = await cache.fetch(key, async () => {
-//             let upstream;
-
-//             if (method === 'GET') {
-//                 const qs = new URLSearchParams(payload).toString();
-//                 upstream = await fetch(`${targetUrl}?${qs}`);
-//             } else {
-//                 upstream = await fetch(targetUrl, {
-//                     method: 'POST',
-//                     headers: {
-//                         'content-type': 'application/json',
-//                         ...clientHeaders
-//                     },
-//                     body: JSON.stringify(payload)
-//                 });
-//             }
-
-//             console.log("Called POST (Cache Miss)");
-
-//             if (!upstream.ok) {
-//                 throw new Error(JSON.stringify({ status: upstream.status, text: upstream.statusText }));
-//             }
-
-//             return await readResponse(upstream);
-//         }, 3600);
-
-//         return buildResponse(cachedResponseData);
-//     } catch (err) {
-//         try {
-//             const upstreamError = JSON.parse(err.message);
-//             return json({ error: upstreamError.text }, { status: upstreamError.status });
-//         } catch {
-//             return json(
-//                 { error: 'Proxy failed: ' + err.message },
-//                 { status: 500 }
-//             );
-//         }
-//     }
-// }

@@ -2,9 +2,6 @@
 	import dayjs from 'dayjs';
 	import FlagIcon from '../Icons/FlagIcon.svelte';
 	import { ChartState } from '$lib/state/ChartState.svelte';
-	import { deserialize } from '$app/forms';
-
-	// import { loadDrawings } from '../ChartComponent.svelte';
 
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
@@ -51,7 +48,7 @@
 			});
 
 		const latestRes = fetch(
-			`/proxy?url=https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`
+			`/proxy?ttl=0&url=https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`
 		)
 			.then((x) => x.json())
 			.then((data) => {
@@ -128,7 +125,7 @@
 			<div class="flex justify-between">
 				<span class="text-sm/tight">{stock.symbol}</span>
 
-				<span class="text-xs/tight text-gray-500">
+				<span class={stock.valueStyle ? stock.valueStyle : 'text-xs/tight text-gray-500'}>
 					{stock.value}
 				</span>
 			</div>
@@ -169,7 +166,7 @@
 
 		<!-- Flag Colors -->
 		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-100">
-			{#each flagColors as color, i}
+			{#each flagColors as color, i (i)}
 				<div
 					class="w-4 h-4 rounded-full cursor-pointer relative group flex items-center justify-center"
 					style={stockColors?.[contextMenu.stock.symbol] === color
