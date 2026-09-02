@@ -521,7 +521,7 @@
 	async function search(query, signal) {
 		searchResult = await fetch(
 			`/proxy?ttl=0&url=${encodeURIComponent(`https://groww.in/v1/api/search/v3/query/global/st_p_query?entity_type=stocks&is_us_stocks=1&page=0&query=${query}&size=6&web=true`)}`,
-			signal
+			{ signal }
 		)
 			.then((x) => x.json())
 			.then((x) =>

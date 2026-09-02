@@ -98,7 +98,7 @@
 		const _21WeekSmaSeries = new _21WeekSmaSeriesPrimitive();
 		candlestickSeries.attachPrimitive(_21WeekSmaSeries);
 
-const _21WeekSmaSeries10pct = new _21WeekSmaSeriesPrimitive10pct();
+		const _21WeekSmaSeries10pct = new _21WeekSmaSeriesPrimitive10pct();
 		candlestickSeries.attachPrimitive(_21WeekSmaSeries10pct);
 
 		const rsiSeries = new CustomShapePrimitive();
@@ -452,6 +452,7 @@ const _21WeekSmaSeries10pct = new _21WeekSmaSeriesPrimitive10pct();
 
 		ChartState.scaleFactor = scalingFactor.toFixed(1);
 		setPriceToPixelRatio(priceScale, scalingFactor);
+		// priceScale.applyOptions({ autoScale: false });
 	});
 
 	$effect(() => {

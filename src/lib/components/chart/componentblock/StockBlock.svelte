@@ -1,7 +1,7 @@
 <script>
-	import dayjs from 'dayjs';
 	import FlagIcon from '../Icons/FlagIcon.svelte';
 	import { ChartState } from '$lib/state/ChartState.svelte';
+	import { tick } from 'svelte';
 
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
@@ -47,8 +47,9 @@
 				return res.candles;
 			});
 
+		const ttl = getCacheTTL();
 		const latestRes = fetch(
-			`/proxy?ttl=0&url=https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`
+			`/proxy?ttl=${ttl}&url=${encodeURIComponent(`https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${symbol}/latest`)}`
 		)
 			.then((x) => x.json())
 			.then((data) => {
@@ -65,22 +66,102 @@
 		ChartState.isLoading = false;
 	}
 
+	let rowElements = $state([]);
+	async function selectStock(stock) {
+		selectedStockId = stock.symbol;
+
+		await loadDrawings(stock.symbol);
+		fetchGraphData(stock.symbol);
+
+		ChartState.currentScrip = {
+			name: stock.name,
+			id: stock.symbol
+		};
+
+		await tick();
+
+		const index = data.findIndex((s) => s.symbol === stock.symbol);
+		rowElements[index]?.focus();
+	}
+
 	function closeMenu() {
 		contextMenu.visible = false;
+	}
+
+	// =======================
+	// CACHE LIFE
+	// =======================
+	import dayjs from 'dayjs';
+	import timezone from 'dayjs/plugin/timezone';
+	import utc from 'dayjs/plugin/utc';
+
+	dayjs.extend(utc);
+	dayjs.extend(timezone);
+
+	function getCacheTTL() {
+		const now = dayjs().tz('Asia/Kolkata');
+
+		const isWeekday = now.day() >= 1 && now.day() <= 5;
+
+		const open = now.hour(9).minute(15).second(0).millisecond(0);
+		const close = now.hour(15).minute(30).second(0).millisecond(0);
+
+		// NSE is open
+		if (isWeekday && now >= open && now < close) {
+			return 0;
+		}
+
+		// Find next weekday
+		let nextOpen = open;
+
+		if (now >= close || !isWeekday) {
+			nextOpen = now.add(1, 'day').startOf('day').hour(9).minute(15);
+		}
+
+		while (nextOpen.day() === 0 || nextOpen.day() === 6) {
+			nextOpen = nextOpen.add(1, 'day');
+		}
+
+		return Math.max(1, nextOpen.diff(now, 'second'));
 	}
 </script>
 
 <svelte:window onclick={closeMenu} />
 
-{#each data as stock, stockIndex (stockIndex)}
+{#each data as stock, stockIndex (stock.symbol)}
 	<div
+		bind:this={rowElements[stockIndex]}
 		role="listbox"
 		tabindex={selectedStockId === stock.symbol ? 0 : -1}
-		class="cursor-pointer transition-all duration-200 py-0.5 border-b border-gray-100 flex flex-row items-center group z-10 relative overflow-hidden
+		class="outline-none cursor-pointer transition-all duration-200 py-0.5 border-b border-gray-100 flex flex-row items-center group z-10 relative overflow-hidden
 		{selectedStockId === stock.symbol ? 'ring-2 ring-inset rounded-md' : ''} 
 		{contextMenu.visible && contextMenu.stock?.symbol === stock.symbol
 			? 'bg-[rgb(187,217,251)]'
 			: 'hover:bg-gray-100'}"
+		onclick={() => selectStock(stock)}
+		onkeydown={(e) => {
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+
+				const next = data[stockIndex + 1];
+				if (next) {
+					selectStock(next);
+				}
+			}
+			if (e.key === 'ArrowUp') {
+				e.preventDefault();
+
+				const previous = data[stockIndex - 1];
+				if (previous) {
+					selectStock(previous);
+				}
+			}
+
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				selectStock(stock);
+			}
+		}}
 		oncontextmenu={(e) => {
 			e.preventDefault();
 			contextMenu = {
@@ -113,13 +194,13 @@
 
 		<div
 			class="flex-1 flex flex-col px-1 overflow-hidden"
-			onclick={async (e) => {
-				e.stopPropagation();
-				selectedStockId = stock.symbol;
-				await loadDrawings(stock.symbol);
-				fetchGraphData(stock.symbol);
-				ChartState.currentScrip = { name: stock.name, id: stock.symbol };
-			}}
+			// onclick={async (e) => {
+			// 	e.stopPropagation();
+			// 	selectedStockId = stock.symbol;
+			// 	await loadDrawings(stock.symbol);
+			// 	fetchGraphData(stock.symbol);
+			// 	ChartState.currentScrip = { name: stock.name, id: stock.symbol };
+			// }}
 			role
 		>
 			<div class="flex justify-between">

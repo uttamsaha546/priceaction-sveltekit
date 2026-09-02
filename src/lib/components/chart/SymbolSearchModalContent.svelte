@@ -4,6 +4,7 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import dayjs from 'dayjs';
 	import { npsSchemeList } from '$lib/files/npsSchemeList';
+	import { onMount, tick } from 'svelte';
 
 	const Type = {
 		Stock: 1,
@@ -26,6 +27,13 @@
 	let searchResult = $state([]);
 
 	let inputElement;
+
+	onMount(async () => {
+		await tick();
+		requestAnimationFrame(() => {
+			inputElement?.focus();
+		});
+	});
 
 	function clearSearch() {
 		searchInput = '';
@@ -59,27 +67,24 @@
 	async function search(debouncedQuery, signal) {
 		try {
 			if (source === Source.Dhan) {
-				const res = await fetch(
-					'https://openweb-search.dhan.co/Search/category',
-					{
-						method: 'POST',
-						body: JSON.stringify({
-							Data: {
-								searchterm: debouncedQuery,
-								inst:
-									type === Type.Stock
-										? 'E'
-										: type === Type.MF
-											? 'MF'
-											: type === Type.Index
-												? 'I'
-												: 'ETF',
-								optionflag: false
-							}
-						})
-					},
+				const res = await fetch('https://openweb-search.dhan.co/Search/category', {
+					method: 'POST',
+					body: JSON.stringify({
+						Data: {
+							searchterm: debouncedQuery,
+							inst:
+								type === Type.Stock
+									? 'E'
+									: type === Type.MF
+										? 'MF'
+										: type === Type.Index
+											? 'I'
+											: 'ETF',
+							optionflag: false
+						}
+					}),
 					signal
-				);
+				});
 				const data = (await res.json()).data;
 
 				if (type === Type.Stock) {

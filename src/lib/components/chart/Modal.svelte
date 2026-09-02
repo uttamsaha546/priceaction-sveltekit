@@ -26,6 +26,9 @@
 
 		if (isOpen && !modalContainer.open) {
 			modalContainer.showModal();
+			requestAnimationFrame(() => {
+				modalContainer.querySelector('input')?.focus();
+			});
 		}
 
 		if (!isOpen && modalContainer.open) {
