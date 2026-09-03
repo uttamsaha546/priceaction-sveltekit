@@ -401,6 +401,7 @@
 <svelte:window onclickcapture={handleWindowClick} />
 
 <div class="p-1 max-w-7xl mx-auto">
+	<a href="/">&larr;</a>
 	<table
 		class="w-full text-left border-collapse border border-gray-200 shadow-sm rounded-lg overflow-hidden"
 	>

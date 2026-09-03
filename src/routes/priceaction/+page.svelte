@@ -5,7 +5,8 @@
 	let activeTab = $state('SCREENER');
 </script>
 
-<div class="w-full max-w-7xl mx-auto p-4 sm:p-6 bg-slate-50 min-h-screen">
+<div class="w-full max-w-7xl mx-auto px-4 sm:px-6 bg-slate-50 min-h-screen">
+	<a href="/">&larr;</a>
 	<!-- Segmented Tab Navigation Control -->
 	<div
 		class="flex items-center justify-start p-1 mb-6 max-w-xs bg-slate-200/80 rounded-xl border border-slate-300/40 backdrop-blur-sm"

@@ -3,6 +3,10 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { tick } from 'svelte';
 
+	function toggleWatchlistSubmenu() {
+		watchlistSubmenuOpen = !watchlistSubmenuOpen;
+	}
+
 	async function addToWatchlist({ symbol, name, watchlistName }) {
 		if (!watchlistName || !symbol) return;
 
@@ -68,7 +72,7 @@
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
 	 */
 
-	let { data, selectedStockId = 0 } = $props();
+	let { data, selectedStockId = 0, openCreateDialog } = $props();
 	let contextMenu = $state({ visible: false, x: 0, y: 0, stock: null });
 	let stockColors = $derived(ChartState.flags);
 
@@ -204,7 +208,7 @@
 		{selectedStockId === stock.symbol ? 'ring-2 ring-inset rounded-md' : ''} 
 		{contextMenu.visible && contextMenu.stock?.symbol === stock.symbol
 			? 'bg-[rgb(187,217,251)]'
-			: 'hover:bg-gray-100'}"
+			: 'hover:bg-gray-200/80'}"
 		onclick={() => selectStock(stock)}
 		onkeydown={(e) => {
 			if (e.key === 'ArrowDown') {
@@ -286,7 +290,7 @@
 	>
 		<!-- Flag/Unflag -->
 		<div
-			class="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+			class="px-3 py-1 hover:bg-gray-200/80 cursor-pointer"
 			onclick={async () => {
 				const symbol = contextMenu.stock.symbol;
 				const isColored = stockColors[symbol];
@@ -306,7 +310,7 @@
 		</div>
 
 		<!-- Flag Colors -->
-		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-100">
+		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-200/80">
 			{#each flagColors as color, i (i)}
 				<div
 					class="w-4 h-4 rounded-full cursor-pointer relative group flex items-center justify-center"
@@ -343,7 +347,7 @@
 
 		<!-- Add to watchlist -->
 		<div
-			class="px-3 py-1 hover:bg-gray-100 cursor-pointer group"
+			class="px-3 py-1 hover:bg-gray-200/80 cursor-pointer group"
 			onclick={() => {
 				closeMenu();
 			}}
@@ -363,7 +367,7 @@
 	>
 		<!-- Flag/Unflag -->
 		<div
-			class="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+			class="px-3 py-1 hover:bg-gray-200/80 cursor-pointer"
 			onclick={async () => {
 				const symbol = contextMenu.stock.symbol;
 				const isColored = stockColors[symbol];
@@ -387,7 +391,7 @@
 		</div>
 
 		<!-- Flag Colors -->
-		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-100">
+		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-200/80">
 			{#each flagColors as color, i (i)}
 				<div
 					class="w-4 h-4 rounded-full cursor-pointer relative group flex items-center justify-center"
@@ -427,12 +431,11 @@
 		</div>
 
 		<!-- Watchlist -->
-		<div class="relative group">
+		<!-- 1. Define the anchor name on the trigger menu item container -->
+		<div class="group">
 			<div
-				class="px-3 py-1 hover:bg-gray-100 cursor-pointer flex items-center justify-between whitespace-nowrap"
-				onclick={() => {
-					watchlistSubmenuOpen = !watchlistSubmenuOpen;
-				}}
+				class="anchor px-3 py-1 hover:bg-gray-200/80 cursor-pointer flex items-center justify-between whitespace-nowrap"
+				onclick={toggleWatchlistSubmenu}
 				role="button"
 				tabindex="0"
 				onkeydown={() => {}}
@@ -442,8 +445,9 @@
 			</div>
 
 			<!-- Watchlist submenu -->
+			<!-- 2. Set position: absolute and point it to the anchor grid -->
 			<div
-				class="absolute right-full top-0 bg-white shadow-lg border rounded text-sm py-1 min-w-40 {window.isTouchable &&
+				class="target bg-white shadow-lg border rounded text-sm py-1 min-w-40 z-50 {window.isTouchable &&
 				watchlistSubmenuOpen
 					? 'block'
 					: 'group-hover:block hidden'}"
@@ -457,12 +461,11 @@
 							onclick={(e) => e.stopPropagation()}
 							onchange={(e) => {
 								const checked = e.currentTarget.checked;
-
 								const symbol = contextMenu.stock.symbol;
 
 								if (checked) {
 									addToWatchlist({
-										symbol: contextMenu.stock.symbol,
+										symbol,
 										name: contextMenu.stock.name,
 										watchlistName: watchlist.name
 									});
@@ -475,9 +478,28 @@
 						<span>{watchlist.name}</span>
 					</label>
 				{/each}
+
 				<hr class="text-gray-200/80 my-1" />
-				<div class="px-3 py-1 hover:bg-gray-200/80">Create new list...</div>
+
+				<div class="px-3 py-1 hover:bg-gray-200/80" onclick={() => openCreateDialog()}>
+					Create new list...
+				</div>
 			</div>
 		</div>
 	</div>
 {/if}
+
+<style>
+	.anchor {
+		anchor-name: --my-anchor;
+	}
+	.target {
+		position: fixed;
+		position-anchor: --my-anchor;
+
+		top: anchor(top);
+		right: anchor(left);
+
+		position-try-fallbacks: flip-block;
+	}
+</style>

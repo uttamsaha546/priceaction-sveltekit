@@ -8,11 +8,13 @@ const selectAllWatchlistsStmt = userdb.prepare('SELECT * FROM watchlists');
 const selectStockUniverseSlimStmt = appdb.prepare('SELECT * FROM stock_universe_with_rsi_industry');
 
 export function GET() {
-  // 1. Insert default watchlists if needed
-  insertDefaultWatchlistStmt.run({ name: 'Default Watchlist', entries: JSON.stringify(['VBL']) });
 
   // 2. Fetch data from DB using precompiled statements
-  const watchlists = selectAllWatchlistsStmt.all();
+  let watchlists = selectAllWatchlistsStmt.all();
+  if (watchlists.length === 0) {
+    insertDefaultWatchlistStmt.run({ name: 'Default Watchlist', entries: JSON.stringify(['VBL', 'BLUESTARCO', 'WABAG', 'JASH']) });
+    watchlists = selectAllWatchlistsStmt.all();
+  }
   const stockUniverse = selectStockUniverseSlimStmt.all();
 
   const symbolMap = new Map(stockUniverse.map(x => ([x.symbol, x])));

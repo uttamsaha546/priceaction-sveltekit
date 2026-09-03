@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
 	import StockBlock from './componentblock/StockBlock.svelte';
-	import {ChartState} from '$lib/state/ChartState.svelte';
+	import { ChartState } from '$lib/state/ChartState.svelte';
 
 	let data = $state({});
 	let selectedStockId = $state('');
@@ -36,8 +36,7 @@
 					(!sector || row.sector === sector) &&
 					(!industry || row.industry === industry) &&
 					(!rsi ||
-						(rsi === 'up' &&
-(row.rsi_14M != null ? row.rsi_14M >= 55 : row.rsi_14W >= 55))||
+						(rsi === 'up' && (row.rsi_14M != null ? row.rsi_14M >= 55 : row.rsi_14W >= 55)) ||
 						(rsi === 'down' && (row.rsi_14M != null ? row.rsi_14M < 55 : row.rsi_14W < 55)) ||
 						(rsi === 'c' && row.rsi_14M > 70) ||
 						(rsi === 'b' && row.rsi_14M <= 70 && row.rsi_14M > 65) ||
@@ -55,21 +54,10 @@
 		data = await p.json();
 		ChartState.StockUniverse = data.data;
 	});
-$inspect(ChartState.StockUniverse)
-	async function UpdateRSIFromTradingview() {
-		// const p = await fetch('/api/stock-universe/update', { method: 'POST' });
-		// data = await p.json();
-	}
 </script>
 
 <div class="p-1 w-full overflow-hidden">
 	<h1>StocksAnalysisComponent</h1>
-	<button
-		onclick={() => UpdateRSIFromTradingview()}
-		class="border border-gray-200 rounded px-2 active:bg-gray-200 hover:bg-gray-100"
-	>
-		Update RSI
-	</button>
 	<span>{dayjs(data.meta?.updated_at).format('DD-MMM-YYYY')}</span>
 	<span>{filteredStockList.length}</span>
 
@@ -77,7 +65,7 @@ $inspect(ChartState.StockUniverse)
 		<!-- Sector Filter -->
 		<select
 			name="sector"
-			class="w-48 truncate border border-gray-200 rounded px-2"
+			class="w-full truncate border border-gray-200 rounded px-2"
 			bind:value={sector}
 			onchange={(e) => {
 				sector = e.target.value;
@@ -95,7 +83,7 @@ $inspect(ChartState.StockUniverse)
 		<!-- Industry Filter -->
 		<select
 			name="industry"
-			class="w-48 truncate border border-gray-200 rounded px-2"
+			class="w-full truncate border border-gray-200 rounded px-2"
 			bind:value={industry}
 		>
 			<option value={''} class="w-48"> Industry </option>
@@ -107,8 +95,8 @@ $inspect(ChartState.StockUniverse)
 		</select>
 
 		<!-- RSI Filter -->
-		<select name="rsi" class="w-48 truncate border border-gray-200 rounded px-2" bind:value={rsi}>
-			<option value={''} class="w-48"> RSI(14M) </option>
+		<select name="rsi" class="w-full truncate border border-gray-200 rounded px-2" bind:value={rsi}>
+			<option value={''}> RSI(14M) </option>
 			<option value={'up'}>{'RSI >55'}</option>
 			<option value={'down'}>{'RSI <55'}</option>
 			<option value={'c'}>{'RSI 100-70) C'}</option>

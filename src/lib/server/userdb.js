@@ -45,9 +45,9 @@ userdb.exec(`
     ) WITHOUT ROWID;
 `);
 
-const defaultEntries = 'VBL';
+const defaultEntries = ['VBL', 'BLUESTARCO'];
 const stmt = userdb.prepare(`INSERT OR REPLACE INTO watchlists (name, entries) VALUES (?, ?)`);
-stmt.run('Default Watchlist', defaultEntries);
+stmt.run('Default Watchlist', JSON.stringify(defaultEntries));
 
 
 const saveDrawingsStmt = userdb.prepare(`INSERT OR REPLACE INTO drawings (symbol, drawings) VALUES (:symbol, :drawings)`);

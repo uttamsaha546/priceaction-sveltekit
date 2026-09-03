@@ -5,6 +5,7 @@
 </script>
 
 <div class="max-w-5xl mx-auto p-6 space-y-10 font-sans text-slate-800">
+	<a href="/">&larr;</a>
 	<!-- Article 1: TradingView Stock Universe -->
 	<article class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
 		<header class="border-b border-slate-100 pb-4">

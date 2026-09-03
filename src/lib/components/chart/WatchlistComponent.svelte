@@ -132,6 +132,7 @@
 	// --------------------------------------------------
 
 	function openCreateDialog() {
+		console.log('first');
 		isOpen = false;
 
 		newWatchlistName = '';
@@ -595,179 +596,180 @@
 <!-- ================================================= -->
 <!-- WATCHLIST HEADER -->
 <!-- ================================================= -->
-
-<div class="WatchlistName flex flex-row items-center gap-1 px-1 m-1">
-	<div class="relative text-left flex-1 min-w-0" bind:this={dropdownEl}>
-		{#if isRenaming}
-			<input
-				bind:this={renameInput}
-				bind:value={renameValue}
-				class="w-full min-w-0
+<main class="h-full flex flex-col">
+	<div class="WatchlistName flex flex-row items-center gap-1 px-1 m-1">
+		<div class="relative text-left flex-1 min-w-0" bind:this={dropdownEl}>
+			{#if isRenaming}
+				<input
+					bind:this={renameInput}
+					bind:value={renameValue}
+					class="w-full min-w-0
 					text-sm font-semibold
 					rounded p-1
 					outline outline-blue-500"
-				onblur={saveRename}
-				onkeydown={handleRenameKeydown}
-			/>
-		{:else}
-			<button
-				class="w-full text-sm font-semibold
+					onblur={saveRename}
+					onkeydown={handleRenameKeydown}
+				/>
+			{:else}
+				<button
+					class="w-full text-sm font-semibold
 		hover:bg-gray-100
 		rounded p-1
 		flex flex-row
 		items-center gap-2
 		group"
-				class:bg-gray-100={isOpen}
-				onclick={toggleDropdown}
-			>
-				<span class="px-px truncate">
-					{currentWatchlist?.name ?? 'No watchlist'}
-				</span>
+					class:bg-gray-100={isOpen}
+					onclick={toggleDropdown}
+				>
+					<span class="px-px truncate">
+						{currentWatchlist?.name ?? 'No watchlist'}
+					</span>
 
-				<span
-					class="shrink-0 transform
+					<span
+						class="shrink-0 transform
 						transition-transform
 						duration-300
 						{isOpen ? 'rotate-180' : ''}
 						group-hover:translate-y-0.5"
-				>
-					<DownArrowHeadIcon />
-				</span>
-			</button>
+					>
+						<DownArrowHeadIcon />
+					</span>
+				</button>
 
-			{#if isOpen}
-				<div
-					class="absolute -left-1
+				{#if isOpen}
+					<div
+						class="absolute -left-1
 						top-full mt-1 w-46
 						bg-white
 						border border-gray-200
 						rounded shadow-lg
 						z-50 py-1
 						flex flex-col"
-				>
-					<button
-						class="flex flex-row
+					>
+						<button
+							class="flex flex-row
 							items-center gap-1
 							hover:bg-gray-100
 							w-full px-2 py-px
 							text-left"
-						onclick={openCreateDialog}
-					>
-						<NewWatchlistIcon />
-						<span>Create new list...</span>
-					</button>
-
-					<button
-						class="flex flex-row
-							items-center gap-1
-							hover:bg-gray-100
-							w-full px-2 py-px
-							text-left
-							disabled:opacity-40"
-						onclick={startRename}
-						disabled={!currentWatchlist}
-					>
-						<PencilIcon />
-						<span>Rename</span>
-					</button>
-
-					<button
-						class="flex flex-row
-							items-center gap-1
-							hover:bg-gray-100
-							w-full px-2 py-px
-							text-left
-							disabled:opacity-40"
-						onclick={openClearDialog}
-						disabled={!currentWatchlist}
-					>
-						<BroomIcon />
-						<span>Clear list</span>
-					</button>
-
-					<hr class="my-1.5 text-gray-200" />
-
-					{#each watchlists as watchlist (watchlist.name)}
-						{@const isCurrent = watchlist.name === currentWatchlist?.name}
+							onclick={openCreateDialog}
+						>
+							<NewWatchlistIcon />
+							<span>Create new list...</span>
+						</button>
 
 						<button
-							onclick={() => selectWatchlist(watchlist)}
-							class="group w-full
+							class="flex flex-row
+							items-center gap-1
+							hover:bg-gray-100
+							w-full px-2 py-px
+							text-left
+							disabled:opacity-40"
+							onclick={startRename}
+							disabled={!currentWatchlist}
+						>
+							<PencilIcon />
+							<span>Rename</span>
+						</button>
+
+						<button
+							class="flex flex-row
+							items-center gap-1
+							hover:bg-gray-100
+							w-full px-2 py-px
+							text-left
+							disabled:opacity-40"
+							onclick={openClearDialog}
+							disabled={!currentWatchlist}
+						>
+							<BroomIcon />
+							<span>Clear list</span>
+						</button>
+
+						<hr class="my-1.5 text-gray-200" />
+
+						{#each watchlists as watchlist (watchlist.name)}
+							{@const isCurrent = watchlist.name === currentWatchlist?.name}
+
+							<button
+								onclick={() => selectWatchlist(watchlist)}
+								class="group w-full
 								text-left px-2 py-0.75
 								flex flex-row
 								justify-between
 								items-center"
-							class:bg-blue-600={isCurrent}
-							class:text-white={isCurrent}
-							class:hover:bg-gray-100={!isCurrent}
-						>
-							<span class="truncate">
-								{watchlist.name}
-							</span>
-
-							<span
-								class="relative w-5 h-5
-									shrink-0
-									flex items-center
-									justify-center"
+								class:bg-blue-600={isCurrent}
+								class:text-white={isCurrent}
+								class:hover:bg-gray-100={!isCurrent}
 							>
-								<span class="absolute" class:group-hover:invisible={!isCurrent}>
-									{watchlist.entries?.length ?? 0}
+								<span class="truncate">
+									{watchlist.name}
 								</span>
 
 								<span
-									class="absolute
+									class="relative w-5 h-5
+									shrink-0
+									flex items-center
+									justify-center"
+								>
+									<span class="absolute" class:group-hover:invisible={!isCurrent}>
+										{watchlist.entries?.length ?? 0}
+									</span>
+
+									<span
+										class="absolute
 										invisible
 										p-0.5 rounded"
-									class:group-hover:visible={!isCurrent}
-									class:hover:bg-gray-300={!isCurrent}
-									onclick={(event) => openDeleteDialog(watchlist, event)}
-									onkeydown={() => {}}
-									role
-								>
-									<RemoveIcon />
+										class:group-hover:visible={!isCurrent}
+										class:hover:bg-gray-300={!isCurrent}
+										onclick={(event) => openDeleteDialog(watchlist, event)}
+										onkeydown={() => {}}
+										role
+									>
+										<RemoveIcon />
+									</span>
 								</span>
-							</span>
-						</button>
-					{/each}
-				</div>
+							</button>
+						{/each}
+					</div>
+				{/if}
 			{/if}
+		</div>
+
+		{#if !isRenaming}
+			<button class="hover:bg-gray-200 rounded shrink-0" onclick={openAddSymbolDialog}>
+				<PlusIcon />
+			</button>
 		{/if}
 	</div>
 
-	{#if !isRenaming}
-		<button class="hover:bg-gray-200 rounded shrink-0" onclick={openAddSymbolDialog}>
-			<PlusIcon />
-		</button>
-	{/if}
-</div>
+	<!-- ================================================= -->
+	<!-- STOCK BLOCK -->
+	<!-- ================================================= -->
 
-<!-- ================================================= -->
-<!-- STOCK BLOCK -->
-<!-- ================================================= -->
-
-<div>
-	<StockBlock
-		data={ChartState.watchlists
-			.find((x) => x.name === currentWatchlist?.name)
-			?.entries?.map((row) => {
-				const dayChangePerc = priceLivePointsMap[row.symbol]?.dayChangePerc;
-				return {
-					name: row.name,
-					symbol: row.symbol,
-					value:
-						dayChangePerc != null
-							? dayChangePerc > 0
-								? `+${dayChangePerc.toFixed(2)}%`
-								: `${dayChangePerc.toFixed(2)}%`
-							: '',
-					valueStyle: dayChangePerc > 0 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'
-				};
-			}) ?? []}
-		{watchlists}
-	/>
-</div>
-
+	<div class="overflow-auto flex-1">
+		<StockBlock
+			data={ChartState.watchlists
+				.find((x) => x.name === currentWatchlist?.name)
+				?.entries?.map((row) => {
+					const dayChangePerc = priceLivePointsMap[row.symbol]?.dayChangePerc;
+					return {
+						name: row.name,
+						symbol: row.symbol,
+						value:
+							dayChangePerc != null
+								? dayChangePerc > 0
+									? `+${dayChangePerc.toFixed(2)}%`
+									: `${dayChangePerc.toFixed(2)}%`
+								: '',
+						valueStyle: dayChangePerc > 0 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'
+					};
+				}) ?? []}
+			{watchlists}
+			{openCreateDialog}
+		/>
+	</div>
+</main>
 <!-- ================================================= -->
 <!-- CREATE DIALOG -->
 <!-- ================================================= -->
