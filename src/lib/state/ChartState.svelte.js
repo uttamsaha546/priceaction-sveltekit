@@ -16,6 +16,8 @@ export const ChartState = (() => {
     let scaleM = $state();
     let scaleF = $state();
 
+    let watchlists = $state([{name:'Default Watchlist', entries:[{symbol:'VBL'}]}])
+
     let drawingManager = $state(null);
 
     let barData = $derived(fillWhitespaceGaps(LineDataToBarData(lineData, timeframe), timeframe));
@@ -75,6 +77,9 @@ export const ChartState = (() => {
 
         get drawingManager() { return drawingManager },
         set drawingManager(val) { drawingManager = val },
+
+        get watchlists(){return watchlists},
+        set watchlists(val){watchlists=val},
     };
 })();
 

@@ -3,6 +3,67 @@
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import { tick } from 'svelte';
 
+	async function addToWatchlist({ symbol, name, watchlistName }) {
+		if (!watchlistName || !symbol) return;
+
+		const response = await fetch('/api/add-to-watchlist', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				symbol,
+				watchlist: watchlistName
+			})
+		});
+
+		if (!response.ok) {
+			console.error('Failed to add to watchlist');
+			return;
+		}
+
+		ChartState.watchlists = ChartState.watchlists.map((watchlist) =>
+			watchlist.name === watchlistName
+				? {
+						...watchlist,
+						entries: [...(watchlist.entries ?? []), { symbol, name }]
+					}
+				: watchlist
+		);
+	}
+
+	async function removeFromWatchlist(symbol, watchlistName) {
+		if (!watchlistName || !symbol) return;
+
+		const response = await fetch(`/api/remove-from-watchlist`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				symbol,
+				watchlist: watchlistName
+			})
+		});
+
+		if (!response.ok) {
+			console.error('Failed to remove from watchlist');
+			return;
+		}
+
+		// Update local state
+		ChartState.watchlists = ChartState.watchlists.map((watchlist) =>
+			watchlist.name === watchlistName
+				? {
+						...watchlist,
+						entries: (watchlist.entries ?? []).filter((entry) => entry.symbol !== symbol)
+					}
+				: watchlist
+		);
+
+		// currentWatchlist = watchlists.find((watchlist) => watchlist.name === currentWatchlist.name);
+	}
+
 	/**
 	 * @data = [{symbol=stock ticker, name=stock name, value = marketcap, weight etc}...]
 	 */
@@ -10,7 +71,7 @@
 	let { data, selectedStockId = 0 } = $props();
 	let contextMenu = $state({ visible: false, x: 0, y: 0, stock: null });
 	let stockColors = $derived(ChartState.flags);
-	// $inspect(data);
+
 	const colorMap = {
 		red: 'rgb(255,82,82)',
 		blue: 'rgb(41,121,255)',
@@ -21,6 +82,8 @@
 		pink: 'rgb(244,143,177)',
 		transparent: 'transparent'
 	};
+
+	let watchlists = $derived(ChartState.watchlists);
 
 	const flagColors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan', 'pink'];
 
@@ -86,6 +149,7 @@
 
 	function closeMenu() {
 		contextMenu.visible = false;
+		watchlistSubmenuOpen = false;
 	}
 
 	// =======================
@@ -125,17 +189,8 @@
 		return Math.max(1, nextOpen.diff(now, 'second'));
 	}
 
-	const watchlists = [
-		{
-			name: 'Watchlist 1'
-		},
-		{
-			name: 'Watchlist 2'
-		},
-		{
-			name: 'Watchlist 3'
-		}
-	];
+	// Require for mobile, as mobile does not have hover state
+	let watchlistSubmenuOpen = $state(false);
 </script>
 
 <svelte:window onclick={closeMenu} />
@@ -176,6 +231,9 @@
 		}}
 		oncontextmenu={(e) => {
 			e.preventDefault();
+
+			watchlistSubmenuOpen = false;
+
 			contextMenu = {
 				visible: true,
 				x: Math.min(e.clientX, window.innerWidth - 200),
@@ -373,7 +431,7 @@
 			<div
 				class="px-3 py-1 hover:bg-gray-100 cursor-pointer flex items-center justify-between whitespace-nowrap"
 				onclick={() => {
-					// closeMenu();
+					watchlistSubmenuOpen = !watchlistSubmenuOpen;
 				}}
 				role="button"
 				tabindex="0"
@@ -385,22 +443,31 @@
 
 			<!-- Watchlist submenu -->
 			<div
-				class="absolute right-full top-0 hidden group-hover:block bg-white shadow-lg border rounded text-sm py-1 min-w-40"
+				class="absolute right-full top-0 bg-white shadow-lg border rounded text-sm py-1 min-w-40 {window.isTouchable &&
+				watchlistSubmenuOpen
+					? 'block'
+					: 'group-hover:block hidden'}"
 			>
 				{#each watchlists as watchlist (watchlist)}
-					<label class="px-3 py-1 hover:bg-gray-200/80 cursor-pointer flex items-center gap-2">
+					<label class="px-3 py-1 hover:bg-gray-200/80 flex items-center gap-2">
 						<input
 							type="checkbox"
-							checked={watchlist.entries?.includes(contextMenu.stock.symbol)}
+							class="w-4 h-4"
+							checked={watchlist.entries?.find((x) => x.symbol === contextMenu.stock.symbol)}
 							onclick={(e) => e.stopPropagation()}
 							onchange={(e) => {
 								const checked = e.currentTarget.checked;
+
 								const symbol = contextMenu.stock.symbol;
 
 								if (checked) {
-									// addToWatchlist(symbol, watchlist.id);
+									addToWatchlist({
+										symbol: contextMenu.stock.symbol,
+										name: contextMenu.stock.name,
+										watchlistName: watchlist.name
+									});
 								} else {
-									// removeFromWatchlist(symbol, watchlist.id);
+									removeFromWatchlist(symbol, watchlist.name);
 								}
 							}}
 						/>
@@ -408,6 +475,8 @@
 						<span>{watchlist.name}</span>
 					</label>
 				{/each}
+				<hr class="text-gray-200/80 my-1" />
+				<div class="px-3 py-1 hover:bg-gray-200/80">Create new list...</div>
 			</div>
 		</div>
 	</div>

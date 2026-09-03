@@ -12,9 +12,15 @@
 	import CloseIcon from './Icons/CloseIcon.svelte';
 	import SearchIcon from './Icons/SearchIcon.svelte';
 	import DustbinIcon from './Icons/DustbinIcon.svelte';
+	import { ChartState } from '$lib/state/ChartState.svelte';
 
-	let watchlists = $state([]);
-	let currentWatchlist = $state(null);
+	let watchlists = $derived(ChartState.watchlists);
+
+	let currentWatchlistName = $state(null);
+
+	let currentWatchlist = $derived(
+		ChartState.watchlists.find((watchlist) => watchlist.name === currentWatchlistName) ?? null
+	);
 
 	let isOpen = $state(false);
 
@@ -75,9 +81,10 @@
 
 			const result = await response.json();
 
-			watchlists = result.data ?? [];
+			const watchlists = result.data ?? [];
 
-			currentWatchlist = watchlists[0] ?? null;
+			ChartState.watchlists = watchlists;
+			currentWatchlistName = watchlists[0]?.name ?? null;
 		} catch (error) {
 			console.error('Failed to load watchlists:', error);
 		}
@@ -96,7 +103,7 @@
 			cancelRename();
 		}
 
-		currentWatchlist = watchlist;
+		currentWatchlistName = watchlist.name;
 		isOpen = false;
 	}
 
@@ -177,9 +184,9 @@
 				entries: []
 			};
 
-			watchlists = [...watchlists, createdWatchlist];
+			ChartState.watchlists = [...ChartState.watchlists, createdWatchlist];
 
-			currentWatchlist = createdWatchlist;
+			currentWatchlistName = createdWatchlist.name;
 
 			newWatchlistName = '';
 
@@ -209,7 +216,7 @@
 
 		isOpen = false;
 
-		renameValue = currentWatchlist.name;
+		renameValue = currentWatchlistName;
 		isRenaming = true;
 
 		setTimeout(() => {
@@ -273,11 +280,9 @@
 				name: newName
 			};
 
-			watchlists = watchlists.map((watchlist) =>
+			ChartState.watchlists = watchlists.map((watchlist) =>
 				watchlist.name === oldName ? updatedWatchlist : watchlist
 			);
-
-			currentWatchlist = updatedWatchlist;
 
 			cancelRename();
 		} catch (error) {
@@ -330,7 +335,7 @@
 				throw new Error('Failed to clear watchlist');
 			}
 
-			watchlists = watchlists.map((watchlist) =>
+			ChartState.watchlists = watchlists.map((watchlist) =>
 				watchlist.name === name
 					? {
 							...watchlist,
@@ -391,10 +396,11 @@
 				throw new Error('Failed to delete watchlist');
 			}
 
-			watchlists = watchlists.filter((watchlist) => watchlist.name !== name);
+			ChartState.watchlists = watchlists.filter((watchlist) => watchlist.name !== name);
+			const wasCurrent = currentWatchlistName === name;
 
-			if (currentWatchlist?.name === name) {
-				currentWatchlist = watchlists[0] ?? null;
+			if (wasCurrent) {
+				currentWatchlistName = ChartState.watchlists[0]?.name ?? null;
 			}
 
 			dialogWatchlist = null;
@@ -438,7 +444,7 @@
 				?.entries?.map((x) => x.symbol) ?? []
 		)
 	);
-	// $inspect(currentWatchlistSymbols);
+
 	async function addToWatchlist({ symbol, name }) {
 		if (!currentWatchlist || !symbol) return;
 
@@ -459,7 +465,7 @@
 		}
 
 		// Update local state
-		watchlists = watchlists.map((watchlist) =>
+		ChartState.watchlists = ChartState.watchlists.map((watchlist) =>
 			watchlist.name === currentWatchlist.name
 				? {
 						...watchlist,
@@ -467,8 +473,6 @@
 					}
 				: watchlist
 		);
-
-		currentWatchlist = watchlists.find((watchlist) => watchlist.name === currentWatchlist.name);
 	}
 
 	async function removeFromWatchlist(symbol) {
@@ -491,7 +495,7 @@
 		}
 
 		// Update local state
-		watchlists = watchlists.map((watchlist) =>
+		ChartState.watchlists = ChartState.watchlists.map((watchlist) =>
 			watchlist.name === currentWatchlist.name
 				? {
 						...watchlist,
@@ -499,8 +503,6 @@
 					}
 				: watchlist
 		);
-
-		currentWatchlist = watchlists.find((watchlist) => watchlist.name === currentWatchlist.name);
 	}
 
 	let controller;
@@ -523,21 +525,41 @@
 	});
 
 	async function search(query, signal) {
-		searchResult = await fetch(
-			`/proxy?ttl=0&url=${encodeURIComponent(`https://groww.in/v1/api/search/v3/query/global/st_p_query?entity_type=stocks&is_us_stocks=1&page=0&query=${query}&size=6&web=true`)}`,
-			{ signal }
-		)
-			.then((x) => x.json())
-			.then((x) =>
-				x.data.content.map((row) => ({
+		try {
+			const response = await fetch(
+				`/proxy?ttl=0&url=${encodeURIComponent(
+					`https://groww.in/v1/api/search/v3/query/global/st_p_query?entity_type=stocks&is_us_stocks=1&page=0&query=${encodeURIComponent(query)}&size=6&web=true`
+				)}`,
+				{ signal }
+			);
+
+			if (!response.ok) {
+				throw new Error('Search failed');
+			}
+
+			const result = await response.json();
+
+			searchResult =
+				result.data?.content?.map((row) => ({
 					name: row.title,
 					symbol: row.nse_scrip_code ?? row.bse_scrip_code
-				}))
-			);
+				})) ?? [];
+		} catch (error) {
+			if (error.name !== 'AbortError') {
+				console.error('Search failed:', error);
+			}
+		}
 	}
 
 	let priceLivePointsMap = $state({});
 	$effect(() => {
+		const symbols = Array.from(currentWatchlistSymbols);
+
+		if (!symbols.length) {
+			priceLivePointsMap = {};
+			return;
+		}
+
 		fetch(
 			`/proxy?ttl=0&url=https://groww.in/v1/api/stocks_data/v1/tr_live_delayed/segment/CASH/latest_aggregated`,
 			{
@@ -726,20 +748,23 @@
 
 <div>
 	<StockBlock
-		data={currentWatchlist?.entries.map((row) => {
-			const dayChangePerc = priceLivePointsMap[row.symbol]?.dayChangePerc;
-			return {
-				name: row.name,
-				symbol: row.symbol,
-				value:
-					dayChangePerc != null
-						? dayChangePerc > 0
-							? `+${dayChangePerc.toFixed(2)}%`
-							: `${dayChangePerc.toFixed(2)}%`
-						: '',
-				valueStyle: dayChangePerc > 0 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'
-			};
-		})}
+		data={ChartState.watchlists
+			.find((x) => x.name === currentWatchlist?.name)
+			?.entries?.map((row) => {
+				const dayChangePerc = priceLivePointsMap[row.symbol]?.dayChangePerc;
+				return {
+					name: row.name,
+					symbol: row.symbol,
+					value:
+						dayChangePerc != null
+							? dayChangePerc > 0
+								? `+${dayChangePerc.toFixed(2)}%`
+								: `${dayChangePerc.toFixed(2)}%`
+							: '',
+					valueStyle: dayChangePerc > 0 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'
+				};
+			}) ?? []}
+		{watchlists}
 	/>
 </div>
 
