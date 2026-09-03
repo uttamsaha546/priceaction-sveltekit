@@ -47,7 +47,7 @@
 				.filter((item) => item.nature_name === 'EQUITY' && item.stock_search_id)
 				.map((item) => ({
 					...item,
-					...window.StockUniverse.data.find((x) => x.stock_search_id === item.stock_search_id)
+					...ChartState.StockUniverse.find((x) => x.stock_search_id === item.stock_search_id)
 				}));
 			isHoldingView = true;
 			clickedIndexName = obj.name;

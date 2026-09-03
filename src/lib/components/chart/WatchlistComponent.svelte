@@ -943,10 +943,6 @@
 <!-- ADD SYMBOL -->
 <!-- ================================================= -->
 
-<!-- <Modal isOpen={false} title="Add symbol" size="large">
-	<SymbolSearchModalContent />
-</Modal> -->
-
 <dialog
 	bind:this={addSymbolDialog}
 	class="m-auto
@@ -988,7 +984,7 @@
 
 		<!-- Search Result -->
 		<div class="grid grid-cols-[4fr_8fr_1fr]">
-			{#each searchResult as row (row.symbol)}
+			{#each searchResult as row (row)}
 				<div
 					class="px-5 group col-span-3
 				grid grid-cols-subgrid

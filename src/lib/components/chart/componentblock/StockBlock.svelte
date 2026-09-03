@@ -124,11 +124,23 @@
 
 		return Math.max(1, nextOpen.diff(now, 'second'));
 	}
+
+	const watchlists = [
+		{
+			name: 'Watchlist 1'
+		},
+		{
+			name: 'Watchlist 2'
+		},
+		{
+			name: 'Watchlist 3'
+		}
+	];
 </script>
 
 <svelte:window onclick={closeMenu} />
 
-{#each data as stock, stockIndex (stock.symbol)}
+{#each data as stock, stockIndex (stock)}
 	<div
 		bind:this={rowElements[stockIndex]}
 		role="listbox"
@@ -192,17 +204,7 @@
 			<FlagIcon color={colorMap[stockColors?.[stock?.symbol]] ?? 'currentColor'} />
 		</span>
 
-		<div
-			class="flex-1 flex flex-col px-1 overflow-hidden"
-			// onclick={async (e) => {
-			// 	e.stopPropagation();
-			// 	selectedStockId = stock.symbol;
-			// 	await loadDrawings(stock.symbol);
-			// 	fetchGraphData(stock.symbol);
-			// 	ChartState.currentScrip = { name: stock.name, id: stock.symbol };
-			// }}
-			role
-		>
+		<div class="flex-1 flex flex-col px-1 overflow-hidden">
 			<div class="flex justify-between">
 				<span class="text-sm/tight">{stock.symbol}</span>
 
@@ -219,7 +221,7 @@
 {/each}
 
 <!-- /* Context Menu */ -->
-{#if contextMenu.visible}
+{#if contextMenu.visible && false}
 	<div
 		class="fixed bg-white shadow-lg border rounded text-sm z-50 py-1"
 		style="top: {contextMenu.y}px; left: {contextMenu.x}px;"
@@ -283,13 +285,130 @@
 
 		<!-- Add to watchlist -->
 		<div
-			class="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+			class="px-3 py-1 hover:bg-gray-100 cursor-pointer group"
 			onclick={() => {
 				closeMenu();
 			}}
 			role
 		>
-			Add {contextMenu.stock.symbol} to watchlist
+			Add {contextMenu.stock.symbol} to watchlist &gt; on grop hover open another menu left of the group
+		</div>
+	</div>
+{/if}
+
+{#if contextMenu.visible}
+	<div
+		class="fixed bg-white shadow-lg border rounded text-sm z-50 py-1"
+		style="top: {contextMenu.y}px; left: {contextMenu.x}px;"
+		onclick={(e) => e.stopPropagation()}
+		role
+	>
+		<!-- Flag/Unflag -->
+		<div
+			class="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+			onclick={async () => {
+				const symbol = contextMenu.stock.symbol;
+				const isColored = stockColors[symbol];
+
+				const p = await fetch('/api/flags', {
+					method: 'POST',
+					body: JSON.stringify({
+						symbol,
+						color: isColored ? '' : 'green'
+					})
+				});
+
+				ChartState.flags = await p.json();
+				// closeMenu();
+			}}
+			role="button"
+			tabindex="0"
+			onkeydown={() => {}}
+		>
+			Flag/Unflag {contextMenu.stock.symbol}
+		</div>
+
+		<!-- Flag Colors -->
+		<div class="flex gap-2 px-3 py-1.5 hover:bg-gray-100">
+			{#each flagColors as color, i (i)}
+				<div
+					class="w-4 h-4 rounded-full cursor-pointer relative group flex items-center justify-center"
+					style={stockColors?.[contextMenu.stock.symbol] === color
+						? `outline: 2px solid ${colorMap[color]}; outline-offset: -2px; background-color: transparent;`
+						: `background-color: ${colorMap[color]};`}
+					onclick={async () => {
+						const symbol = contextMenu.stock.symbol;
+						const isColored = stockColors[symbol];
+
+						const p = await fetch('/api/flags', {
+							method: 'POST',
+							body: JSON.stringify({
+								symbol,
+								color: isColored ? '' : color
+							})
+						});
+
+						ChartState.flags = await p.json();
+						// closeMenu();
+					}}
+					role="button"
+					tabindex="0"
+					onkeydown={() => {}}
+				>
+					<div
+						style={stockColors?.[contextMenu.stock.symbol] === color
+							? `background-color: ${colorMap[color]}`
+							: ''}
+						class:bg-white={stockColors?.[contextMenu.stock.symbol] !== color}
+						class:opacity-0={stockColors?.[contextMenu.stock.symbol] !== color}
+						class:group-hover:opacity-60={stockColors?.[contextMenu.stock.symbol] !== color}
+						class="w-2 h-2 rounded-full opacity-0 transition-opacity duration-150"
+					></div>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Watchlist -->
+		<div class="relative group">
+			<div
+				class="px-3 py-1 hover:bg-gray-100 cursor-pointer flex items-center justify-between whitespace-nowrap"
+				onclick={() => {
+					// closeMenu();
+				}}
+				role="button"
+				tabindex="0"
+				onkeydown={() => {}}
+			>
+				<span>Add {contextMenu.stock.symbol} to watchlist</span>
+				<span class="ml-4 text-gray-400">›</span>
+			</div>
+
+			<!-- Watchlist submenu -->
+			<div
+				class="absolute right-full top-0 hidden group-hover:block bg-white shadow-lg border rounded text-sm py-1 min-w-40"
+			>
+				{#each watchlists as watchlist (watchlist)}
+					<label class="px-3 py-1 hover:bg-gray-200/80 cursor-pointer flex items-center gap-2">
+						<input
+							type="checkbox"
+							checked={watchlist.entries?.includes(contextMenu.stock.symbol)}
+							onclick={(e) => e.stopPropagation()}
+							onchange={(e) => {
+								const checked = e.currentTarget.checked;
+								const symbol = contextMenu.stock.symbol;
+
+								if (checked) {
+									// addToWatchlist(symbol, watchlist.id);
+								} else {
+									// removeFromWatchlist(symbol, watchlist.id);
+								}
+							}}
+						/>
+
+						<span>{watchlist.name}</span>
+					</label>
+				{/each}
+			</div>
 		</div>
 	</div>
 {/if}
