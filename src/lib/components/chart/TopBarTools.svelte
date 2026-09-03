@@ -1,7 +1,6 @@
 <script>
 	import { ChartState } from '$lib/state/ChartState.svelte';
 	import Modal from './Modal.svelte';
-	import SettingsModalContent from './SettingsModalContent.svelte';
 	import SymbolSearchModalContent from './SymbolSearchModalContent.svelte';
 	import SettingsIcon from './Icons/SettingsIcon.svelte';
 	import { goto } from '$app/navigation';
@@ -127,13 +126,7 @@
 	>
 
 	<div class="Settings w-11 flex flex-row justify-center">
-		<button
-			class="hover:bg-gray-200 rounded p-0.5"
-			onclick={() => {
-				// ChartState.activeModal = 'settings';
-				openSettingsDialog();
-			}}
-		>
+		<button class="hover:bg-gray-200 rounded p-0.5" onclick={openSettingsDialog}>
 			<SettingsIcon />
 		</button>
 	</div>
@@ -147,9 +140,6 @@
 	size={ChartState.activeModal === 'settings' ? 'small' : 'large'}
 	backdrop={ChartState.activeModal === 'settings' ? false : true}
 >
-	<!-- <div class:hidden={ChartState.activeModal !== 'settings'}>
-		<SettingsModalContent />
-	</div> -->
 	<div class:hidden={ChartState.activeModal !== 'search'}>
 		<SymbolSearchModalContent />
 	</div>

@@ -131,9 +131,11 @@
 
 		createDialog?.showModal();
 
-		setTimeout(() => {
-			createInput?.focus();
-		});
+		if (!window.isTouchable) {
+			setTimeout(() => {
+				createInput?.focus();
+			});
+		}
 	}
 
 	async function createWatchlist() {
@@ -411,9 +413,11 @@
 		isOpen = false;
 		addSymbolDialog?.showModal();
 
-		setTimeout(() => {
-			symbolInput?.focus();
-		});
+		if (!window.isTouchable) {
+			setTimeout(() => {
+				symbolInput?.focus();
+			});
+		}
 	}
 
 	let searchResult = $state([

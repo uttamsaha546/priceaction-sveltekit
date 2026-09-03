@@ -30,9 +30,13 @@
 
 	onMount(async () => {
 		await tick();
-		requestAnimationFrame(() => {
-			inputElement?.focus();
-		});
+
+		// Focus input on keyboard device. Do not focus on mobile due to small size (keyboard covers the screen)
+		if (!window.isTouchable) {
+			requestAnimationFrame(() => {
+				inputElement?.focus();
+			});
+		}
 	});
 
 	function clearSearch() {
@@ -49,6 +53,9 @@
 		source; // make source a dependancy
 		type; //make type a dependancy
 		const q = searchInput.trim();
+		// if ((type = Type.Nps && !q)) {
+		// 	searchResult = npsSchemeList;
+		// }
 		if (!q) return;
 		const t = setTimeout(() => {
 			// cancel previous request (if still running)
@@ -349,6 +356,7 @@
 		onclick={() => {
 			type = Type.Stock;
 			source = Source.Dhan;
+			searchResult = [];
 		}}
 		class={`${type === Type.Stock ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>Stock</button
@@ -357,6 +365,7 @@
 		onclick={() => {
 			type = Type.MF;
 			source = Source.Dhan;
+			searchResult = [];
 		}}
 		class={`${type === Type.MF ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>MF</button
@@ -365,6 +374,7 @@
 		onclick={() => {
 			type = Type.ETF;
 			source = Source.Dhan;
+			searchResult = [];
 		}}
 		class={`${type === Type.ETF ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>ETF</button
@@ -373,6 +383,7 @@
 		onclick={() => {
 			type = Type.Index;
 			source = Source.Dhan;
+			searchResult = [];
 		}}
 		class={`${type === Type.Index ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>Index</button
@@ -381,6 +392,7 @@
 		onclick={() => {
 			type = Type.Nps;
 			source = Source.NpsTrust;
+			searchResult = npsSchemeList;
 		}}
 		class={`${type === Type.Nps ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>NPS</button
@@ -389,6 +401,7 @@
 		onclick={() => {
 			type = Type.Global;
 			source = Source.YahooFinance;
+			searchResult = [];
 		}}
 		class={`${type === Type.Global ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}  px-3 py-0.5 rounded-2xl`}
 		>Global</button
@@ -399,7 +412,7 @@
 
 <div class="searchResultContainer flex-1 overflow-auto">
 	<div>
-		{#each searchResult as row, index}
+		{#each searchResult as row, index (index)}
 			<div
 				class="flex flex-row gap-4 border-b border-gray-200 hover:bg-gray-200 h-10 items-center"
 				onclick={() => {

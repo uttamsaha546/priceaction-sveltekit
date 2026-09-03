@@ -40,12 +40,6 @@
 	onMount(() => {
 		loadFlagsTableData();
 		loadInitialData();
-
-		// Check if the client is touch device
-		if (typeof window !== 'undefined') {
-			// window.isTouchCapable = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-			window.isTouchCapable = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-		}
 	});
 </script>
 

@@ -25,7 +25,7 @@
 				class={`${ToolState.activeTool === 'trendAngle' ? 'bg-gray-200 hover:bg-gray-300' : 'hover:bg-gray-200/75'} rounded p-1`}
 				onclick={() => {
 					ToolState.activeTool = 'trendAngle';
-					if (window.isTouchCapable) {
+					if (window.isTouchable) {
 						// const visibleRange = window.mainSeries.getVisibleRange();
 						const paneSize = window.chart.paneSize();
 						const price = window.mainSeries.coordinateToPrice(paneSize.height / 2);

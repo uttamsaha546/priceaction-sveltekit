@@ -116,7 +116,7 @@
 		const safeEntryZonePlugin = new SafeEntryZonePrimitive();
 		candlestickSeries.attachPrimitive(safeEntryZonePlugin);
 
-		if (window.isTouchCapable) {
+		if (window.isTouchable) {
 			//For touch screen
 			let measureState = $state('idle');
 			let startPoint = null;
