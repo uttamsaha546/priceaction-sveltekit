@@ -1,4 +1,6 @@
 import { parseArgs } from 'node:util';
+import JSZip from 'jszip';
+import Papa from 'papaparse';
 
 // 1. Get today's date in YYYY-MM-DD format (accounting for local timezone)
 const today = new Date().toLocaleDateString('en-CA'); // 'en-CA' outputs exactly YYYY-MM-DD
@@ -29,6 +31,9 @@ let toStr = values.to || fromStr;
 
 // --- UTILITY FUNCTIONS ---
 function parseLocalDate(dateStr) {
+  if(typeof dateStr ==='object'){
+    return new Date(dateStr);
+  }
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
@@ -96,16 +101,18 @@ async function processBhavcopyRange(startStr, endStr) {
 
             // --- FILTER CONDITION ---
             // Example: Select normal equities (EQ) with substantial trading volume
-            if (row.SERIES === 'EQ' && parseFloat(row.TTL_TRD_VAL || 0) > 10000000) {
+            if (row.SctySrs === 'EQ' || row.SctySrs ==='BE') {
               
               const stockRecord = {
-                symbol: row.SYMBOL,
-                open: parseFloat(row.OPEN_PRICE),
-                high: parseFloat(row.HIGH_PRICE),
-                low: parseFloat(row.LOW_PRICE),
-                close: parseFloat(row.CLOSE_PRICE),
-                volume: parseInt(row.TTL_TRD_QNTY),
-                date: current.toLocaleDateString('en-CA')
+                instrument_id: row.FinInstrmId,
+                symbol: row.TckrSymb,
+                open: parseFloat(row.OpnPric),
+                high: parseFloat(row.HghPric),
+                low: parseFloat(row.LwPric),
+                close: parseFloat(row.ClsPric),
+                volume: parseInt(row.TtlTradgVol),
+                traded_value: parseFloat(row.TtlTrfVal),
+                trade_date: current.toLocaleDateString('en-CA')
               };
 
               // 💥 PLACE YOUR DATABASE SAVE HERE 💥
