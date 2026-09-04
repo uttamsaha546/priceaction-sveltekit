@@ -62,8 +62,15 @@
 			timeScale: { rightOffset: 10, barSpacing: 4 },
 			autoSize: true
 		});
+		
+		
 
 		candlestickSeries = chart.addSeries(CandlestickSeries);
+		
+		
+window.chart = chart; // used in leftbarwithdivider
+window.mainSeries = candlestickSeries;
+
 
 		// Initialize DrawingManager with Save Callback
 		drawingManager = new DrawingManager(chart, candlestickSeries, '', async (symbol, drawings) => {
