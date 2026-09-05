@@ -7,44 +7,40 @@ db.exec(`
     PRAGMA synchronous = NORMAL;    
 
     CREATE TABLE IF NOT EXISTS stock_prices_daily (
-        instrument_id INTEGER NOT NULL,
-        symbol TEXT NOT NULL,
-        open REAL NOT NULL,
-        high REAL NOT NULL,
-        low REAL NOT NULL,
-        close REAL NOT NULL,
-        volume INTEGER NOT NULL,
-        traded_value REAL NOT NULL,
         trade_date DATE NOT NULL,
+        symbol TEXT NOT NULL,
+        open INTEGER NOT NULL,
+        high INTEGER NOT NULL,
+        low INTEGER NOT NULL,
+        close INTEGER NOT NULL,
+        volume INTEGER NOT NULL,
+        traded_value INTEGER NOT NULL,
 
-        PRIMARY KEY (instrument_id, trade_date)
+        PRIMARY KEY (symbol, trade_date)
     ) WITHOUT ROWID;
 
     CREATE TABLE IF NOT EXISTS stock_liquidity (
-        instrument_id INTEGER NOT NULL,
-        symbol TEXT NOT NULL,
-        adv20 REAL NOT NULL,
-        adv60 REAL NOT NULL,
-        adv120 REAL NOT NULL,
-        median_value60 REAL NOT NULL,
-        liquid_days60 INTEGER NOT NULL,
         trade_date DATE NOT NULL,
+        symbol TEXT NOT NULL,
+        adv20 INTEGER NOT NULL,
+        adv60 INTEGER NOT NULL,
+        adv120 INTEGER NOT NULL,
+        median_value60 INTEGER NOT NULL,
+        liquid_days60 INTEGER NOT NULL,
 
-        PRIMARY KEY (instrument_id, trade_date)
+        PRIMARY KEY (symbol, trade_date)
     ) WITHOUT ROWID;
 
     CREATE TABLE IF NOT EXISTS stock_ma_daily (
-        instrument_id INTEGER NOT NULL,
+        trade_date DATE NOT NULL,
         symbol TEXT NOT NULL,
-        ma252 REAL,
-        trade_date DATE NOT NULL
+        ma252 INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS stock_indicators (
-        instrument_id INTEGER NOT NULL,
-        symbol TEXT NOT NULL,
         trade_date DATE NOT NULL,
-        ma252 REAL,
+        symbol TEXT NOT NULL,
+        ma252 INTEGER,
         slope40 REAL,
         slope120 REAL,
         acceleration REAL        
@@ -53,30 +49,27 @@ db.exec(`
 
 const insertBhavcopyRowStmt = db.prepare(`
     INSERT INTO stock_prices_daily (
-        instrument_id,
+        trade_date,
         symbol,
         open,
         high,
         low,
         close,
         volume,
-        traded_value,
-        trade_date
+        traded_value
     )
     VALUES (
-        :instrument_id,
+        :trade_date,
         :symbol,
         :open,
         :high,
         :low,
         :close,
         :volume,
-        :traded_value,
-        :trade_date
+        :traded_value
     )
-    ON CONFLICT (instrument_id, trade_date)
+    ON CONFLICT (symbol, trade_date)
     DO UPDATE SET
-        symbol = excluded.symbol,
         open = excluded.open,
         high = excluded.high,
         low = excluded.low,
@@ -85,8 +78,7 @@ const insertBhavcopyRowStmt = db.prepare(`
         traded_value = excluded.traded_value
 
     WHERE
-        stock_prices_daily.symbol != excluded.symbol
-        OR stock_prices_daily.open != excluded.open
+        stock_prices_daily.open != excluded.open
         OR stock_prices_daily.high != excluded.high
         OR stock_prices_daily.low != excluded.low
         OR stock_prices_daily.close != excluded.close
@@ -114,7 +106,7 @@ export function closeDatabase() {
 }
 
 export type BhavcopyRow = {
-	instrument_id: number;
+	trade_date: string;
 	symbol: string;
 	open: number;
 	high: number;
@@ -122,5 +114,4 @@ export type BhavcopyRow = {
 	close: number;
 	volume: number;
 	traded_value: number;
-	trade_date: string;
 };

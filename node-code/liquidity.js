@@ -17,7 +17,7 @@ db.exec(`
     VACUUM;
 
     CREATE TABLE IF NOT EXISTS stock_liquidity (
-        instrument_id INTEGER NOT NULL,
+        trade_date DATE NOT NULL,
         symbol TEXT NOT NULL,
 
         adv20 INTEGER NOT NULL,
@@ -27,9 +27,7 @@ db.exec(`
         median_value60 INTEGER NOT NULL,
         liquid_days60 INTEGER NOT NULL,
 
-        trade_date TEXT NOT NULL,
-
-        PRIMARY KEY (instrument_id, trade_date)
+        PRIMARY KEY (symbol, trade_date)
     ) WITHOUT ROWID;
 `);
 
@@ -109,7 +107,6 @@ const calculateLiquidityStmt = db.prepare(`
     active_instruments AS (
 
         SELECT
-            instrument_id,
             symbol
 
         FROM stock_prices_daily
@@ -130,7 +127,6 @@ const calculateLiquidityStmt = db.prepare(`
     instrument_sessions AS (
 
         SELECT
-            a.instrument_id,
             a.symbol,
             m.trade_date,
             m.session_number
@@ -154,7 +150,6 @@ const calculateLiquidityStmt = db.prepare(`
     daily_values AS (
 
         SELECT
-            i.instrument_id,
             i.symbol,
             i.trade_date,
             i.session_number,
@@ -168,7 +163,7 @@ const calculateLiquidityStmt = db.prepare(`
 
         LEFT JOIN stock_prices_daily d
 
-            ON d.instrument_id = i.instrument_id
+            ON d.symbol = i.symbol
             AND d.trade_date = i.trade_date
     ),
 
@@ -188,10 +183,7 @@ const calculateLiquidityStmt = db.prepare(`
     stats AS (
 
         SELECT
-            instrument_id,
-
-            MAX(symbol) AS symbol,
-
+            symbol,
 
             -- Average traded value over last 20 MARKET sessions
 
@@ -220,7 +212,7 @@ const calculateLiquidityStmt = db.prepare(`
 
         FROM daily_values
 
-        GROUP BY instrument_id
+        GROUP BY symbol
 
         -- We only want a complete 120-session history.
 
@@ -235,7 +227,7 @@ const calculateLiquidityStmt = db.prepare(`
     values60 AS (
 
         SELECT
-            instrument_id,
+            symbol,
             traded_value
 
         FROM daily_values
@@ -259,7 +251,7 @@ const calculateLiquidityStmt = db.prepare(`
     liquid_days AS (
 
         SELECT
-            instrument_id,
+            symbol,
 
             SUM(
                 CASE
@@ -271,7 +263,7 @@ const calculateLiquidityStmt = db.prepare(`
 
         FROM values60
 
-        GROUP BY instrument_id
+        GROUP BY symbol
     ),
 
 
@@ -284,16 +276,16 @@ const calculateLiquidityStmt = db.prepare(`
     median_ranked AS (
 
         SELECT
-            instrument_id,
+            symbol,
             traded_value,
 
             ROW_NUMBER() OVER (
-                PARTITION BY instrument_id
+                PARTITION BY symbol
                 ORDER BY traded_value
             ) AS value_rank,
 
             COUNT(*) OVER (
-                PARTITION BY instrument_id
+                PARTITION BY symbol
             ) AS value_count
 
         FROM values60
@@ -314,7 +306,7 @@ const calculateLiquidityStmt = db.prepare(`
     medians AS (
 
         SELECT
-            instrument_id,
+            symbol,
 
             AVG(traded_value) AS median_value60
 
@@ -325,7 +317,7 @@ const calculateLiquidityStmt = db.prepare(`
             (value_count + 2) / 2
         )
 
-        GROUP BY instrument_id
+        GROUP BY symbol
     )
 
 
@@ -334,7 +326,6 @@ const calculateLiquidityStmt = db.prepare(`
     -- -------------------------------------------------------------------------
 
     SELECT
-        s.instrument_id,
         s.symbol,
 
         s.adv20,
@@ -351,10 +342,10 @@ const calculateLiquidityStmt = db.prepare(`
     FROM stats s
 
     JOIN medians m
-        ON m.instrument_id = s.instrument_id
+        ON m.symbol = s.symbol
 
     LEFT JOIN liquid_days l
-        ON l.instrument_id = s.instrument_id
+        ON l.symbol = s.symbol
 
     WHERE s.adv120 IS NOT NULL
 `);
@@ -365,32 +356,28 @@ const calculateLiquidityStmt = db.prepare(`
 
 const insertLiquidityStmt = db.prepare(`
     INSERT INTO stock_liquidity (
-        instrument_id,
+        trade_date,
         symbol,
         adv20,
         adv60,
         adv120,
         median_value60,
-        liquid_days60,
-        trade_date
+        liquid_days60
     )
 
     VALUES (
-        :instrument_id,
+        :trade_date,
         :symbol,
         :adv20,
         :adv60,
         :adv120,
         :median_value60,
-        :liquid_days60,
-        :trade_date
+        :liquid_days60
     )
 
-    ON CONFLICT (instrument_id, trade_date)
+    ON CONFLICT (symbol, trade_date)
 
     DO UPDATE SET
-
-        symbol = excluded.symbol,
 
         adv20 = excluded.adv20,
 
@@ -424,7 +411,7 @@ function processDate(tradeDate) {
 	try {
 		for (const row of rows) {
 			insertLiquidityStmt.run({
-				instrument_id: row.instrument_id,
+				trade_date: tradeDate,
 
 				symbol: row.symbol,
 
@@ -436,9 +423,7 @@ function processDate(tradeDate) {
 
 				median_value60: Math.round(row.median_value60),
 
-				liquid_days60: row.liquid_days60,
-
-				trade_date: tradeDate
+				liquid_days60: row.liquid_days60
 			});
 		}
 

@@ -102,15 +102,14 @@ async function processBhavcopyRange(startStr, endStr) {
 						// Example: Select normal equities (EQ) with substantial trading volume
 						if (row.SctySrs === 'EQ' || row.SctySrs === 'BE') {
 							const stockRecord = {
-								instrument_id: Number(row.FinInstrmId),
+								trade_date: tradeDate,
 								symbol: row.TckrSymb,
 								open: Number(row.OpnPric),
 								high: Number(row.HghPric),
 								low: Number(row.LwPric),
 								close: Number(row.ClsPric),
 								volume: Number(row.TtlTradgVol),
-								traded_value: Number(row.TtlTrfVal),
-								trade_date: tradeDate
+								traded_value: Number(row.TtlTrfVal)
 							};
 
 							// 💥 PLACE YOUR DATABASE SAVE HERE 💥
@@ -124,9 +123,8 @@ async function processBhavcopyRange(startStr, endStr) {
 
 			console.log(`💾 Saving ${rows.length} rows...`);
 			insertBhavcopyRows(rows);
-			console.log(`✅ Completed ${dateFormatted}`);
-		} catch (error) {
-			console.error(`❌ Error on ${dateFormatted}:`, error.message);
+			console.log(`✅ Completed ${tradeDate}	`)	} catch (error) {
+			console.error(`❌ Error on ${tradeDate}:`, error.message);
 		}
 
 		// Advance loop by 1 day
